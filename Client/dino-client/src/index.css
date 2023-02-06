@@ -11,3 +11,18 @@ code {
   font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New',
     monospace;
 }
+
+a {
+  border-style:solid;
+  text-decoration: none;
+  color:white;
+  padding: 1%;
+  border-color:red;
+  border-radius: 20px;
+  transition: 1s;
+}
+
+a:hover {
+  color: white;
+  background-color: red;
+}
