@@ -1,0 +1,59 @@
+html {
+    background-color: black;
+    color:white;
+}
+
+a {
+    border: solid;
+   /* border-radius: 5%;*/
+    padding: 20px;
+    text-decoration: none;
+    border-color: lightgreen;
+    background-color: darkgreen;
+    color: white;
+    transition: 1s;
+}
+
+a:hover {
+    border: solid;
+    border-radius: 5%;
+    padding: 20px;
+    text-decoration: none;
+    border-color: darkgreen;
+    background-color: lightgreen;
+    color: black;
+}
+
+.center {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 200px;
+   /* border: 3px solid green; */
+}
+
+.center img {
+    margin: 0;
+    position: absolute;
+    top: 10%;
+    left: 35%;
+    transform: translate(-50%, -50%);
+    animation: rotation 10s infinite linear;
+}
+
+@keyframes rotation {
+    from {
+      transform: rotate(0deg);
+    }
+    to {
+      transform: rotate(359deg);
+    }
+  }
+
+.center a {
+    margin: 0;
+    position: absolute;
+    top: 85%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+}
