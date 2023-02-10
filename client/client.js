@@ -1,8 +1,14 @@
+const container = document.getElementById("container");
+var image = new Image();
+image.crossOrigin = "anonymous";
+image.src = "https://dino-chrome.com/static/images/dino.jpg"
 
-const canvas = document.getElementById("game");
-const canvas_context = canvas.getContext("2d");
-canvas_context.fillStyle = "#ffffff";
-canvas_context.textBaseline = 'middle';
-canvas_context.textAlign = 'center';
-canvas_context.font = "25px Arcade";
-canvas_context.fillText("hello", canvas.width / 2, (canvas.height / 2) - 50);
+window.onload = function (){
+    let app = new PIXI.Application({width: 1106});
+    container.appendChild(app.view);
+    let player = PIXI.Sprite.from(image);
+    player.anchor.set(0.5);
+    player.x = app.view.width / 2;
+    player.y = app.view.height / 2;
+    app.stage.addChild(player);
+}

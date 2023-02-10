@@ -1,5 +1,4 @@
 html {
-    background-color: black;
     color:white;
 }
 
@@ -58,7 +57,7 @@ a:hover {
     transform: translate(-50%, -50%);
 }
 
-#game {
+#container {
   border-style: solid;
   border-color: white;
   margin: 0;
