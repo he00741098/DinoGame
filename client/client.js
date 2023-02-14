@@ -35,7 +35,7 @@ const spritesheet = new PIXI.Spritesheet(
 
 spritesheet.parse();
 
-const anim = new PIXI.AnimatedSprite(spritesheet.animations.dino);
+let anim = new PIXI.AnimatedSprite(spritesheet.animations.dino);
 anim.animationSpeed = 0.1666;
 anim.play();
 let app = new PIXI.Application({width: 1106});
@@ -64,13 +64,13 @@ class Circle {
         this.radius = radius;
         this.v = v;
 
-        let circle = new PIXI.Graphics();
-        circle.beginFill(color);
-        circle.drawCircle(0, 0, radius);
-        circle.endFill();
-        circle.x = radius;
-        circle.y = radius;
-        app.stage.addChild(circle);
+        let circle = anim;
+        //circle.beginFill(color);
+        //circle.drawCircle(0, 0, radius);
+        //circle.endFill();
+        //circle.x = radius;
+        //circle.y = radius;
+        //app.stage.addChild(circle);
 
         this.circle = circle;
     }
