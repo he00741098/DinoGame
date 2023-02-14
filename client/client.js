@@ -103,6 +103,9 @@ function onkeydown(ev) {
 
 
         case "ArrowUp":
+        case "Spacebar":
+        //spacebar is " " apparently
+        case " ":
         case "w":
             player.v.y = -player.speed;
             pressed['up'] = true;
@@ -119,6 +122,9 @@ function onkeyup(ev) {
     switch (ev.key) {
 
         case "ArrowUp": 
+        case "Spacebar":
+        //spacebar is " " apparently
+        case " ":
         case "w":
             player.v.y = pressed['down']?player.speed:0; 
             pressed['up'] = false;
