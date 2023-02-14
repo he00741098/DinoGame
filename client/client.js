@@ -78,23 +78,46 @@ class Circle {
 
 
 class Player extends Circle {
+
+
     constructor(color, radius, v) {
         super(color, radius, v);
+        this.defX = app.view.width / 6;
+        this.defY = anim.y = app.view.height / 2;
+        this.maxHeight = 170;
+
         this.reset();
     }
+
 
     reset() {
         this.circle.x = w/2;
         this.circle.y = h/2;
-        this.speed = 2;
+        this.speed = 5;
     }
 
     update() {
+        
+        if(this.circle.y<this.maxHeight){
+            //pressed['up'] = false;
+            this.v.y=this.speed;
+            console.log("too high");
+        }
+        if(this.circle.y>this.defY){
+            //pressed['down'] = false;
+            this.v.y=0;
+            this.circle.y = this.defY;
+            console.log("too low");
+        }
+        console.log(this.circle.y);
         let x = this.circle.x + this.v.x;
         let y = this.circle.y + this.v.y;
 
         this.circle.x = Math.min(Math.max(x, this.radius), w-this.radius);
         this.circle.y = Math.min(Math.max(y, this.radius), w-this.radius);
+
+    
+
     }
 }
 
@@ -107,14 +130,21 @@ function onkeydown(ev) {
         //spacebar is " " apparently
         case " ":
         case "w":
+            if(player.circle.y==player.defY){
             player.v.y = -player.speed;
+                console.log("jump");
+        }
             pressed['up'] = true;
+
             break;
 
         case "ArrowDown": 
         case "s":
-            player.v.y = player.speed;
+            if(player.circle.y!=player.defY){
+            player.v.y = player.speed*3;
+            }
             pressed['down'] = true;
+
             break;
     }
 }
@@ -126,13 +156,13 @@ function onkeyup(ev) {
         //spacebar is " " apparently
         case " ":
         case "w":
-            player.v.y = pressed['down']?player.speed:0; 
+            //player.v.y = pressed['down']?player.speed:0; 
             pressed['up'] = false;
             break;
 
         case "ArrowDown": 
         case "s":
-            player.v.y = pressed['up']?-player.speed:0; 
+            //player.v.y = 0; 
             pressed['down'] = false;
             break;
     }
