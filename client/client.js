@@ -16,6 +16,17 @@ const atlasData = {
 			sourceSize: { w: 32, h: 32 },
 			spriteSourceSize: { x: 0, y: 0, w: 32, h: 32 }
 		},
+        DuckDino1: {
+            frame: { x: 240, y:0, w: 60, h:60 },
+            sourceSize: {w: 32, h:32},
+            spriteSourceSize: {x: 0, y: 0, w: 32, h: 32}
+        },
+        DuckDino2: {
+            frame: {x: 0, y:60, w:60, h:60},
+            sourceSize: {w: 32, h:32},
+            spriteSourceSize: {x: 0, y: 0, w: 32, h:32}
+
+        },
 	},
 	meta: {
 		image: image,
@@ -24,7 +35,8 @@ const atlasData = {
 		scale: 1
 	},
 	animations: {
-		dino: ['Dino1','Dino2'] //array of frames by name
+		dino: ['Dino1','Dino2'], //array of frames by name
+        duckDino: ['DuckDino1', 'DuckDino2']
 	}
 }
 
