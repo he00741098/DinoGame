@@ -38,7 +38,7 @@ spritesheet.parse();
 let anim = new PIXI.AnimatedSprite(spritesheet.animations.dino);
 anim.animationSpeed = 0.1666;
 anim.play();
-let app = new PIXI.Application({width: 1106});
+let app = new PIXI.Application({width: 1106, height: 250});
 app.renderer.backgroundColor = 0x456268;
 
 window.onload = function (){
@@ -84,7 +84,7 @@ class Player extends Circle {
         super(color, radius, v);
         this.defX = app.view.width / 6;
         this.defY = anim.y = app.view.height / 2;
-        this.maxHeight = 170;
+        this.maxHeight = 25;
 
         this.reset();
     }
@@ -93,7 +93,7 @@ class Player extends Circle {
     reset() {
         this.circle.x = w/2;
         this.circle.y = h/2;
-        this.speed = 5;
+        this.speed = 10;
     }
 
     update() {
@@ -109,7 +109,7 @@ class Player extends Circle {
             this.circle.y = this.defY;
             console.log("too low");
         }
-        console.log(this.circle.y);
+        //console.log(this.circle.y);
         let x = this.circle.x + this.v.x;
         let y = this.circle.y + this.v.y;
 
@@ -131,11 +131,10 @@ function onkeydown(ev) {
         case " ":
         case "w":
             if(player.circle.y==player.defY){
-            player.v.y = -player.speed;
+                player.v.y = -player.speed;
                 console.log("jump");
-        }
+            }
             pressed['up'] = true;
-
             break;
 
         case "ArrowDown": 
