@@ -27,6 +27,16 @@ const atlasData = {
             spriteSourceSize: {x: 0, y: 0, w: 32, h:32}
 
         },
+        JumpDino1:{
+            frame: {x:120, y:0, w:60, h:60},
+            sourceSize: {w: 32, h:32},
+            spriteSourceSize: {x: 0, y: 0, w: 32, h:32}
+        },
+        JumpDino2:{
+            frame: {x:180, y:0, w:60, h:60},
+            sourceSize: {w: 32, h:32},
+            spriteSourceSize: {x: 0, y: 0, w: 32, h:32}
+        },
 	},
 	meta: {
 		image: image,
@@ -36,7 +46,8 @@ const atlasData = {
 	},
 	animations: {
 		dino: ['Dino1','Dino2'], //array of frames by name
-        duckDino: ['DuckDino1', 'DuckDino2']
+        duckDino: ['DuckDino1', 'DuckDino2'],
+        jumpDino: ['JumpDino1', 'JumpDino2']
 	}
 }
 
@@ -50,7 +61,7 @@ spritesheet.parse();
 let anim = new PIXI.AnimatedSprite(spritesheet.animations.dino);
 anim.animationSpeed = 0.1666;
 anim.play();
-let app = new PIXI.Application({width: 1106, height: 250});
+let app = new PIXI.Application({width: 1106, height: 310});
 app.renderer.backgroundColor = 0x456268;
 
 window.onload = function (){
@@ -71,6 +82,8 @@ function gameLoop() {
 
 let w = 512, h=512;
 let pressed = {};
+pressed['holding']=false;
+pressed['holdingDown'] = false;
 class Circle {
     constructor(color, radius, v) {
         this.radius = radius;
@@ -114,11 +127,16 @@ class Player extends Circle {
             //pressed['up'] = false;
             this.v.y=this.speed;
             console.log("too high");
+            anim.stop();
+            anim.textures = spritesheet.animations.dino;
+            anim.play();
+            pressed['holding'] = true;
         }
         if(this.circle.y>this.defY){
             //pressed['down'] = false;
             this.v.y=0;
             this.circle.y = this.defY;
+            pressed['holding'] = false;
             console.log("too low");
         }
         //console.log(this.circle.y);
@@ -147,6 +165,11 @@ function onkeydown(ev) {
                 console.log("jump");
             }
             pressed['up'] = true;
+            if(!pressed['holding']){
+            anim.stop();
+            anim.textures = spritesheet.animations.jumpDino;
+            anim.play();
+            }
             break;
 
         case "ArrowDown": 
@@ -155,7 +178,14 @@ function onkeydown(ev) {
             player.v.y = player.speed*3;
             }
             pressed['down'] = true;
-
+            //anim = new PIXI.AnimatedSprite(spritesheet.animations.duckDino);
+            //anim.play();
+            if(!pressed['holdingDown']){
+            anim.stop();
+            anim.textures = spritesheet.animations.duckDino;
+            anim.play();
+            pressed['holdingDown'] = true;
+            }
             break;
     }
 }
@@ -169,12 +199,17 @@ function onkeyup(ev) {
         case "w":
             //player.v.y = pressed['down']?player.speed:0; 
             pressed['up'] = false;
+            pressed['holding'] = false;
             break;
 
         case "ArrowDown": 
         case "s":
             //player.v.y = 0; 
             pressed['down'] = false;
+            pressed['holdingDown'] = false;
+            anim.stop();
+            anim.textures = spritesheet.animations.dino;
+            anim.play();
             break;
     }
 }
