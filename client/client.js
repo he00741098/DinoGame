@@ -1,5 +1,6 @@
 //import * as TWEEDLE from TWEEDLE;
 const container = document.getElementById("container");
+const socket = io("ws://127.0.0.1:6969");
 
 const image = new Image();
 image.src = '/images/DinoSprites.png';
@@ -71,14 +72,18 @@ window.onload = function (){
     anim.x = app.view.width / 6;
     anim.y = app.view.height / 2;
     app.stage.addChild(anim);
-
-
 }
 
 function gameLoop() {
     player.update();
-
+    socket.emit("getAllScores");
 }
+
+// TODO: add score and center this
+let scoreText = new PIXI.Text("score here", {fontFamily: 'Arial', fontSize: 24, fill: "white", align: 'right'});
+//scoreText.anchor.set(0.5, 0.5);
+scoreText.position.set(750,100);
+app.stage.addChild(scoreText);
 
 let w = 512, h=512;
 let pressed = {};
@@ -110,6 +115,7 @@ class Player extends Circle {
         this.defX = app.view.width / 6;
         this.defY = anim.y = app.view.height / 2;
         this.maxHeight = 25;
+        this.score = 0;
 
         this.reset();
     }
@@ -145,9 +151,9 @@ class Player extends Circle {
 
         this.circle.x = Math.min(Math.max(x, this.radius), w-this.radius);
         this.circle.y = Math.min(Math.max(y, this.radius), w-this.radius);
+        this.score = this.score+1;
 
-    
-
+        socket.emit("scoreSend", this.score);
     }
 }
 
@@ -218,6 +224,10 @@ function setupControls() {
     window.addEventListener("keydown", onkeydown);
     window.addEventListener("keyup", onkeyup);
 }
+
+//socket.on("disconnect", (reason) => {
+//    document.body.innerHTML = reason;
+//});
 
 //---
 player = new Player(0xfcf8ec, 10, {x:0, y:0});
