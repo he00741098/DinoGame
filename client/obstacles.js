@@ -8,10 +8,10 @@ this.height = height;
 this.width = width;
 }
 
-function isColliding(){
+isColliding(player){
 
 
-    
+
 }
 
 }
