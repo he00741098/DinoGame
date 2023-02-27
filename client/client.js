@@ -233,6 +233,16 @@ function scoreLoop() {
     socket.emit("scoreSend", player.score);
 }
 
+
+
+function generateTerrain(length){
+
+
+
+    
+}
+
+
 //---
 player = new Player(0xfcf8ec, 10, {x:0, y:0});
 setupControls();
