@@ -1,5 +1,5 @@
 class obstacle{
-    constructor(x, y, height, width) {
+    constructor(x, y, height, width, sprite) {
         //xy = lower left corner of obstacle
         this.x = x;
         this.y = y;
@@ -7,6 +7,6 @@ class obstacle{
         this.width = width;
     }
 
-    isColliding(player) {
-    }
+    
+    
 }
