@@ -151,7 +151,6 @@ class Player extends Circle {
 
         this.circle.x = Math.min(Math.max(x, this.radius), w-this.radius);
         this.circle.y = Math.min(Math.max(y, this.radius), w-this.radius);
-        socket.emit("scoreSend", this.score);
         if((this.score % 100) == 0) {
             scoreSound.play();
         }
@@ -231,6 +230,7 @@ function setupControls() {
 function scoreLoop() {
     player.score = player.score+1;
     scoreText.text = player.score.toString();
+    socket.emit("scoreSend", this.score);
 }
 
 //---
