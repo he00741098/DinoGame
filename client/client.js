@@ -230,7 +230,7 @@ function setupControls() {
 function scoreLoop() {
     player.score = player.score+1;
     scoreText.text = player.score.toString();
-    socket.emit("scoreSend", this.score);
+    socket.emit("scoreSend", player.score);
 }
 
 //---
