@@ -1,6 +1,9 @@
 //import * as TWEEDLE from TWEEDLE;
 const container = document.getElementById("container");
 const socket = io("ws://127.0.0.1:6969");
+const deathSound = new Audio("./sounds/hit.mp3");
+const jumpSound = new Audio("./sounds/press.mp3");
+const scoreSound = new Audio("./sounds/reached.mp3");
 
 const image = new Image();
 image.src = '/images/DinoSprites.png';
@@ -148,9 +151,10 @@ class Player extends Circle {
 
         this.circle.x = Math.min(Math.max(x, this.radius), w-this.radius);
         this.circle.y = Math.min(Math.max(y, this.radius), w-this.radius);
-        this.score = this.score+1;
-        scoreText.text = this.score.toString();
         socket.emit("scoreSend", this.score);
+        if((this.score % 100) == 0) {
+            scoreSound.play();
+        }
     }
 }
 
@@ -161,6 +165,7 @@ function onkeydown(ev) {
         //spacebar is " " apparently
         case " ":
         case "w":
+            jumpSound.play();
             if(player.circle.y==player.defY) {
                 player.v.y = -player.speed;
                 console.log("jump");
@@ -174,6 +179,7 @@ function onkeydown(ev) {
             break;
         case "ArrowDown": 
         case "s":
+            jumpSound.play();
             if(player.circle.y!=player.defY) {
                 player.v.y = player.speed*3;
             }
@@ -222,7 +228,13 @@ function setupControls() {
 //    document.body.innerHTML = reason;
 //});
 
+function scoreLoop() {
+    player.score = player.score+1;
+    scoreText.text = player.score.toString();
+}
+
 //---
 player = new Player(0xfcf8ec, 10, {x:0, y:0});
 setupControls();
 setInterval(gameLoop, 1000/60);
+setInterval(scoreLoop, 100);
