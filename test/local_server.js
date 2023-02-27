@@ -6,6 +6,7 @@ http.createServer(function (request, response) {
     console.log('request starting...');
 
     var filePath = './client/' + request.url;
+    console.log(filePath);
     if (filePath == './client//') {
         filePath = './client//index.html';
     }

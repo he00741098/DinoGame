@@ -65,6 +65,11 @@ anim.play();
 let app = new PIXI.Application({width: 1106, height: 310});
 app.renderer.backgroundColor = 0x456268;
 
+// TODO: add score and center this
+let scoreText = new PIXI.Text("0", {fontFamily: 'Arial', fontSize: 24, fill: "white", align: 'right'});
+//scoreText.anchor.set(0.5, 0.5);
+//scoreText.position.set(750,100);
+
 window.onload = function (){
     //let app = new PIXI.Application({width: 1106});
     container.appendChild(app.view);
@@ -72,18 +77,13 @@ window.onload = function (){
     anim.x = app.view.width / 6;
     anim.y = app.view.height / 2;
     app.stage.addChild(anim);
+    app.stage.addChild(scoreText);
 }
 
 function gameLoop() {
     player.update();
     socket.emit("getAllScores");
 }
-
-// TODO: add score and center this
-let scoreText = new PIXI.Text("score here", {fontFamily: 'Arial', fontSize: 24, fill: "white", align: 'right'});
-//scoreText.anchor.set(0.5, 0.5);
-scoreText.position.set(750,100);
-app.stage.addChild(scoreText);
 
 let w = 512, h=512;
 let pressed = {};
@@ -108,8 +108,6 @@ class Circle {
 
 
 class Player extends Circle {
-
-
     constructor(color, radius, v) {
         super(color, radius, v);
         this.defX = app.view.width / 6;
@@ -119,7 +117,6 @@ class Player extends Circle {
 
         this.reset();
     }
-
 
     reset() {
         this.circle.x = w/2;
@@ -152,52 +149,49 @@ class Player extends Circle {
         this.circle.x = Math.min(Math.max(x, this.radius), w-this.radius);
         this.circle.y = Math.min(Math.max(y, this.radius), w-this.radius);
         this.score = this.score+1;
-
+        scoreText.text = this.score.toString();
         socket.emit("scoreSend", this.score);
     }
 }
 
 function onkeydown(ev) {
     switch (ev.key) {
-
-
         case "ArrowUp":
         case "Spacebar":
         //spacebar is " " apparently
         case " ":
         case "w":
-            if(player.circle.y==player.defY){
+            if(player.circle.y==player.defY) {
                 player.v.y = -player.speed;
                 console.log("jump");
             }
             pressed['up'] = true;
-            if(!pressed['holding']){
-            anim.stop();
-            anim.textures = spritesheet.animations.jumpDino;
-            anim.play();
+            if(!pressed['holding']) {
+                anim.stop();
+                anim.textures = spritesheet.animations.jumpDino;
+                anim.play();
             }
             break;
-
         case "ArrowDown": 
         case "s":
-            if(player.circle.y!=player.defY){
-            player.v.y = player.speed*3;
+            if(player.circle.y!=player.defY) {
+                player.v.y = player.speed*3;
             }
             pressed['down'] = true;
             //anim = new PIXI.AnimatedSprite(spritesheet.animations.duckDino);
             //anim.play();
-            if(!pressed['holdingDown']){
-            anim.stop();
-            anim.textures = spritesheet.animations.duckDino;
-            anim.play();
-            pressed['holdingDown'] = true;
+            if(!pressed['holdingDown']) {
+                anim.stop();
+                anim.textures = spritesheet.animations.duckDino;
+                anim.play();
+                pressed['holdingDown'] = true;
             }
             break;
     }
 }
+
 function onkeyup(ev) {
     switch (ev.key) {
-
         case "ArrowUp": 
         case "Spacebar":
         //spacebar is " " apparently
@@ -207,7 +201,6 @@ function onkeyup(ev) {
             pressed['up'] = false;
             pressed['holding'] = false;
             break;
-
         case "ArrowDown": 
         case "s":
             //player.v.y = 0; 
