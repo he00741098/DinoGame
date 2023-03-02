@@ -8,6 +8,7 @@ const scoreSound = new Audio("./sounds/reached.mp3");
 const image = new Image();
 image.src = '/images/DinoSprites.png';
 
+let pos = 0;
 const atlasData = {
 	frames: {
 		Dino1: {
@@ -41,6 +42,12 @@ const atlasData = {
             sourceSize: {w: 32, h:32},
             spriteSourceSize: {x: 0, y: 0, w: 32, h:32}
         },
+        cactus: {
+            frame: {x: 0, y:180, w:60, h:60},
+            sourceSize: {w: 32, h:32},
+            spriteSourceSize: {x: 0, y: 0, w: 32, h:32}
+
+        },
 	},
 	meta: {
 		image: image,
@@ -51,7 +58,8 @@ const atlasData = {
 	animations: {
 		dino: ['Dino1','Dino2'], //array of frames by name
         duckDino: ['DuckDino1', 'DuckDino2'],
-        jumpDino: ['JumpDino1', 'JumpDino2']
+        jumpDino: ['JumpDino1', 'JumpDino2'],
+        cactus: ['cactus']
 	}
 }
 
@@ -72,7 +80,7 @@ app.renderer.backgroundColor = 0x456268;
 let scoreText = new PIXI.Text("0", {fontFamily: 'Arial', fontSize: 24, fill: "white", align: 'right'});
 //scoreText.anchor.set(0.5, 0.5);
 //scoreText.position.set(750,100);
-
+const obstacles = generateTerrain(1000);
 window.onload = function (){
     //let app = new PIXI.Application({width: 1106});
     container.appendChild(app.view);
@@ -82,10 +90,39 @@ window.onload = function (){
     app.stage.addChild(anim);
     app.stage.addChild(scoreText);
 }
-
+let index = 0;
+let using = [];
 function gameLoop() {
+    
     player.update();
+    pos++;
+    if(obstacles[index].x<pos+10){
+        //console.log("I ran 100");
+        index++;
+        app.stage.addChild(obstacles[index].sprite);
+        using.push(obstacles[index]);
+    }
+
+    move(using);
     socket.emit("getAllScores");
+}
+
+function move(obstacle_list){
+for(i = 0; i<obstacle_list.length; i++){
+if(obstacle_list[i].x<pos){
+    //console.log("deleting stuff");
+    
+    //obstacle_list[i].destroy();
+    obstacle_list.splice(i,obstacle_list.length-1);
+    obstacles.splice(i,obstacle_list.length-1);
+}else{
+    obstacle_list[i].x--;
+    obstacle_list[i].sprite.x--;
+}
+
+}
+
+
 }
 
 let w = 512, h=512;
@@ -237,10 +274,18 @@ function scoreLoop() {
 
 function generateTerrain(length){
 
-
-
-
+let obstacle_distance = 10;
+let obstacles = [];
+for(i=0; i<length; i+=obstacle_distance){
+    obstacles.push(new obstacle(i, 0, 5, 2, new PIXI.AnimatedSprite(spritesheet.animations.cactus)));
+    console.log("added new obstacle at "+i+","+0);
 }
+
+
+return obstacles;
+}
+
+
 
 
 //---

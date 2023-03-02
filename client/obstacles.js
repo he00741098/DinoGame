@@ -5,8 +5,13 @@ class obstacle{
         this.y = y;
         this.height = height;
         this.width = width;
+        this.sprite = sprite;
     }
 
-    
+    move(distance){
+        this.x+=distance;
+        this.sprite.x = this.x;
+
+    }
     
 }
