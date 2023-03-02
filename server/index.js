@@ -1,5 +1,6 @@
 const { createServer } = require("http");
 const { Server } = require("socket.io");
+const { callbackify } = require("util");
 
 let ids = 0;
 let scores = {};
@@ -17,15 +18,19 @@ io.on("connection", (socket) => {
   scores[socket.data.id] = 0;
 
 
-  socket.on("scoreSend", (...score) => {
-    scores[socket.data.id] = score[0];
+  socket.on("move", () => {
+    scores[socket.data.id] = scores[socket.data.id]+1;
+  });
+
+  socket.on("getScore", (callback) => {
+    callback(scores[socket.data.id]);
   });
 
   // TODO: send this to client
   socket.on("getAllScores", () => {
     console.log(scores);
   });
-  
+
   socket.on("disconnect", (reason) => {
     delete scores[socket.data.id];
   });
