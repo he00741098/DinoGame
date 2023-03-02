@@ -80,7 +80,7 @@ app.renderer.backgroundColor = 0x456268;
 let scoreText = new PIXI.Text("0", {fontFamily: 'Arial', fontSize: 24, fill: "white", align: 'right'});
 //scoreText.anchor.set(0.5, 0.5);
 //scoreText.position.set(750,100);
-const obstacles = generateTerrain(1000);
+const obstacles = generateTerrain(10000);
 window.onload = function (){
     //let app = new PIXI.Application({width: 1106});
     container.appendChild(app.view);
@@ -96,9 +96,11 @@ function gameLoop() {
     
     player.update();
     pos++;
-    if(obstacles[index].x<pos+10){
+    if(obstacles[index].x<pos+100){
         //console.log("I ran 100");
         index++;
+        obstacles[index].sprite.width = 60;
+        obstacles[index].sprite.height = 180;
         app.stage.addChild(obstacles[index].sprite);
         using.push(obstacles[index]);
     }
@@ -274,7 +276,7 @@ function scoreLoop() {
 
 function generateTerrain(length){
 
-let obstacle_distance = 10;
+let obstacle_distance = 100;
 let obstacles = [];
 for(i=0; i<length; i+=obstacle_distance){
     obstacles.push(new obstacle(i, 0, 5, 2, new PIXI.AnimatedSprite(spritesheet.animations.cactus)));
