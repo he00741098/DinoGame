@@ -265,9 +265,11 @@ function setupControls() {
 //});
 
 function scoreLoop() {
-    player.score = player.score+1;
+    socket.emit("getScore", (res) => {
+        player.score = res;
+    });
     scoreText.text = player.score.toString();
-    socket.emit("scoreSend", player.score);
+    socket.emit("move");
 }
 
 
