@@ -25,8 +25,10 @@ io.on("connection", (socket) => {
   socket.on("getAllScores", () => {
     console.log(scores);
   });
-
-  // TODO: maybe remove score from object on disconnect
+  
+  socket.on("disconnect", (reason) => {
+    delete scores[socket.data.id];
+  });
 });
 
 httpServer.listen(6969);
