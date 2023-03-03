@@ -99,8 +99,8 @@ function gameLoop() {
     if(obstacles[index].x<pos+100){
         //console.log("I ran 100");
         index++;
-        obstacles[index].sprite.width = 60;
-        obstacles[index].sprite.height = 180;
+        obstacles[index].sprite.width = 80;
+        obstacles[index].sprite.height = 120;
         app.stage.addChild(obstacles[index].sprite);
         using.push(obstacles[index]);
     }
@@ -110,13 +110,13 @@ function gameLoop() {
 }
 
 function move(obstacle_list){
-for(i = 0; i<obstacle_list.length; i++){
+for(i = obstacle_list.length-1; i>=0; i--){
 if(obstacle_list[i].x<pos){
     //console.log("deleting stuff");
     
-    //obstacle_list[i].destroy();
-    obstacle_list.splice(i,obstacle_list.length-1);
-    obstacles.splice(i,obstacle_list.length-1);
+    obstacle_list[i].destroy();
+    obstacle_list.splice(0,i);
+    obstacles.splice(0,i);
 }else{
     obstacle_list[i].x--;
     obstacle_list[i].sprite.x--;
