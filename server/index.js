@@ -1,6 +1,5 @@
 const { createServer } = require("http");
 const { Server } = require("socket.io");
-const { callbackify } = require("util");
 
 let ids = 0;
 let scores = {};
@@ -23,6 +22,9 @@ io.on("connection", (socket) => {
   });
 
   socket.on("getScore", (callback) => {
+    if(typeof callback !== "function") {
+      return;
+    }
     callback(scores[socket.data.id]);
   });
 
