@@ -4,7 +4,7 @@ const socket = io("ws://127.0.0.1:6969");
 const deathSound = new Audio("./sounds/hit.mp3");
 const jumpSound = new Audio("./sounds/press.mp3");
 const scoreSound = new Audio("./sounds/reached.mp3");
-
+let w = 512, h=512;
 const image = new Image();
 image.src = '/images/DinoSprites.png';
 
@@ -92,17 +92,24 @@ window.onload = function (){
 }
 let index = 0;
 let using = [];
+let started = false;
 function gameLoop() {
     
     player.update();
     pos++;
-    if(obstacles[index].x<pos+100){
-        //console.log("I ran 100");
-        index++;
-        obstacles[index].sprite.width = 80;
-        obstacles[index].sprite.height = 120;
+    //console.log(obstacles[index]);
+    if(!started||obstacles[index-1].sprite.x<0){
+        console.log("I ran 100");
+        started = true;
+        obstacles[index].sprite.width = 60;
+        obstacles[index].sprite.height = 75;
+        obstacles[index].x = app.view.width;
+        obstacles[index].sprite.x = app.view.width;
         app.stage.addChild(obstacles[index].sprite);
         using.push(obstacles[index]);
+        if(index<obstacles.length-1){
+        index++;
+    }
     }
 
     move(using);
@@ -111,15 +118,17 @@ function gameLoop() {
 
 function move(obstacle_list){
 for(i = obstacle_list.length-1; i>=0; i--){
-if(obstacle_list[i].x<pos){
-    //console.log("deleting stuff");
+if(obstacle_list[i].sprite.x<-220){
+    console.log("deleting stuff");
     
-    obstacle_list[i].destroy();
-    obstacle_list.splice(0,i);
-    obstacles.splice(0,i);
+    //obstacle_list[i].destroy();
+    //obstacle_list = obstacle_list.splice(0,i);
+    //obstacles = obstacles.splice(0,i);
+    using = using.splice(0, i).concat(using.splice(i+1));
+    obstacle_list = using;
 }else{
-    obstacle_list[i].x--;
-    obstacle_list[i].sprite.x--;
+    obstacle_list[i].x-=4;
+    obstacle_list[i].sprite.x-=4;
 }
 
 }
@@ -127,7 +136,7 @@ if(obstacle_list[i].x<pos){
 
 }
 
-let w = 512, h=512;
+
 let pressed = {};
 pressed['holding']=false;
 pressed['holdingDown'] = false;
@@ -281,7 +290,13 @@ function generateTerrain(length){
 let obstacle_distance = 100;
 let obstacles = [];
 for(i=0; i<length; i+=obstacle_distance){
-    obstacles.push(new obstacle(i, 0, 5, 2, new PIXI.AnimatedSprite(spritesheet.animations.cactus)));
+    let sprite = new PIXI.AnimatedSprite(spritesheet.animations.cactus);
+    let defY = (h/4);
+    sprite.x = app.view.width;
+    sprite.y = defY-sprite.height;
+    //sprite.height = sprite.height*0.25;
+    //sprite.width = sprite.width*0.25;
+    obstacles.push(new obstacle(i, 0, 5, 2, sprite));
     console.log("added new obstacle at "+i+","+0);
 }
 
