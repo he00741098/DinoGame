@@ -7,7 +7,7 @@ const scoreSound = new Audio("./sounds/reached.mp3");
 let w = 512, h=512;
 const image = new Image();
 image.src = '/images/DinoSprites.png';
-
+let speedup = 1.5;
 let pos = 0;
 const atlasData = {
 	frames: {
@@ -127,8 +127,8 @@ if(obstacle_list[i].sprite.x<-220){
     using = using.splice(0, i).concat(using.splice(i+1));
     obstacle_list = using;
 }else{
-    obstacle_list[i].x-=4;
-    obstacle_list[i].sprite.x-=4;
+    obstacle_list[i].x-=(4*speedup);
+    obstacle_list[i].sprite.x-=(4*speedup);
 }
 
 }
@@ -172,7 +172,7 @@ class Player extends Circle {
     reset() {
         this.circle.x = w/2;
         this.circle.y = h/2;
-        this.speed = 10;
+        this.speed = 4*speedup;
     }
 
     update() {
