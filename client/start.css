@@ -1,0 +1,17 @@
+html {
+    background-image: url("./bg.png");
+    background-size: cover;
+}
+
+.center a {
+    margin: 0;
+    position: absolute;
+    top: 40%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    transition: all 0.2s ease-in-out;
+}
+
+a:hover {
+    filter: invert(100%);
+}
