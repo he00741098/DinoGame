@@ -117,31 +117,25 @@ function gameLoop() {
 }
 
 function move(obstacle_list){
-for(i = obstacle_list.length-1; i>=0; i--){
-if(obstacle_list[i].sprite.x<-220){
-    console.log("deleting stuff");
-    
-    //obstacle_list[i].destroy();
-    //obstacle_list = obstacle_list.splice(0,i);
-    //obstacles = obstacles.splice(0,i);
-    using = using.splice(0, i).concat(using.splice(i+1));
-    obstacle_list = using;
-}else{
-
-    if(boxesIntersect(obstacle_list[i].sprite, anim)){
-        console.log("you died");
-        clearInterval(gameloop);
-        document.body.innerHTML = "<h1>you died!</h1><button id='deathbutton'>retry</button>";
+    for(i = obstacle_list.length-1; i>=0; i--){
+        if(obstacle_list[i].sprite.x<-220){
+            console.log("deleting stuff");
+            //obstacle_list[i].destroy();
+            //obstacle_list = obstacle_list.splice(0,i);
+            //obstacles = obstacles.splice(0,i);
+            using = using.splice(0, i).concat(using.splice(i+1));
+            obstacle_list = using;
+        } else {
+            if(boxesIntersect(obstacle_list[i].sprite, anim)){
+                console.log("you died");
+                clearInterval(gameloop);
+                document.body.innerHTML = "<h1>you died!</h1><button onClick='document.location.reload();'>retry</button>";
+            }
+            obstacle_list[i].x-=(4*speedup);
+            obstacle_list[i].sprite.x-=(4*speedup);
+        }
     }
-    obstacle_list[i].x-=(4*speedup);
-    obstacle_list[i].sprite.x-=(4*speedup);
 }
-
-}
-
-
-}
-
 
 let pressed = {};
 pressed['holding']=false;
