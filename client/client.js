@@ -127,6 +127,12 @@ if(obstacle_list[i].sprite.x<-220){
     using = using.splice(0, i).concat(using.splice(i+1));
     obstacle_list = using;
 }else{
+
+    if(boxesIntersect(obstacle_list[i].sprite, anim)){
+        console.log("you died");
+        clearInterval(gameloop);
+        document.body.innerHTML = "<h1>you died!</h1><button id='deathbutton'>retry</button>";
+    }
     obstacle_list[i].x-=(4*speedup);
     obstacle_list[i].sprite.x-=(4*speedup);
 }
@@ -177,6 +183,9 @@ class Player extends Circle {
 
     update() {
         
+
+
+
         if(this.circle.y<this.maxHeight){
             //pressed['up'] = false;
             this.v.y=this.speed;
@@ -304,11 +313,16 @@ for(i=0; i<length; i+=obstacle_distance){
 return obstacles;
 }
 
-
+function boxesIntersect(a, b)
+{
+  var ab = a.getBounds();
+  var bb = b.getBounds();
+  return ab.x + ab.width > bb.x && ab.x < bb.x + bb.width && ab.y + ab.height > bb.y && ab.y < bb.y + bb.height;
+}
 
 
 //---
 player = new Player(0xfcf8ec, 10, {x:0, y:0});
 setupControls();
-setInterval(gameLoop, 1000/60);
+let gameloop = setInterval(gameLoop, 1000/60);
 setInterval(scoreLoop, 100);
