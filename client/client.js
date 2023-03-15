@@ -128,8 +128,17 @@ function move(obstacle_list){
         } else {
             if(boxesIntersect(obstacle_list[i].sprite, anim)){
                 console.log("you died");
-                clearInterval(gameloop);
-                document.body.innerHTML = "<h1>you died!</h1><button onClick='document.location.reload();'>retry</button>";
+                clearInterval(gameLoop_interval);
+                clearInterval(scoreLoop_interval);
+                window.removeEventListener("keydown", onkeydown);
+                window.removeEventListener("keyup", onkeyup);
+                anim.stop();
+                socket.disconnect();
+                let deathText = new PIXI.Text("You died! -- Press ENTER to retry", {fontFamily: 'Arial', fontSize: 24, fill: "white", align: 'right'});
+                deathText.anchor.x = -1;
+                deathText.anchor.y = -5;
+                app.stage.addChild(deathText);
+                window.addEventListener("keydown", deathKey);
             }
             obstacle_list[i].x-=(4*speedup);
             obstacle_list[i].sprite.x-=(4*speedup);
@@ -269,11 +278,6 @@ function onkeyup(ev) {
     }
 }
 
-function setupControls() {
-    window.addEventListener("keydown", onkeydown);
-    window.addEventListener("keyup", onkeyup);
-}
-
 //socket.on("disconnect", (reason) => {
 //    document.body.innerHTML = reason;
 //});
@@ -286,37 +290,39 @@ function scoreLoop() {
     socket.emit("move");
 }
 
-
+function deathKey(ev) {
+    switch(ev.key) {
+        case "Enter":
+            document.location.reload();
+            break;
+    }
+}
 
 function generateTerrain(length){
-
-let obstacle_distance = 100;
-let obstacles = [];
-for(i=0; i<length; i+=obstacle_distance){
-    let sprite = new PIXI.AnimatedSprite(spritesheet.animations.cactus);
-    let defY = (h/4);
-    sprite.x = app.view.width;
-    sprite.y = defY-sprite.height;
-    //sprite.height = sprite.height*0.25;
-    //sprite.width = sprite.width*0.25;
-    obstacles.push(new obstacle(i, 0, 5, 2, sprite));
-    console.log("added new obstacle at "+i+","+0);
+    let obstacle_distance = 100;
+    let obstacles = [];
+    for(i=0; i<length; i+=obstacle_distance){
+        let sprite = new PIXI.AnimatedSprite(spritesheet.animations.cactus);
+        let defY = (h/4);
+        sprite.x = app.view.width;
+        sprite.y = defY-sprite.height;
+        //sprite.height = sprite.height*0.25;
+        //sprite.width = sprite.width*0.25;
+        obstacles.push(new obstacle(i, 0, 5, 2, sprite));
+        console.log("added new obstacle at "+i+","+0);
+    }
+    return obstacles;
 }
 
-
-return obstacles;
+function boxesIntersect(a, b) {
+    var ab = a.getBounds();
+    var bb = b.getBounds();
+    return ab.x + ab.width > bb.x && ab.x < bb.x + bb.width && ab.y + ab.height > bb.y && ab.y < bb.y + bb.height;
 }
-
-function boxesIntersect(a, b)
-{
-  var ab = a.getBounds();
-  var bb = b.getBounds();
-  return ab.x + ab.width > bb.x && ab.x < bb.x + bb.width && ab.y + ab.height > bb.y && ab.y < bb.y + bb.height;
-}
-
 
 //---
 player = new Player(0xfcf8ec, 10, {x:0, y:0});
-setupControls();
-let gameloop = setInterval(gameLoop, 1000/60);
-setInterval(scoreLoop, 100);
+window.addEventListener("keydown", onkeydown);
+window.addEventListener("keyup", onkeyup);
+let gameLoop_interval = setInterval(gameLoop, 1000/60);
+let scoreLoop_interval = setInterval(scoreLoop, 100);
