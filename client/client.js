@@ -110,7 +110,7 @@ function gameLoop() {
     pos++;
     //console.log(obstacles[index]);
     if(!started||obstacles[index-1].sprite.x<0){
-        console.log("I ran 100");
+        //console.log("I ran 100");
         started = true;
         obstacles[index].sprite.width = 60;
         obstacles[index].sprite.height = 75;
@@ -195,7 +195,7 @@ class Player extends Circle {
     }
 
     update() {
-        
+        this.speed = 4*speedup;
 
 
 
