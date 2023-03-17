@@ -81,6 +81,17 @@ let scoreText = new PIXI.Text("0", {fontFamily: 'Arial', fontSize: 24, fill: "wh
 //scoreText.anchor.set(0.5, 0.5);
 //scoreText.position.set(750,100);
 const obstacles = generateTerrain(10000);
+
+socket.emit("registerPlayer", new URLSearchParams(document.location.search).get("username"), (res) => {
+    switch(res) {
+        case "ETAKEN":
+            document.location.href = document.location.host;
+            break;
+        default:
+            break;
+    }
+});
+
 window.onload = function (){
     //let app = new PIXI.Application({width: 1106});
     container.appendChild(app.view);
@@ -113,7 +124,6 @@ function gameLoop() {
     }
 
     move(using);
-    socket.emit("getAllScores");
 }
 
 function move(obstacle_list){

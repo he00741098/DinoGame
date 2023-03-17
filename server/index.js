@@ -1,7 +1,7 @@
 const { createServer } = require("http");
 const { Server } = require("socket.io");
 
-let ids = 0;
+//let ids = 0;
 let scores = {};
 
 const httpServer = createServer();
@@ -12,12 +12,52 @@ const io = new Server(httpServer, {
 });
 
 io.on("connection", (socket) => {
-  ids = ids+1;
-  socket.data.id = ids;
-  scores[socket.data.id] = 0;
+  //ids = ids+1;
+  //socket.data.id = ids;
+  //scores[socket.data.id] = 0;
 
+
+  socket.on("registerPlayer", (username, callback) => {
+    if(typeof callback !== "function") {
+      return;
+    }
+    if(socket.data.registered) {
+      callback("EALREADYREG");
+      return;
+    }
+    if(typeof username !== "string") {
+      callback("EBADREQ")
+      return;
+    }
+    if(scores[username]) {
+      callback("ETAKEN");
+      return;
+    }
+    socket.data.id = username;
+    socket.data.registered = true;
+    scores[socket.data.id] = 0;
+    callback("SUCCESS");
+  });
+
+  socket.on("checkPlayerUsername", (username, callback) => {
+    if(typeof callback !== "function") {
+      return;
+    }
+    if(typeof username !== "string") {
+      callback("EBADREQ")
+      return;
+    }
+    if(typeof scores[username] != "undefined") {
+      callback("TAKEN");
+    } else {
+      callback("NOT TAKEN")
+    }
+  });
 
   socket.on("move", () => {
+    if(!socket.data.registered) {
+      return;
+    }
     scores[socket.data.id] = scores[socket.data.id]+1;
   });
 
@@ -25,12 +65,18 @@ io.on("connection", (socket) => {
     if(typeof callback !== "function") {
       return;
     }
+    if(!socket.data.registered) {
+      callback("ENOTREG");
+      return;
+    }
     callback(scores[socket.data.id]);
   });
 
-  // TODO: send this to client
-  socket.on("getAllScores", () => {
-    console.log(scores);
+  socket.on("getAllScores", (callback) => {
+    if(typeof callback !== "function") {  
+      return;
+    }
+    callback(scores);
   });
 
   socket.on("disconnect", (reason) => {

@@ -3,15 +3,30 @@ html {
     background-size: cover;
 }
 
-.center a {
+.center {
     margin: 0;
     position: absolute;
     top: 40%;
     left: 50%;
     transform: translate(-50%, -50%);
+}
+
+a {
     transition: all 0.2s ease-in-out;
 }
 
 a:hover {
     filter: invert(100%);
+}
+
+input {
+    height: 100px;
+    width: 582px;
+    font-size: 48px;
+    background-color: gray;
+    color: white;
+}
+
+::placeholder {
+    color: darkgray;
 }

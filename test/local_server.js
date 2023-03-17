@@ -10,6 +10,7 @@ http.createServer(function (request, response) {
     if (filePath == './client//') {
         filePath = './client//index.html';
     }
+    filePath = filePath.split("?")[0];
     var extname = path.extname(filePath);
     var contentType = 'text/html';
     switch (extname) {
