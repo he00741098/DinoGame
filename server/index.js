@@ -29,7 +29,7 @@ io.on("connection", (socket) => {
       callback("EBADREQ")
       return;
     }
-    if(scores[username]) {
+    if(typeof scores[username] != "undefined") {
       callback("ETAKEN");
       return;
     }
