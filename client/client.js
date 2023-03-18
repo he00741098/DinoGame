@@ -74,10 +74,10 @@ let anim = new PIXI.AnimatedSprite(spritesheet.animations.dino);
 anim.animationSpeed = 0.1666;
 anim.play();
 let app = new PIXI.Application({width: 1106, height: 310});
-app.renderer.backgroundColor = 0x456268;
+app.renderer.backgroundColor = 0xffffff;
 
 // TODO: add score and center this
-let scoreText = new PIXI.Text("0", {fontFamily: 'Arial', fontSize: 24, fill: "white", align: 'right'});
+let scoreText = new PIXI.Text("0", {fontFamily: 'Arial', fontSize: 24, fill: "black", align: 'right'});
 //scoreText.anchor.set(0.5, 0.5);
 //scoreText.position.set(750,100);
 const obstacles = generateTerrain(10000);
@@ -85,7 +85,7 @@ const obstacles = generateTerrain(10000);
 socket.emit("registerPlayer", new URLSearchParams(document.location.search).get("username"), (res) => {
     switch(res) {
         case "ETAKEN":
-            document.location.href = document.location.host;
+            document.location.href = "/";
             break;
         default:
             break;
@@ -144,7 +144,7 @@ function move(obstacle_list){
                 window.removeEventListener("keyup", onkeyup);
                 anim.stop();
                 socket.disconnect();
-                let deathText = new PIXI.Text("You died! -- Press ENTER to retry", {fontFamily: 'Arial', fontSize: 24, fill: "white", align: 'right'});
+                let deathText = new PIXI.Text("You died! -- Press ENTER to retry", {fontFamily: 'Arial', fontSize: 24, fill: "black", align: 'right'});
                 deathText.anchor.x = -1;
                 deathText.anchor.y = -5;
                 app.stage.addChild(deathText);
