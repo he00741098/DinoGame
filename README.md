@@ -6,4 +6,4 @@ Make a multiplayer version of the chrome dino game
 
 # Play!
 
-Join now at: https://multiplayerdino.herokuapp.com/
+Join now at: http://sweep.rs/
