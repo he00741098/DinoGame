@@ -1,5 +1,7 @@
 //const { createServer } = require("http");
 //const { Server } = require("socket.io");
+var fs = require('fs');
+var path = require('path');
 var port = port = process.env.PORT || 8125;
 //let ids = 0;
 let scores = {};
