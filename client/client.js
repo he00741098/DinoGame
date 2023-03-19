@@ -328,7 +328,7 @@ function generateTerrain(length){
 function boxesIntersect(a, b) {
     var ab = a.getBounds();
     var bb = b.getBounds();
-    return ab.x + (ab.width*0.8) > bb.x && ab.x < bb.x + (bb.width*0.8) && ab.y + (ab.height*0.8) > bb.y && ab.y < bb.y + (bb.height*0.8);
+    return ab.x + (ab.width*0.6) > bb.x && ab.x < bb.x + (bb.width*0.8) && ab.y + (ab.height*0.8) > bb.y && ab.y < bb.y + (bb.height*0.8);
 }
 
 //---
