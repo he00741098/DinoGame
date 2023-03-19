@@ -4,7 +4,7 @@
     "socket.io": "^4.6.1"
   },
   "scripts": {
-    "start": "node test/local_server.js"
+    "start": "node server/index.js"
 
   }
 }
