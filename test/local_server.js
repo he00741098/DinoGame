@@ -54,5 +54,5 @@ http.createServer(function (request, response) {
         }
     });
 
-}).listen(8125);
+}).listen(process.env.$PORT);
 console.log('Server running at http://127.0.0.1:8125/');
