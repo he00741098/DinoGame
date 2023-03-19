@@ -1,10 +1,12 @@
+const host = 'https://multiplayerdino.herokuapp.com/';
+
 function play() {
     let box = document.getElementById("usernamebox");
     if(box.value == "") {
         alert("please input a username");
         return;
     }
-    let check_sock = io("ws://127.0.0.1:6969");
+    let check_sock = io(host);
     check_sock.emit("checkPlayerUsername", box.value, (res) => {
         switch(res) {
             case "EBADREQ":
