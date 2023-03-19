@@ -4,6 +4,6 @@ Make a multiplayer version of the chrome dino game
 - server side
 - client side
 
-# Play!
+# IP
 
 Join now at: http://sweep.rs/
