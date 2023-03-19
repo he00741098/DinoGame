@@ -1,4 +1,4 @@
-const host = 'https://multiplayerdino.herokuapp.com/';
+const host = location.hostname;
 
 function play() {
     let box = document.getElementById("usernamebox");

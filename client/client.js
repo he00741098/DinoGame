@@ -1,5 +1,5 @@
 //import * as TWEEDLE from TWEEDLE;
-const host = 'https://multiplayerdino.herokuapp.com/';
+const host = location.hostname;
 const container = document.getElementById("container");
 const socket = io(host);
 const deathSound = new Audio("./sounds/hit.mp3");
