@@ -324,11 +324,11 @@ function generateTerrain(length){
     }
     return obstacles;
 }
-
+//a = obstacle, b = player
 function boxesIntersect(a, b) {
     var ab = a.getBounds();
     var bb = b.getBounds();
-    return ab.x + (ab.width*0.6) > bb.x && ab.x < bb.x + (bb.width*0.8) && ab.y + (ab.height*0.8) > bb.y && ab.y < bb.y + (bb.height*0.8);
+    return ab.x + (ab.width*0.6) > bb.x && ab.x < bb.x + (bb.width*0.6) && ab.y + (ab.height*0.7) > bb.y && ab.y < bb.y + (bb.height*0.7);
 }
 
 //---
