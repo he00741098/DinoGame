@@ -9,13 +9,18 @@ let scores = {};
 const httpServer = require('http').createServer(function (request, response) {
   console.log('request starting...');
 
-  var filePath = './client/' + request.url;
-  console.log(filePath);
-  if (filePath == './client//') {
-      filePath = './client//index.html';
+  let filePath = request.url.split("?")[0];
+
+  let safeSuffix = path.normalize(filePath).replace(/^(\.\.(\/|\\|$))+/, '');
+  let safePath = path.join("./client/", safeSuffix);
+
+  if(safePath === "client/") {
+    safePath = "client/index.html";
   }
-  filePath = filePath.split("?")[0];
-  var extname = path.extname(filePath);
+
+  console.log(safePath);
+
+  var extname = path.extname(safePath);
   var contentType = 'text/html';
   switch (extname) {
       case '.js':
@@ -38,13 +43,11 @@ const httpServer = require('http').createServer(function (request, response) {
           break;
   }
 
-  fs.readFile(filePath, function(error, content) {
+  fs.readFile(safePath, function(error, content) {
       if (error) {
           if(error.code == 'ENOENT'){
-              fs.readFile('./404.html', function(error, content) {
-                  response.writeHead(404, { 'Content-Type': contentType });
-                  response.end(content, 'utf-8');
-              });
+            response.writeHead(404);
+            response.end("Not found");
           }
           else {
               response.writeHead(500);
