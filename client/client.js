@@ -130,7 +130,7 @@ function gameLoop() {
 function move(obstacle_list){
     for(i = obstacle_list.length-1; i>=0; i--){
         if(obstacle_list[i].sprite.x<-220){
-            console.log("deleting stuff");
+            //console.log("deleting stuff");
             //obstacle_list[i].destroy();
             //obstacle_list = obstacle_list.splice(0,i);
             //obstacles = obstacles.splice(0,i);
@@ -138,7 +138,7 @@ function move(obstacle_list){
             obstacle_list = using;
         } else {
             if(boxesIntersect(obstacle_list[i].sprite, anim)){
-                console.log("you died");
+                //console.log("you died");
                 clearInterval(gameLoop_interval);
                 clearInterval(scoreLoop_interval);
                 window.removeEventListener("keydown", onkeydown);
@@ -203,7 +203,7 @@ class Player extends Circle {
         if(this.circle.y<this.maxHeight){
             //pressed['up'] = false;
             this.v.y=this.speed;
-            console.log("too high");
+            //console.log("too high");
             anim.stop();
             anim.textures = spritesheet.animations.dino;
             anim.play();
@@ -214,7 +214,7 @@ class Player extends Circle {
             this.v.y=0;
             this.circle.y = this.defY;
             pressed['holding'] = false;
-            console.log("too low");
+            //console.log("too low");
         }
         //console.log(this.circle.y);
         let x = this.circle.x + this.v.x;
