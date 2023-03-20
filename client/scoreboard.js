@@ -1,4 +1,4 @@
-const score_socket = io(host);
+const score_socket = io(location.hostname);
 
 function scoreTable() {
     score_socket.emit("getAllScores", (res) => {
