@@ -6,4 +6,4 @@ Make a multiplayer version of the chrome dino game
 
 # IP
 
-Join now at: http://sweep.rs/
+http://sweep.rs/

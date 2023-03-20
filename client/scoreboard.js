@@ -1,4 +1,5 @@
-const score_socket = io("ws://127.0.0.1:6969");
+const host = location.hostname;
+const score_socket = io(host);
 
 function scoreTable() {
     socket.emit("getAllScores", (res) => {
