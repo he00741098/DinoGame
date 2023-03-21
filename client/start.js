@@ -23,3 +23,11 @@ function play() {
         }
     });
 }
+
+function playEnter(ev) {
+    if(ev.key == "Enter") {
+        play();
+    }
+}
+
+window.addEventListener("keydown", playEnter);
