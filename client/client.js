@@ -1,15 +1,17 @@
-//import * as TWEEDLE from TWEEDLE;
 const host = location.hostname;
 const container = document.getElementById("container");
 const socket = io(host);
 const deathSound = new Audio("./sounds/hit.mp3");
 const jumpSound = new Audio("./sounds/press.mp3");
 const scoreSound = new Audio("./sounds/reached.mp3");
+
+//width and height
 let w = 512, h=512;
+//images
 const image = new Image();
 image.src = '/images/DinoSprites.png';
-let speedup = 1.5;
-let pos = 0;
+
+//images
 const atlasData = {
 	frames: {
 		Dino1: {
@@ -63,26 +65,31 @@ const atlasData = {
         cactus: ['cactus']
 	}
 }
-
+//more images
 const spritesheet = new PIXI.Spritesheet(
 	PIXI.BaseTexture.from(atlasData.meta.image),
 	atlasData
 );
-
+//parsing
 spritesheet.parse();
+//speed and position variables
+let speedup = 1.5;
+let pos = 0;
 
+//the player
 let anim = new PIXI.AnimatedSprite(spritesheet.animations.dino);
 anim.animationSpeed = 0.1666;
 anim.play();
+
+//rendering the app
 let app = new PIXI.Application({width: 1106, height: 310});
 app.renderer.backgroundColor = 0xffffff;
-
-// TODO: add score and center this
+//score
 let scoreText = new PIXI.Text("0", {fontFamily: 'Arial', fontSize: 24, fill: "black", align: 'right'});
-//scoreText.anchor.set(0.5, 0.5);
-//scoreText.position.set(750,100);
+//obstacles
+//TODO: get obstacles from server
 const obstacles = generateTerrain(10000);
-
+//register player
 socket.emit("registerPlayer", new URLSearchParams(document.location.search).get("username"), (res) => {
     switch(res) {
         case "ETAKEN":
@@ -93,8 +100,8 @@ socket.emit("registerPlayer", new URLSearchParams(document.location.search).get(
     }
 });
 
+//start the app
 window.onload = function (){
-    //let app = new PIXI.Application({width: 1106});
     container.appendChild(app.view);
     anim.anchor.set(0.5);
     anim.x = app.view.width / 6;
@@ -102,16 +109,20 @@ window.onload = function (){
     app.stage.addChild(anim);
     app.stage.addChild(scoreText);
 }
+
+//more variables for game
 let index = 0;
+//TODO: object pool?
 let using = [];
 let started = false;
+//game loop function
+//Updates player, increments position, moves obstacles
 function gameLoop() {
     
     player.update();
-    pos++;
-    //console.log(obstacles[index]);
+    //pos++;
+    //checks if obstacles should be moved I think
     if(!started||obstacles[index-1].sprite.x<0){
-        //console.log("I ran 100");
         started = true;
         obstacles[index].sprite.width = 60;
         obstacles[index].sprite.height = 75;
@@ -126,19 +137,14 @@ function gameLoop() {
 
     move(using);
 }
-
+//move function - to be used by game loop to move obstacles
 function move(obstacle_list){
     for(i = obstacle_list.length-1; i>=0; i--){
         if(obstacle_list[i].sprite.x<-220){
-            //console.log("deleting stuff");
-            //obstacle_list[i].destroy();
-            //obstacle_list = obstacle_list.splice(0,i);
-            //obstacles = obstacles.splice(0,i);
             using = using.splice(0, i).concat(using.splice(i+1));
             obstacle_list = using;
         } else {
             if(boxesIntersect(obstacle_list[i].sprite, anim)){
-                //console.log("you died");
                 clearInterval(gameLoop_interval);
                 clearInterval(scoreLoop_interval);
                 window.removeEventListener("keydown", onkeydown);
@@ -151,41 +157,29 @@ function move(obstacle_list){
                 app.stage.addChild(deathText);
                 window.addEventListener("keydown", deathKey);
             }
+
+            //obstacles being moved across the screen
             obstacle_list[i].x-=(4*speedup);
             obstacle_list[i].sprite.x-=(4*speedup);
         }
     }
 }
 
+//array for movement handling
 let pressed = {};
 pressed['holding']=false;
 pressed['holdingDown'] = false;
-class Circle {
+//player class
+class Player{
     constructor(color, radius, v) {
         this.radius = radius;
         this.v = v;
-
         let circle = anim;
-        //circle.beginFill(color);
-        //circle.drawCircle(0, 0, radius);
-        //circle.endFill();
-        //circle.x = radius;
-        //circle.y = radius;
-        //app.stage.addChild(circle);
-
         this.circle = circle;
-    }
-}
-
-
-class Player extends Circle {
-    constructor(color, radius, v) {
-        super(color, radius, v);
         this.defX = app.view.width / 6;
         this.defY = anim.y = app.view.height / 2;
         this.maxHeight = 25;
         this.score = 0;
-
         this.reset();
     }
 
@@ -197,7 +191,8 @@ class Player extends Circle {
 
     update() {
         this.speed = 4*speedup;
-
+        //TODO: send pos to server
+        pos+=this.speed;
 
 
         if(this.circle.y<this.maxHeight){
@@ -227,7 +222,7 @@ class Player extends Circle {
         }
     }
 }
-
+// moves on keydown
 function onkeydown(ev) {
     switch (ev.key) {
         case "ArrowUp":
@@ -265,7 +260,7 @@ function onkeydown(ev) {
             break;
     }
 }
-
+//moves on keydown
 function onkeyup(ev) {
     switch (ev.key) {
         case "ArrowUp": 
@@ -289,10 +284,8 @@ function onkeyup(ev) {
     }
 }
 
-//socket.on("disconnect", (reason) => {
-//    document.body.innerHTML = reason;
-//});
 
+//score
 function scoreLoop() {
     socket.emit("getScore", (res) => {
         player.score = res;
@@ -300,7 +293,7 @@ function scoreLoop() {
     scoreText.text = player.score.toString();
     socket.emit("move");
 }
-
+//death
 function deathKey(ev) {
     switch(ev.key) {
         case "Enter":
@@ -308,7 +301,7 @@ function deathKey(ev) {
             break;
     }
 }
-
+//Generate terrain - WILL BE REMOVED
 function generateTerrain(length){
     let obstacle_distance = 100;
     let obstacles = [];
@@ -324,14 +317,14 @@ function generateTerrain(length){
     }
     return obstacles;
 }
-//a = obstacle, b = player
+//collision detection
 function boxesIntersect(a, b) {
     var ab = a.getBounds();
     var bb = b.getBounds();
     return ab.x + (ab.width*0.6) > bb.x && ab.x < bb.x + (bb.width*0.6) && ab.y + (ab.height*0.7) > bb.y && ab.y < bb.y + (bb.height*0.7);
 }
 
-//---
+//game starts and everything
 player = new Player(0xfcf8ec, 10, {x:0, y:0});
 window.addEventListener("keydown", onkeydown);
 window.addEventListener("keyup", onkeyup);
