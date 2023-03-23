@@ -313,7 +313,7 @@ function generateTerrain(length){
         //sprite.height = sprite.height*0.25;
         //sprite.width = sprite.width*0.25;
         obstacles.push(new obstacle(i, 0, 5, 2, sprite));
-        console.log("added new obstacle at "+i+","+0);
+        //console.log("added new obstacle at "+i+","+0);
     }
     return obstacles;
 }
