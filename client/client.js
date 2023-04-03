@@ -164,6 +164,8 @@ function move(obstacle_list){
         }
     }
 }
+//TODO: rest
+
 
 //array for movement handling
 let pressed = {};

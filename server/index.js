@@ -5,6 +5,8 @@ var path = require('path');
 var port = port = process.env.PORT || 8125;
 //let ids = 0;
 let scores = {};
+let gameStarted = false;
+let gameSeed = 0;
 
 const httpServer = require('http').createServer(function (request, response) {
   console.log('request starting...');
@@ -17,6 +19,10 @@ const httpServer = require('http').createServer(function (request, response) {
   if(safePath === "client/") {
     safePath = "client/index.html";
   }
+
+//Generate terrain
+const alphabet = ["a","b","c","d","e","f","g","h","i","j","k","l","m","n","o","p","q","r","s","t","u","v","w","x","y","z"];
+
 
   console.log(safePath);
 
@@ -92,6 +98,7 @@ io.on("connection", (socket) => {
       callback("ETAKEN");
       return;
     }
+    
     socket.data.id = username;
     socket.data.registered = true;
     scores[socket.data.id] = 0;
@@ -141,6 +148,37 @@ io.on("connection", (socket) => {
   socket.on("disconnect", (reason) => {
     delete scores[socket.data.id];
   });
+
+  socket.on("getObstacles", (callback)=>{
+    if(typeof callback !== "function"){
+      return;
+    }
+    if(!gameStarted){
+      //gameSeed = generateTerrain(100000);
+
+        let obstacle_distance = 100;
+        let obstacles = "";
+        for(i=0; i<length; i+=obstacle_distance){
+          obstacle_distance = Math.random()*100+20;
+            //let sprite = new PIXI.AnimatedSprite(spritesheet.animations.cactus);
+            let defY = (h/4);
+            sprite.x = app.view.width;
+            sprite.y = defY-sprite.height;
+            //sprite.height = sprite.height*0.25;
+            //sprite.width = sprite.width*0.25;
+            //obstacles.push(new obstacle(i, 0, 5, 2, sprite));
+      
+      
+            obstacles+=" "+i+alphabet[Math.random()*alphabet.length];
+            //console.log("added new obstacle at "+i+","+0);
+        }      
+      gameSeed = obstacles;
+      gameStarted = true;
+    }
+    callback(gameSeed);
+  });
+
+
 });
 
 httpServer.listen(port);
