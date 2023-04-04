@@ -135,7 +135,11 @@ io.on("connection", (socket) => {
     if(typeof callback !== "function") {  
       return;
     }
-    callback(scores);
+    let score_compat = [];
+    for (i in scores) {
+      score_compat.push({username: i, score: scores[i]});
+    }
+    callback(score_compat);
   });
 
   socket.on("disconnect", (reason) => {
