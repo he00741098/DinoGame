@@ -11,6 +11,9 @@ let w = 512, h=512;
 const image = new Image();
 image.src = '/images/DinoSprites.png';
 
+let global_player_x = 0;
+
+
 //images
 const atlasData = {
 	frames: {
@@ -75,6 +78,7 @@ spritesheet.parse();
 //speed and position variables
 let speedup = 1.5;
 let pos = 0;
+
 
 //the player
 let anim = new PIXI.AnimatedSprite(spritesheet.animations.dino);
@@ -292,6 +296,7 @@ function scoreLoop() {
     });
     scoreText.text = player.score.toString();
     socket.emit("move");
+    socket.emit("sendPos", pos, (res) =>{});
 }
 //death
 function deathKey(ev) {
@@ -303,6 +308,12 @@ function deathKey(ev) {
 }
 //Generate terrain - WILL BE REMOVED
 function generateTerrain(length){
+
+    socket.emit("getObstacles", (res)=>{
+        console.log("obstacles: "+res);
+
+    });
+
     let obstacle_distance = 100;
     let obstacles = [];
     for(i=0; i<length; i+=obstacle_distance){

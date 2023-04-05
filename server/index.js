@@ -1,11 +1,13 @@
 //const { createServer } = require("http");
 //const { Server } = require("socket.io");
 var fs = require('fs');
+let w = 512, h=512;
 var path = require('path');
 var port = port = process.env.PORT || 8125;
 //let ids = 0;
 let scores = {};
-
+let gameStarted = false;
+let gameSeed = 0;
 const httpServer = require('http').createServer(function (request, response) {
   console.log('request starting...');
 
@@ -94,7 +96,7 @@ io.on("connection", (socket) => {
     }
     socket.data.id = username;
     socket.data.registered = true;
-    scores[socket.data.id] = 0;
+    scores[socket.data.id] = {score:0, pos:0};
     callback("SUCCESS");
   });
 
@@ -117,7 +119,7 @@ io.on("connection", (socket) => {
     if(!socket.data.registered) {
       return;
     }
-    scores[socket.data.id] = scores[socket.data.id]+1;
+    scores[socket.data.id]["score"] = scores[socket.data.id]["score"]+1;
   });
 
   socket.on("getScore", (callback) => {
@@ -128,7 +130,7 @@ io.on("connection", (socket) => {
       callback("ENOTREG");
       return;
     }
-    callback(scores[socket.data.id]);
+    callback(scores[socket.data.id]["score"]);
   });
 
   socket.on("getAllScores", (callback) => {
@@ -137,7 +139,7 @@ io.on("connection", (socket) => {
     }
     let score_compat = [];
     for (i in scores) {
-      score_compat.push({username: i, score: scores[i]});
+      score_compat.push({username: i, score: scores[i]["score"]});
     }
     callback(score_compat);
   });
@@ -145,6 +147,56 @@ io.on("connection", (socket) => {
   socket.on("disconnect", (reason) => {
     delete scores[socket.data.id];
   });
+
+  socket.on("sendPos", (pos, callback) => {
+    if(typeof callback !== "function") {
+      return;
+    }
+    if(typeof pos !== "number") {
+      callback("EBADREQ");
+      return;
+    }
+    if(!socket.data.registered) {
+      callback("ENOTREG");
+      return;
+    }
+    scores[socket.data.id]["pos"] = pos;
+  });
+
+
+  socket.on("getObstacles", (callback)=>{
+    if(typeof callback !== "function"){
+      return;
+    }
+    if(!gameStarted){
+      //gameSeed = generateTerrain(100000);
+        let length = 100000;
+        let obstacle_distance = 100;
+        let obstacles = "";
+        for(i=0; i<length; i+=obstacle_distance){
+          obstacle_distance = Math.random()*100+20;
+            //let sprite = new PIXI.AnimatedSprite(spritesheet.animations.cactus);
+            let defY = (h/4);
+            sprite.x = app.view.width;
+            sprite.y = defY-sprite.height;
+            //sprite.height = sprite.height*0.25;
+            //sprite.width = sprite.width*0.25;
+            //obstacles.push(new obstacle(i, 0, 5, 2, sprite));
+      
+      
+            obstacles+=" "+i+alphabet[Math.random()*alphabet.length];
+            //console.log("added new obstacle at "+i+","+0);
+        }      
+      gameSeed = obstacles;
+      gameStarted = true;
+    }
+    callback(gameSeed);
+  });
+
+
+
+
+
 });
 
 httpServer.listen(port);
