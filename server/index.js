@@ -174,7 +174,7 @@ io.on("connection", (socket) => {
         let obstacle_distance = 1000;
         let obstacles = [];
         for(i=1106; i<length; i+=obstacle_distance){
-          obstacle_distance = Math.floor(Math.random()*1000)+200;
+          obstacle_distance = Math.floor(Math.random()*1000)+300;
             //let sprite = new PIXI.AnimatedSprite(spritesheet.animations.cactus);
 //sprite.x = app.view.width;
             //sprite.y = defY-sprite.height;
