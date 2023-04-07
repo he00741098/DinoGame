@@ -133,8 +133,8 @@ function gameLoop() {
         if(!started){
             ratio = app.width/obstacles[obstacles.length-1]["x"];
             let mapSprite = new PIXI.AnimatedSprite(spritesheet.animations.dino);
-            mapSprite.height= 60;
-            mapSprite.width= 30;
+            //mapSprite.height= 60;
+            //mapSprite.width= 30;
             mapSprite.x = pos*ratio;
             mapSprite.y = 285;
             app.stage.addChild(mapSprite)
