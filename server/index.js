@@ -1,13 +1,13 @@
 //const { createServer } = require("http");
 //const { Server } = require("socket.io");
 var fs = require('fs');
-let w = 512, h=512;
 var path = require('path');
-var port = port = process.env.PORT || 8125;
-//let ids = 0;
-let scores = {};
+var port = process.env.PORT || 8125;
+
+let scores = [];
 let gameStarted = false;
 let gameSeed = 0;
+let h=512;
 const httpServer = require('http').createServer(function (request, response) {
   console.log('request starting...');
 
@@ -87,7 +87,7 @@ io.on("connection", (socket) => {
       return;
     }
     if(typeof username !== "string") {
-      callback("EBADREQ")
+      callback("EBADREQ");
       return;
     }
     if(typeof scores[username] != "undefined") {
@@ -105,13 +105,13 @@ io.on("connection", (socket) => {
       return;
     }
     if(typeof username !== "string") {
-      callback("EBADREQ")
+      callback("EBADREQ");
       return;
     }
     if(typeof scores[username] != "undefined") {
       callback("TAKEN");
     } else {
-      callback("NOT TAKEN")
+      callback("NOT TAKEN");
     }
   });
 
@@ -131,6 +131,7 @@ io.on("connection", (socket) => {
       return;
     }
     callback(scores[socket.data.id]["score"]);
+
   });
 
   socket.on("getAllScores", (callback) => {
@@ -176,9 +177,8 @@ io.on("connection", (socket) => {
         for(i=0; i<length; i+=obstacle_distance){
           obstacle_distance = Math.random()*100+20;
             //let sprite = new PIXI.AnimatedSprite(spritesheet.animations.cactus);
-            let defY = (h/4);
-            sprite.x = app.view.width;
-            sprite.y = defY-sprite.height;
+//sprite.x = app.view.width;
+            //sprite.y = defY-sprite.height;
             //sprite.height = sprite.height*0.25;
             //sprite.width = sprite.width*0.25;
             //obstacles.push(new obstacle(i, 0, 5, 2, sprite));
