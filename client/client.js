@@ -7,6 +7,7 @@ const scoreSound = new Audio("./sounds/reached.mp3");
 
 //width and height
 let w = 512, h=512;
+var ratio;
 //images
 const image = new Image();
 image.src = '/images/DinoSprites.png';
@@ -108,6 +109,10 @@ window.onload = function (){
     anim.y = app.view.height / 2;
     app.stage.addChild(anim);
     app.stage.addChild(scoreText);
+    //put dino on "map"
+    //TODO: look at app ticker
+
+
 }
 
 //more variables for game
@@ -117,12 +122,23 @@ let using = [];
 let started = false;
 //game loop function
 //Updates player, increments position, moves obstacles
+
 function gameLoop() {
     
     player.update();
     //pos++;
     //checks if obstacles should be moved I think
     if(obstacles.length>0&&(!started||obstacles[index].x<pos-anim.x+1106)){
+        if(!started){
+            ratio = obstacles[obstacles.length]["x"]/app.width;
+            let mapSprite = new PIXI.AnimatedSprite(spritesheet.animations.dino);
+            mapSprite.height= 25;
+            mapSprite.width= 12;
+            mapSprite.x = pos*ratio;
+            mapSprite.y = 285;
+        }
+
+
         started = true;
         obstacles[index].sprite.width = 60;
         obstacles[index].sprite.height = 75;
