@@ -88,7 +88,7 @@ app.renderer.backgroundColor = 0xffffff;
 let scoreText = new PIXI.Text("0", {fontFamily: 'Arial', fontSize: 24, fill: "black", align: 'right'});
 //obstacles
 //TODO: get obstacles from server
-const obstacles = generateTerrain(10000);
+const obstacles = generateTerrain();
 //register player
 socket.emit("registerPlayer", new URLSearchParams(document.location.search).get("username"), (res) => {
     switch(res) {
@@ -302,7 +302,7 @@ function deathKey(ev) {
     }
 }
 //Generate terrain - WILL BE REMOVED
-function generateTerrain(length){
+function generateTerrain(){
     let obstacles = [];
     socket.emit("getObstacles", (res)=>{
 
