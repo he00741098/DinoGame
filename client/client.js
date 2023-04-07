@@ -130,7 +130,7 @@ function gameLoop() {
     //checks if obstacles should be moved I think
     if(obstacles.length>0&&(!started||obstacles[index].x<pos-anim.x+1106)){
         if(!started){
-            ratio = obstacles[obstacles.length]["x"]/app.width;
+            ratio = obstacles[obstacles.length-1]["x"]/app.width;
             let mapSprite = new PIXI.AnimatedSprite(spritesheet.animations.dino);
             mapSprite.height= 25;
             mapSprite.width= 12;
