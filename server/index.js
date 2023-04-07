@@ -190,7 +190,7 @@ io.on("connection", (socket) => {
       gameSeed = obstacles;
       gameStarted = true;
     }
-    console.log("sending game seed: "+JSON.stringify(gameSeed));
+    //console.log("sending game seed: "+JSON.stringify(gameSeed));
     callback(JSON.stringify(gameSeed));
   });
 

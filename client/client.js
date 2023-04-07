@@ -308,10 +308,10 @@ function generateTerrain(){
 
         let thing = JSON.parse(res);
         console.log(thing);
-        for(const i in thing.length){
+        for(let i in thing){
             //TODO: add different types of obstacles and also object pool
-            obstacles.push(new obstacle(thing[i].x, thing[i].y, thing[i].height, thing[i].width, new PIXI.AnimatedSprite(spritesheet.animations.cactus)));
-            console.log("added obstacle: " + thing[i].x + " " + thing[i].y + " " + thing[i].height + " " + thing[i].width);
+            obstacles.push(new obstacle(thing.x, thing.y, thing.height, thing.width, new PIXI.AnimatedSprite(spritesheet.animations.cactus)));
+            console.log("added obstacle: " + thing.x + " " + thing.y + " " + thing.height + " " + thing.width);
         }
 
     });
