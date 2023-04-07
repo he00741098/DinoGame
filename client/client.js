@@ -131,11 +131,14 @@ function gameLoop() {
     //checks if obstacles should be moved I think
     if(obstacles.length>0&&(!started||obstacles[index].x<pos-anim.x+1106)){
         if(!started){
+            //TODO: show a map of all the player positions
             ratio = app.width/obstacles[obstacles.length-1]["x"];
+            console.log("the ration:" + ratio);
             let mapSprite = new PIXI.AnimatedSprite(spritesheet.animations.dino);
             //mapSprite.height= 60;
             //mapSprite.width= 30;
             mapSprite.x = pos*ratio;
+            console.log("mapSpriteX:"+mapSprite.x);
             mapSprite.y = 285;
             app.stage.addChild(mapSprite)
             mapSprites.push({name: "main",sprite:mapSprite});
@@ -166,6 +169,9 @@ function move(obstacle_list){
             using = using.splice(0, i).concat(using.splice(i+1));
             obstacle_list = using;
         } else {
+            //TODO: Slow down player instead of death in multiplayer game
+            //TODO: Fix death when player reaches end of map. Instead show "you win" or something
+            //console.log(obstacle_list[i].sprite);
             if(boxesIntersect(obstacle_list[i].sprite, anim)){
                 clearInterval(gameLoop_interval);
                 clearInterval(scoreLoop_interval);
