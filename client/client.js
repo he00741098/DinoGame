@@ -302,11 +302,12 @@ function deathKey(ev) {
     }
 }
 //Generate terrain - WILL BE REMOVED
+var thing;
 function generateTerrain(){
     let obstacles = [];
     socket.emit("getObstacles", (res)=>{
 
-        let thing = JSON.parse(res);
+        thing = JSON.parse(res);
         console.log(thing);
         for(const i of thing){
             //TODO: add different types of obstacles and also object pool
