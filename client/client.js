@@ -140,6 +140,8 @@ function gameLoop() {
             app.stage.addChild(mapSprite)
             mapSprites.push({name: "main",sprite:mapSprite});
             console.log("added map sprite");
+        }else{
+            mapSprites[0].sprite.x = pos*ratio;
         }
 
 
