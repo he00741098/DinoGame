@@ -138,7 +138,7 @@ function gameLoop() {
             mapSprite.x = pos*ratio;
             mapSprite.y = 285;
             app.stage.addChild(mapSprite)
-            mapSprites.push({id:socket.data.id,sprite:mapSprite});
+            mapSprites.push({name: "main",sprite:mapSprite});
             console.log("added map sprite");
         }
 
