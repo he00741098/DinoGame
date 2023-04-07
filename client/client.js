@@ -309,26 +309,17 @@ function deathKey(ev) {
 function generateTerrain(length){
 
     socket.emit("getObstacles", (res)=>{
+        let obstacles = [];
         let thing = JSON.parse(res);
         console.log(thing)
         for(const i in thing.length){
-            console.log(thing[i]);
+            //TODO: add different types of obstacles and also object pool
+            obstacles.push(new obstacle(thing[i].x, thing[i].y, thing[i].height, thing[i].width, new PIXI.AnimatedSprite(spritesheet.animations.cactus)));
+
         }
+        return obstacles;
     });
 
-    let obstacle_distance = 100;
-    let obstacles = [];
-    for(i=0; i<length; i+=obstacle_distance){
-        let sprite = new PIXI.AnimatedSprite(spritesheet.animations.cactus);
-        let defY = (h/4);
-        sprite.x = app.view.width;
-        sprite.y = defY-sprite.height;
-        //sprite.height = sprite.height*0.25;
-        //sprite.width = sprite.width*0.25;
-        obstacles.push(new obstacle(i, 0, 5, 2, sprite));
-        //console.log("added new obstacle at "+i+","+0);
-    }
-    return obstacles;
 }
 //collision detection
 function boxesIntersect(a, b) {
