@@ -131,8 +131,8 @@ function gameLoop() {
     //checks if obstacles should be moved I think
     if(obstacles.length>0&&(!started||obstacles[index].x<pos-anim.x+1106)){
         if(!started){
-            //TODO: show a map of all the player positions
-            ratio = app.width/obstacles[obstacles.length-1]["x"];
+            //TODO: show a map of all the player positions, also make a width variable
+            ratio = 1106/obstacles[obstacles.length-1]["x"];
             console.log("the ration:" + ratio);
             let mapSprite = new PIXI.AnimatedSprite(spritesheet.animations.dino);
             //mapSprite.height= 60;
