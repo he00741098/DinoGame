@@ -310,6 +310,7 @@ function generateTerrain(length){
 
     socket.emit("getObstacles", (res)=>{
         let thing = JSON.parse(res);
+        console.log(thing)
         for(const i in thing.length){
             console.log(thing[i]);
         }
