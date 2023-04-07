@@ -122,7 +122,7 @@ function gameLoop() {
     player.update();
     //pos++;
     //checks if obstacles should be moved I think
-    if(!started||obstacles[index].x<pos-anim.x+1106){
+    if(!started||obstacles[index].x()<pos-anim.x+1106){
         started = true;
         obstacles[index].sprite.width = 60;
         obstacles[index].sprite.height = 75;
@@ -311,7 +311,7 @@ function generateTerrain(){
         for(const i in thing.length){
             //TODO: add different types of obstacles and also object pool
             obstacles.push(new obstacle(thing[i].x, thing[i].y, thing[i].height, thing[i].width, new PIXI.AnimatedSprite(spritesheet.animations.cactus)));
-
+            console.log("added obstacle: " + thing[i].x + " " + thing[i].y + " " + thing[i].height + " " + thing[i].width);
         }
 
     });

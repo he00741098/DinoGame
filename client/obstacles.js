@@ -18,5 +18,8 @@ class obstacle{
         this.sprite.x = this.x;
 
     }
-    
+    get x(){
+        return this.x;
+    }
+
 }
