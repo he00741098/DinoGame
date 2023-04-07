@@ -311,8 +311,8 @@ function generateTerrain(){
         console.log(thing);
         for(const i of thing){
             //TODO: add different types of obstacles and also object pool
-            obstacles.push(new obstacle(thing['x'], thing['y'], 2, 5, new PIXI.AnimatedSprite(spritesheet.animations.cactus)));
-            console.log("added obstacle: " + thing['x'] + " " + thing['y']);
+            obstacles.push(new obstacle(i['x'], i['y'], 2, 5, new PIXI.AnimatedSprite(spritesheet.animations.cactus)));
+            console.log("added obstacle: " + i['x'] + " " + i['y']);
         }
 
     });
