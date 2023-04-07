@@ -178,8 +178,7 @@ class Player{
     constructor(color, radius, v) {
         this.radius = radius;
         this.v = v;
-        let circle = anim;
-        this.circle = circle;
+        this.circle = anim;
         this.defX = app.view.width / 6;
         this.defY = anim.y = app.view.height / 2;
         this.maxHeight = 25;
@@ -296,7 +295,7 @@ function scoreLoop() {
     });
     scoreText.text = player.score.toString();
     socket.emit("move");
-    socket.emit("sendPos", pos, (res) =>{});
+    socket.emit("sendPos", pos, () =>{});
 }
 //death
 function deathKey(ev) {
@@ -310,8 +309,9 @@ function deathKey(ev) {
 function generateTerrain(length){
 
     socket.emit("getObstacles", (res)=>{
-        console.log("obstacles: "+res);
-
+        for(const i in res){
+            console.log(i);
+        }
     });
 
     let obstacle_distance = 100;
