@@ -309,8 +309,8 @@ function deathKey(ev) {
 function generateTerrain(length){
 
     socket.emit("getObstacles", (res)=>{
-        for(const i in res){
-            console.log(res[i]);
+        for(const i in JSON.parse(res)){
+            console.log(i);
         }
     });
 
