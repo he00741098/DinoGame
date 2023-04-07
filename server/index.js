@@ -7,7 +7,6 @@ var port = process.env.PORT || 8125;
 let scores = [];
 let gameStarted = false;
 let gameSeed = 0;
-let h=512;
 const httpServer = require('http').createServer(function (request, response) {
   console.log('request starting...');
 
@@ -145,7 +144,7 @@ io.on("connection", (socket) => {
     callback(score_compat);
   });
 
-  socket.on("disconnect", (reason) => {
+  socket.on("disconnect", () => {
     delete scores[socket.data.id];
   });
 
@@ -182,8 +181,9 @@ io.on("connection", (socket) => {
             //sprite.height = sprite.height*0.25;
             //sprite.width = sprite.width*0.25;
             //obstacles.push(new obstacle(i, 0, 5, 2, sprite));
-      
-      
+
+
+            let alphabet = ["a", "b", "c", "d", "e", "f", "g", "h", "i", "j", "k", "l", "m", "n", "o", "p", "q", "r", "s", "t", "u", "v", "w", "x", "y", "z"];
             obstacles+=" "+i+alphabet[Math.random()*alphabet.length];
             //console.log("added new obstacle at "+i+","+0);
         }      
