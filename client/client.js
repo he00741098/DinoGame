@@ -307,9 +307,9 @@ function deathKey(ev) {
 }
 //Generate terrain - WILL BE REMOVED
 function generateTerrain(length){
-
+    let obstacles = [];
     socket.emit("getObstacles", (res)=>{
-        let obstacles = [];
+
         let thing = JSON.parse(res);
         console.log(thing);
         for(const i in thing.length){
@@ -317,9 +317,9 @@ function generateTerrain(length){
             obstacles.push(new obstacle(thing[i].x, thing[i].y, thing[i].height, thing[i].width, new PIXI.AnimatedSprite(spritesheet.animations.cactus)));
 
         }
-        return obstacles;
-    });
 
+    });
+    return obstacles;
 }
 //collision detection
 function boxesIntersect(a, b) {
