@@ -132,10 +132,11 @@ function gameLoop() {
         if(!started){
             ratio = obstacles[obstacles.length-1]["x"]/app.width;
             let mapSprite = new PIXI.AnimatedSprite(spritesheet.animations.dino);
-            mapSprite.height= 25;
-            mapSprite.width= 12;
+            mapSprite.height= 60;
+            mapSprite.width= 30;
             mapSprite.x = pos*ratio;
             mapSprite.y = 285;
+            console.log("added map sprite");
         }
 
 
@@ -248,7 +249,7 @@ function onkeydown(ev) {
             jumpSound.play();
             if(player.circle.y==player.defY) {
                 player.v.y = -player.speed;
-                console.log("jump");
+                //console.log("jump");
             }
             pressed['up'] = true;
             if(!pressed['holding']) {
@@ -324,7 +325,7 @@ function generateTerrain(){
     socket.emit("getObstacles", (res)=>{
 
         thing = JSON.parse(res);
-        console.log(thing);
+        //console.log(thing);
         for(const i of thing){
             //TODO: add different types of obstacles and also object pool
             let sprite = new PIXI.AnimatedSprite(spritesheet.animations.cactus);
@@ -332,7 +333,7 @@ function generateTerrain(){
             sprite.x = app.view.width;
             sprite.y = defY-sprite.height;
             obstacles.push(new obstacle(i['x'], i['y'], 2, 5, sprite));
-            console.log("added obstacle: " + i['x'] + " " + i['y']);
+            //console.log("added obstacle: " + i['x'] + " " + i['y']);
         }
 
     });
