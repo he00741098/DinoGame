@@ -10,10 +10,6 @@ let w = 512, h=512;
 //images
 const image = new Image();
 image.src = '/images/DinoSprites.png';
-
-let global_player_x = 0;
-
-
 //images
 const atlasData = {
 	frames: {
@@ -323,8 +319,8 @@ function generateTerrain(length){
 }
 //collision detection
 function boxesIntersect(a, b) {
-    var ab = a.getBounds();
-    var bb = b.getBounds();
+    const ab = a.getBounds();
+    const bb = b.getBounds();
     return ab.x + (ab.width*0.6) > bb.x && ab.x < bb.x + (bb.width*0.6) && ab.y + (ab.height*0.7) > bb.y && ab.y < bb.y + (bb.height*0.7);
 }
 
