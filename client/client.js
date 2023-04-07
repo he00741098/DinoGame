@@ -122,7 +122,7 @@ function gameLoop() {
     player.update();
     //pos++;
     //checks if obstacles should be moved I think
-    if(!started||obstacles[index].x()<pos-anim.x+1106){
+    if(obstacles.length>0&&(!started||obstacles[index].x()<pos-anim.x+1106)){
         started = true;
         obstacles[index].sprite.width = 60;
         obstacles[index].sprite.height = 75;
