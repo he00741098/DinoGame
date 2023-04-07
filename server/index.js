@@ -172,7 +172,7 @@ io.on("connection", (socket) => {
       //gameSeed = generateTerrain(100000);
         let length = 100000;
         let obstacle_distance = 100;
-        let obstacles = "";
+        let obstacles = [];
         for(i=0; i<length; i+=obstacle_distance){
           obstacle_distance = Math.random()*100+20;
             //let sprite = new PIXI.AnimatedSprite(spritesheet.animations.cactus);
@@ -184,7 +184,7 @@ io.on("connection", (socket) => {
 
 
             let alphabet = ["a", "b", "c", "d", "e", "f", "g", "h", "i", "j", "k", "l", "m", "n", "o", "p", "q", "r", "s", "t", "u", "v", "w", "x", "y", "z"];
-            obstacles+=" "+i+alphabet[Math.random()*alphabet.length];
+            obstacles.push({type:alphabet[Math.floor(Math.random()*alphabet.length)], x:i, y:0})
             //console.log("added new obstacle at "+i+","+0);
         }      
       gameSeed = obstacles;
