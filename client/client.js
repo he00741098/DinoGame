@@ -4,6 +4,7 @@ const socket = io(host);
 const deathSound = new Audio("./sounds/hit.mp3");
 const jumpSound = new Audio("./sounds/press.mp3");
 const scoreSound = new Audio("./sounds/reached.mp3");
+var mapSprites = [];
 
 //width and height
 let w = 512, h=512;
@@ -136,7 +137,8 @@ function gameLoop() {
             mapSprite.width= 30;
             mapSprite.x = pos*ratio;
             mapSprite.y = 285;
-            app.stage.addChild(mapSprite);
+            app.stage.addChild(mapSprite)
+            mapSprites.push({id:socket.data.id,sprite:mapSprite});
             console.log("added map sprite");
         }
 
