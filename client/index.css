@@ -66,3 +66,9 @@ a:hover {
   box-shadow: 10px 10px;
   transform: translate(10%, 50%);
 }
+
+.centerer {
+    margin: auto;
+    width: 50%;
+    padding: 10px;
+}
