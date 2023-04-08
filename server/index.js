@@ -169,7 +169,7 @@ io.on("connection", (socket) => {
     }
     let pos_compat = [];
     for (let i in scores) {
-      pos_compat.push({username: i, pos: scores[i]["pos"]});
+      pos_compat.push({username: socket.data.id, pos: i["pos"]});
     }
     callback(pos_compat);
 
