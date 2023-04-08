@@ -152,8 +152,6 @@ function gameLoop() {
 
             console.log("added map sprite");
 
-        }else{
-            mapSprites[username].x += (pos*ratio)-mapSprites[username].x;
         }
 
 
@@ -329,7 +327,8 @@ function scoreLoop() {
     scoreText.text = player.score.toString();
     socket.emit("move");
     socket.emit("sendPos", pos, () =>{});
-
+    //update map positions;
+    mapSprites[username].x = pos*ratio;
     socket.emit("getAllPos", (result) => {
         let resi = JSON.parse(result);
         //console.log(resi);
