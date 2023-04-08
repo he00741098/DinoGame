@@ -123,6 +123,7 @@ let using = [];
 let started = false;
 //game loop function
 //Updates player, increments position, moves obstacles
+let spriteY = 285;
 
 function gameLoop() {
     
@@ -139,12 +140,12 @@ function gameLoop() {
             //mapSprite.width= 30;
             mapSprite.x = pos*ratio;
             console.log("mapSpriteX:"+mapSprite.x);
-            mapSprite.y = 285;
+            mapSprite.y = spriteY;
             app.stage.addChild(mapSprite)
-            mapSprites.push({name: "main",sprite:mapSprite});
+            mapSprites["main"] = mapSprite;
             console.log("added map sprite");
         }else{
-            mapSprites[0].sprite.x = pos*ratio;
+            mapSprites["main"].sprite.x = pos*ratio;
         }
 
 
@@ -320,6 +321,18 @@ function scoreLoop() {
     scoreText.text = player.score.toString();
     socket.emit("move");
     socket.emit("sendPos", pos, () =>{});
+
+    socket.emit("getAllPos", (res) => {
+        if(mapSprites[res['username']]!=null) {
+            mapSprites[res['username']].x=res['pos']*ratio;
+        }else{
+            mapSprites[res['username']]= new PIXI.AnimatedSprite(spritesheet.animations.dino);
+            mapSprites[res['username']].x=res['pos']*ratio;
+            mapSprites[res['username']].y = spriteY;
+            mapSprites[res['username']].tint = "#d9ad4e";
+            app.stage.addChild(mapSprites[res['username']]);
+        }
+    });
 }
 //death
 function deathKey(ev) {

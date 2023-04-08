@@ -163,6 +163,19 @@ io.on("connection", (socket) => {
     scores[socket.data.id]["pos"] = pos;
   });
 
+  socket.on("getAllPos", (callback) => {
+      if(typeof callback !== "function") {
+        return;
+    }
+    let pos_compat = [];
+    for (let i in scores) {
+      pos_compat.push({username: i, pos: scores[i]["pos"]});
+    }
+    callback(pos_compat);
+
+
+  });
+
 
   socket.on("getObstacles", (callback)=>{
     if(typeof callback !== "function"){
