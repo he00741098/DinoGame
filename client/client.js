@@ -227,7 +227,7 @@ class Player{
         this.speed = 4*speedup;
         //TODO: send pos to server
         pos+=this.speed;
-        console.log(pos);
+        //console.log(pos);
 
         if(this.circle.y<this.maxHeight){
             //pressed['up'] = false;
