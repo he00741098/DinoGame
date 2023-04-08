@@ -183,7 +183,7 @@ io.on("connection", (socket) => {
     }
     if(!gameStarted){
       //gameSeed = generateTerrain(100000);
-        let length = 10000;
+        let length = 100000;
         let obstacle_distance = 1000;
         let obstacles = [];
         for(i=1106; i<length; i+=obstacle_distance){
