@@ -328,6 +328,9 @@ function scoreLoop() {
         let resi = JSON.parse(result);
         //console.log(res);
         for(let res of resi){
+            if(res['username']==username) {
+                continue;
+            }
         if(mapSprites[res['username']]!=null) {
             mapSprites[res['username']].x=res['pos']*ratio;
         }else{
@@ -338,6 +341,7 @@ function scoreLoop() {
             app.stage.addChild(mapSprites[res['username']]);
         }
         }
+
     });
 }
 //death
