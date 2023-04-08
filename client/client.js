@@ -378,7 +378,7 @@ function boxesIntersect(a, b) {
 }
 
 function toggleDev() {
-    dev = !dev;
+    devMode = !devMode;
 }
 
 //game starts and everything
