@@ -325,8 +325,9 @@ function scoreLoop() {
     socket.emit("sendPos", pos, () =>{});
 
     socket.emit("getAllPos", (result) => {
-        let res = JSON.parse(result);
+        let resi = JSON.parse(result);
         //console.log(res);
+        for(let res of resi){
         if(mapSprites[res['username']]!=null) {
             mapSprites[res['username']].x=res['pos']*ratio;
         }else{
@@ -335,6 +336,7 @@ function scoreLoop() {
             mapSprites[res['username']].y = spriteY;
             mapSprites[res['username']].tint = "#d9ad4e";
             app.stage.addChild(mapSprites[res['username']]);
+        }
         }
     });
 }
