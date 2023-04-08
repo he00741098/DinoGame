@@ -326,7 +326,8 @@ function scoreLoop() {
 
     socket.emit("getAllPos", (result) => {
         let resi = JSON.parse(result);
-        //console.log(res);
+        console.log(res);
+
         for(let res of resi){
             if(res['username']==username) {
                 continue;
