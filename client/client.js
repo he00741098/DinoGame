@@ -326,7 +326,7 @@ function scoreLoop() {
 
     socket.emit("getAllPos", (result) => {
         let res = JSON.parse(result);
-        console.log(res);
+        //console.log(res);
         if(mapSprites[res['username']]!=null) {
             mapSprites[res['username']].x=res['pos']*ratio;
         }else{
