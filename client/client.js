@@ -4,13 +4,16 @@ const socket = io(host);
 const deathSound = new Audio("./sounds/hit.mp3");
 const jumpSound = new Audio("./sounds/press.mp3");
 const scoreSound = new Audio("./sounds/reached.mp3");
+const username = new URLSearchParams(document.location.search).get("username");
+var devMode = false;
+var mapSprites = [];
 
 //width and height
 let w = 512, h=512;
+var ratio;
 //images
 const image = new Image();
 image.src = '/images/DinoSprites.png';
-
 //images
 const atlasData = {
 	frames: {
@@ -76,6 +79,7 @@ spritesheet.parse();
 let speedup = 1.5;
 let pos = 0;
 
+
 //the player
 let anim = new PIXI.AnimatedSprite(spritesheet.animations.dino);
 anim.animationSpeed = 0.1666;
@@ -84,11 +88,12 @@ anim.play();
 //rendering the app
 let app = new PIXI.Application({width: 1106, height: 310});
 app.renderer.backgroundColor = 0xffffff;
+app.stage.sortableChildren = true;
 //score
 let scoreText = new PIXI.Text("0", {fontFamily: 'Arial', fontSize: 24, fill: "black", align: 'right'});
 //obstacles
 //TODO: get obstacles from server
-const obstacles = generateTerrain(10000);
+const obstacles = generateTerrain();
 //register player
 socket.emit("registerPlayer", new URLSearchParams(document.location.search).get("username"), (res) => {
     switch(res) {
@@ -108,6 +113,10 @@ window.onload = function (){
     anim.y = app.view.height / 2;
     app.stage.addChild(anim);
     app.stage.addChild(scoreText);
+    //put dino on "map"
+    //TODO: look at app ticker
+
+
 }
 
 //more variables for game
@@ -117,12 +126,35 @@ let using = [];
 let started = false;
 //game loop function
 //Updates player, increments position, moves obstacles
+let spriteY = 285;
+
 function gameLoop() {
     
     player.update();
     //pos++;
     //checks if obstacles should be moved I think
-    if(!started||obstacles[index-1].sprite.x<0){
+    if(obstacles.length>0&&(!started||obstacles[index].x<pos-anim.x+1106)){
+        if(!started){
+            //TODO: show a map of all the player positions, also make a width variable
+            ratio = 1106/obstacles[obstacles.length-1]["x"];
+            console.log("the ration:" + ratio);
+            let mapSprite = new PIXI.AnimatedSprite(spritesheet.animations.dino);
+            //mapSprite.height= 60;
+            //mapSprite.width= 30;
+            mapSprite.x = pos*ratio;
+            console.log("mapSpriteX:"+mapSprite.x);
+            mapSprite.y = spriteY;
+            mapSprite.zIndex = 4;
+            mapSprite.width = 16;
+            mapSprite.height = 16;
+            app.stage.addChild(mapSprite)
+            mapSprites[username] = mapSprite;
+
+            console.log("added map sprite");
+
+        }
+
+
         started = true;
         obstacles[index].sprite.width = 60;
         obstacles[index].sprite.height = 75;
@@ -144,6 +176,9 @@ function move(obstacle_list){
             using = using.splice(0, i).concat(using.splice(i+1));
             obstacle_list = using;
         } else {
+            //TODO: Slow down player instead of death in multiplayer game
+            //TODO: Fix death when player reaches end of map. Instead show "you win" or something
+            //console.log(obstacle_list[i].sprite);
             if(boxesIntersect(obstacle_list[i].sprite, anim)){
                 clearInterval(gameLoop_interval);
                 clearInterval(scoreLoop_interval);
@@ -174,8 +209,7 @@ class Player{
     constructor(color, radius, v) {
         this.radius = radius;
         this.v = v;
-        let circle = anim;
-        this.circle = circle;
+        this.circle = anim;
         this.defX = app.view.width / 6;
         this.defY = anim.y = app.view.height / 2;
         this.maxHeight = 25;
@@ -233,7 +267,7 @@ function onkeydown(ev) {
             jumpSound.play();
             if(player.circle.y==player.defY) {
                 player.v.y = -player.speed;
-                console.log("jump");
+                //console.log("jump");
             }
             pressed['up'] = true;
             if(!pressed['holding']) {
@@ -292,6 +326,33 @@ function scoreLoop() {
     });
     scoreText.text = player.score.toString();
     socket.emit("move");
+    socket.emit("sendPos", pos, () =>{});
+    //update map positions;
+    if(started) {
+        mapSprites[username].x = pos * ratio;
+    }
+    socket.emit("getAllPos", (result) => {
+        let resi = JSON.parse(result);
+        //console.log(resi);
+
+        for(let res of resi){
+            if(res['username']==username) {
+                continue;
+            }
+        if(mapSprites[res['username']]!=null) {
+            mapSprites[res['username']].x=res['pos']*ratio;
+        }else{
+            mapSprites[res['username']]= new PIXI.AnimatedSprite(spritesheet.animations.dino);
+            mapSprites[res['username']].x=res['pos']*ratio;
+            mapSprites[res['username']].y = spriteY;
+            mapSprites[res['username']].width = 16;
+            mapSprites[res['username']].height = 16;
+            mapSprites[res['username']].tint = "#d9ad4e";
+            app.stage.addChild(mapSprites[res['username']]);
+        }
+        }
+
+    });
 }
 //death
 function deathKey(ev) {
@@ -302,26 +363,38 @@ function deathKey(ev) {
     }
 }
 //Generate terrain - WILL BE REMOVED
-function generateTerrain(length){
-    let obstacle_distance = 100;
+var thing;
+function generateTerrain(){
     let obstacles = [];
-    for(i=0; i<length; i+=obstacle_distance){
-        let sprite = new PIXI.AnimatedSprite(spritesheet.animations.cactus);
-        let defY = (h/4);
-        sprite.x = app.view.width;
-        sprite.y = defY-sprite.height;
-        //sprite.height = sprite.height*0.25;
-        //sprite.width = sprite.width*0.25;
-        obstacles.push(new obstacle(i, 0, 5, 2, sprite));
-        //console.log("added new obstacle at "+i+","+0);
-    }
+    socket.emit("getObstacles", (res)=>{
+
+        thing = JSON.parse(res);
+        //console.log(thing);
+        for(const i of thing){
+            //TODO: add different types of obstacles and also object pool
+            let sprite = new PIXI.AnimatedSprite(spritesheet.animations.cactus);
+            let defY = (h/4);
+            sprite.x = app.view.width;
+            sprite.y = defY-sprite.height;
+            obstacles.push(new obstacle(i['x'], i['y'], 2, 5, sprite));
+            //console.log("added obstacle: " + i['x'] + " " + i['y']);
+        }
+
+    });
     return obstacles;
 }
 //collision detection
 function boxesIntersect(a, b) {
-    var ab = a.getBounds();
-    var bb = b.getBounds();
+    if (devMode) {
+        return false;
+    }
+    const ab = a.getBounds();
+    const bb = b.getBounds();
     return ab.x + (ab.width*0.6) > bb.x && ab.x < bb.x + (bb.width*0.6) && ab.y + (ab.height*0.7) > bb.y && ab.y < bb.y + (bb.height*0.7);
+}
+
+function toggleDev() {
+    devMode = !devMode;
 }
 
 //game starts and everything

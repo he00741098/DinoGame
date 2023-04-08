@@ -2,10 +2,11 @@
 //const { Server } = require("socket.io");
 var fs = require('fs');
 var path = require('path');
-var port = port = process.env.PORT || 8125;
-//let ids = 0;
-let scores = {};
+var port = process.env.PORT || 8125;
 
+let scores = [];
+let gameStarted = false;
+let gameSeed = 0;
 const httpServer = require('http').createServer(function (request, response) {
   console.log('request starting...');
 
@@ -85,7 +86,7 @@ io.on("connection", (socket) => {
       return;
     }
     if(typeof username !== "string") {
-      callback("EBADREQ")
+      callback("EBADREQ");
       return;
     }
     if(typeof scores[username] != "undefined") {
@@ -94,7 +95,7 @@ io.on("connection", (socket) => {
     }
     socket.data.id = username;
     socket.data.registered = true;
-    scores[socket.data.id] = 0;
+    scores[socket.data.id] = {score:0, pos:0};
     callback("SUCCESS");
   });
 
@@ -103,13 +104,13 @@ io.on("connection", (socket) => {
       return;
     }
     if(typeof username !== "string") {
-      callback("EBADREQ")
+      callback("EBADREQ");
       return;
     }
     if(typeof scores[username] != "undefined") {
       callback("TAKEN");
     } else {
-      callback("NOT TAKEN")
+      callback("NOT TAKEN");
     }
   });
 
@@ -117,7 +118,7 @@ io.on("connection", (socket) => {
     if(!socket.data.registered) {
       return;
     }
-    scores[socket.data.id] = scores[socket.data.id]+1;
+    scores[socket.data.id]["score"] = scores[socket.data.id]["score"]+1;
   });
 
   socket.on("getScore", (callback) => {
@@ -128,7 +129,8 @@ io.on("connection", (socket) => {
       callback("ENOTREG");
       return;
     }
-    callback(scores[socket.data.id]);
+    callback(scores[socket.data.id]["score"]);
+
   });
 
   socket.on("getAllScores", (callback) => {
@@ -136,15 +138,79 @@ io.on("connection", (socket) => {
       return;
     }
     let score_compat = [];
-    for (i in scores) {
-      score_compat.push({username: i, score: scores[i]});
+    for (let i in scores) {
+      score_compat.push({username: i, score: scores[i]["score"]});
     }
     callback(score_compat);
   });
 
-  socket.on("disconnect", (reason) => {
+  socket.on("disconnect", () => {
     delete scores[socket.data.id];
   });
+
+  socket.on("sendPos", (pos, callback) => {
+    if(typeof callback !== "function") {
+      return;
+    }
+    if(typeof pos !== "number") {
+      callback("EBADREQ");
+      return;
+    }
+    if(!socket.data.registered) {
+      callback("ENOTREG");
+      return;
+    }
+    scores[socket.data.id]["pos"] = pos;
+  });
+
+  socket.on("getAllPos", (callback) => {
+      if(typeof callback !== "function") {
+        return;
+    }
+    let pos_compat = [];
+    for (let i in scores) {
+      pos_compat.push({username: i, pos: scores[i]["pos"]});
+    }
+    callback(JSON.stringify(pos_compat));
+
+
+  });
+
+
+  socket.on("getObstacles", (callback)=>{
+    if(typeof callback !== "function"){
+      return;
+    }
+    if(!gameStarted){
+      //gameSeed = generateTerrain(100000);
+        let length = 100000;
+        let obstacle_distance = 1000;
+        let obstacles = [];
+        for(i=1106; i<length; i+=obstacle_distance){
+          obstacle_distance = Math.floor(Math.random()*1000)+300;
+            //let sprite = new PIXI.AnimatedSprite(spritesheet.animations.cactus);
+//sprite.x = app.view.width;
+            //sprite.y = defY-sprite.height;
+            //sprite.height = sprite.height*0.25;
+            //sprite.width = sprite.width*0.25;
+            //obstacles.push(new obstacle(i, 0, 5, 2, sprite));
+
+
+            let alphabet = ["a", "b", "c", "d", "e", "f", "g", "h", "i", "j", "k", "l", "m", "n", "o", "p", "q", "r", "s", "t", "u", "v", "w", "x", "y", "z"];
+            obstacles.push({type:alphabet[Math.floor(Math.random()*alphabet.length)], x:i, y:0})
+            //console.log("added new obstacle at "+i+","+0);
+        }      
+      gameSeed = obstacles;
+      gameStarted = true;
+    }
+    //console.log("sending game seed: "+JSON.stringify(gameSeed));
+    callback(JSON.stringify(gameSeed));
+  });
+
+
+
+
+
 });
 
 httpServer.listen(port);
