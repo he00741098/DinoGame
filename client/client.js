@@ -145,12 +145,15 @@ function gameLoop() {
             console.log("mapSpriteX:"+mapSprite.x);
             mapSprite.y = spriteY;
             mapSprite.zIndex = 4;
+            mapSprite.width = 16;
+            mapSprite.height = 16;
             app.stage.addChild(mapSprite)
             mapSprites[username] = mapSprite;
+
             console.log("added map sprite");
 
         }else{
-            mapSprites[username].x = pos*ratio;
+            mapSprites[username].x += (pos*ratio)-mapSprites[username].x;
         }
 
 
@@ -341,6 +344,8 @@ function scoreLoop() {
             mapSprites[res['username']]= new PIXI.AnimatedSprite(spritesheet.animations.dino);
             mapSprites[res['username']].x=res['pos']*ratio;
             mapSprites[res['username']].y = spriteY;
+            mapSprites[res['username']].width = 16;
+            mapSprites[res['username']].height = 16;
             mapSprites[res['username']].tint = "#d9ad4e";
             app.stage.addChild(mapSprites[res['username']]);
         }
