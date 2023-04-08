@@ -5,6 +5,7 @@ const deathSound = new Audio("./sounds/hit.mp3");
 const jumpSound = new Audio("./sounds/press.mp3");
 const scoreSound = new Audio("./sounds/reached.mp3");
 const username = new URLSearchParams(document.location.search).get("username");
+var devMode = false;
 var mapSprites = [];
 
 //width and height
@@ -368,9 +369,16 @@ function generateTerrain(){
 }
 //collision detection
 function boxesIntersect(a, b) {
+    if (devMode) {
+        return false;
+    }
     const ab = a.getBounds();
     const bb = b.getBounds();
     return ab.x + (ab.width*0.6) > bb.x && ab.x < bb.x + (bb.width*0.6) && ab.y + (ab.height*0.7) > bb.y && ab.y < bb.y + (bb.height*0.7);
+}
+
+function toggleDev() {
+    dev = !dev;
 }
 
 //game starts and everything
