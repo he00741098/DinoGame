@@ -145,7 +145,7 @@ function gameLoop() {
             mapSprites["main"] = mapSprite;
             console.log("added map sprite");
         }else{
-            mapSprites["main"].sprite.x = pos*ratio;
+            mapSprites["main"].x = pos*ratio;
         }
 
 
