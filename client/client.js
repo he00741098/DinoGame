@@ -4,6 +4,7 @@ const socket = io(host);
 const deathSound = new Audio("./sounds/hit.mp3");
 const jumpSound = new Audio("./sounds/press.mp3");
 const scoreSound = new Audio("./sounds/reached.mp3");
+const username = new URLSearchParams(document.location.search).get("username");
 var mapSprites = [];
 
 //width and height
@@ -142,10 +143,10 @@ function gameLoop() {
             console.log("mapSpriteX:"+mapSprite.x);
             mapSprite.y = spriteY;
             app.stage.addChild(mapSprite)
-            mapSprites["main"] = mapSprite;
+            mapSprites[username] = mapSprite;
             console.log("added map sprite");
         }else{
-            mapSprites["main"].x = pos*ratio;
+            mapSprites[username].x = pos*ratio;
         }
 
 
