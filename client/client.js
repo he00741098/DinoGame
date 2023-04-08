@@ -322,7 +322,8 @@ function scoreLoop() {
     socket.emit("move");
     socket.emit("sendPos", pos, () =>{});
 
-    socket.emit("getAllPos", (res) => {
+    socket.emit("getAllPos", (result) => {
+        let res = JSON.parse(result);
         if(mapSprites[res['username']]!=null) {
             mapSprites[res['username']].x=res['pos']*ratio;
         }else{

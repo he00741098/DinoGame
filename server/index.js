@@ -138,7 +138,7 @@ io.on("connection", (socket) => {
       return;
     }
     let score_compat = [];
-    for (i in scores) {
+    for (let i in scores) {
       score_compat.push({username: i, score: scores[i]["score"]});
     }
     callback(score_compat);
@@ -171,7 +171,7 @@ io.on("connection", (socket) => {
     for (let i in scores) {
       pos_compat.push({username: socket.data.id, pos: i["pos"]});
     }
-    callback(pos_compat);
+    callback(JSON.stringify(pos_compat));
 
 
   });
