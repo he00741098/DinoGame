@@ -133,16 +133,16 @@ function gameLoop() {
     player.update();
     //pos++;
     //checks if obstacles should be moved I think
-    if(obstacles.length>0&&(!started||obstacles[index].x<pos-anim.x+1106)){
+    if(obstacles.length>0&&(!started||obstacles[index].x<pos+1106)){
         if(!started){
             //TODO: show a map of all the player positions, also make a width variable
             ratio = 1106/obstacles[obstacles.length-1]["x"];
-            console.log("the ration:" + ratio);
+            //console.log("the ration:" + ratio);
             let mapSprite = new PIXI.AnimatedSprite(spritesheet.animations.dino);
             //mapSprite.height= 60;
             //mapSprite.width= 30;
             mapSprite.x = pos*ratio;
-            console.log("mapSpriteX:"+mapSprite.x);
+            //console.log("mapSpriteX:"+mapSprite.x);
             mapSprite.y = spriteY;
             mapSprite.zIndex = 4;
             mapSprite.width = 16;
@@ -150,7 +150,7 @@ function gameLoop() {
             app.stage.addChild(mapSprite)
             mapSprites[username] = mapSprite;
 
-            console.log("added map sprite");
+            //console.log("added map sprite");
 
         }
 
