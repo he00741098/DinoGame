@@ -88,6 +88,7 @@ anim.play();
 //rendering the app
 let app = new PIXI.Application({width: 1106, height: 310});
 app.renderer.backgroundColor = 0xffffff;
+app.stage.sortableChildren = true;
 //score
 let scoreText = new PIXI.Text("0", {fontFamily: 'Arial', fontSize: 24, fill: "black", align: 'right'});
 //obstacles
@@ -143,9 +144,11 @@ function gameLoop() {
             mapSprite.x = pos*ratio;
             console.log("mapSpriteX:"+mapSprite.x);
             mapSprite.y = spriteY;
+            mapSprite.zIndex = 4;
             app.stage.addChild(mapSprite)
             mapSprites[username] = mapSprite;
             console.log("added map sprite");
+
         }else{
             mapSprites[username].x = pos*ratio;
         }
