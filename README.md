@@ -1,6 +1,5 @@
 # DinoGame
-Goal-
-Make a multiplayer version of the chrome dino game
+Multiplayer version of the chrome dino game, repo has:
 - server side
 - client side
 
