@@ -4,7 +4,7 @@ var table = new Tabulator("#score-table", {
     height:"200px",
     layout:"fitDataTable",
     initialSort:[{column:"score", dir:"desc"}],
-    columns:[{title:"Username", field:"username"},{title:"Score", field:"score"}]
+    columns:[{title:"Username", field:"username"},{title:"Score", field:"score", sorter: "number"}]
 });
 
 table.on("tableBuilt", () => {
