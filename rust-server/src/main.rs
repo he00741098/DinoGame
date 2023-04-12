@@ -39,7 +39,7 @@ async fn handle_connection(peer_map: PeerMap, raw_stream: TcpStream, addr: Socke
 
 
         let command:ClientCommand = serde_json::from_str(msg.to_text().unwrap()
-        ).unwrap_or(ClientCommand{name:"error".to_owned(), args: vec![]});
+        ).unwrap_or(ClientCommand{name:"Disconnect".to_owned(), args: vec![]});
 
         println!("ClientCommand: {:?}", command);
 
@@ -65,6 +65,8 @@ async fn handle_connection(peer_map: PeerMap, raw_stream: TcpStream, addr: Socke
     println!("{} disconnected", &addr);
     peer_map.lock().unwrap().remove(&addr);
 }
+
+
 
 #[tokio::main]
 async fn main() -> Result<(), IoError> {
