@@ -15,10 +15,10 @@ type Tx = UnboundedSender<Message>;
 type PeerMap = Arc<Mutex<HashMap<SocketAddr, Tx>>>;
 
 mod client_command;
-use crate::client_command::client_command::{ObstacleList, ClientCommand, serverData};
+use crate::client_command::client_command::{ObstacleList, ClientCommand, ServerData};
 
 
-async fn handle_connection(peer_map: PeerMap, raw_stream: TcpStream, addr: SocketAddr) {
+async fn handle_connection(peer_map: PeerMap, raw_stream: TcpStream, addr: SocketAddr, serverData: Arc<Mutex<ServerData>>) {
 
     println!("Incoming TCP connection from: {}", addr);
 
@@ -73,7 +73,7 @@ async fn main() -> Result<(), IoError> {
     let addr = "127.0.0.1:".to_owned() + &env::var("PORT").unwrap_or_else(|_| "8125".to_string());
 
     let state = PeerMap::new(Mutex::new(HashMap::new()));
-    //let serverData = Arc::new(Mutex::new(serverData::new()));
+    let serverData = Arc::new(Mutex::new(serverData::new()));
 
 
     // Create the event loop and TCP listener we'll accept connections on.
@@ -83,7 +83,7 @@ async fn main() -> Result<(), IoError> {
 
     // Let's spawn the handling of each connection in a separate task.
     while let Ok((stream, addr)) = listener.accept().await {
-        tokio::spawn(handle_connection(state.clone(), stream, addr));
+        tokio::spawn(handle_connection(state.clone(), stream, addr, serverData.clone()));
     }
 
     Ok(())

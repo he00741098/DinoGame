@@ -1,6 +1,6 @@
 pub mod client_command{
 
-use std::ops::Index;
+
 use futures_channel::mpsc::{unbounded, UnboundedSender};
 use futures_util::{future, pin_mut, stream::{TryStreamExt, SplitSink}, StreamExt};
 use tokio::net::{TcpListener, TcpStream};
@@ -57,19 +57,19 @@ x: u64, y: u64, obstacle_type: u64,
 
 }
 
-pub struct serverData{
+pub struct ServerData{
 
 usernames: Vec<String>,
-gameIDs: Vec<u128>,
+game_ids: Vec<u128>,
 games: Vec<Game>,
 ingame: Vec<String>,
 
 
 }
-impl serverData{
+impl ServerData{
 
-pub fn new() -> serverData{
-serverData{usernames: Vec::new(), gameIDs: Vec::new(), games: Vec::new(), ingame: Vec::new()}
+pub fn new() -> ServerData{
+ServerData{usernames: Vec::new(), game_ids: Vec::new(), games: Vec::new(), ingame: Vec::new()}
 
 }
 pub fn addPlayer(&mut self, username: String) -> Result<(), JoinError>{
@@ -133,9 +133,9 @@ Ok(())
 pub fn newGame(&mut self){
     let mut rng = rand::thread_rng();
     loop{
-    let gameId = self.gameIDs.iter().max().unwrap()+rng.gen_range(500..10000);
-    if !self.gameIDs.contains(&gameId){
-        self.gameIDs.push(gameId);
+    let gameId = self.game_ids.iter().max().unwrap()+rng.gen_range(500..10000);
+    if !self.game_ids.contains(&gameId){
+        self.game_ids.push(gameId);
         self.games.push(Game{usernames: Vec::new(), game_id: gameId, obstacles: ObstacleList::new(gameId, 100000, 1048), size: 400, status: GameStatus::Waiting});
         break;
         }
@@ -162,16 +162,6 @@ pub enum JoinError{
     #[error("Unknown error")]
     Unknown,
 }
-
-pub struct Player{
-
-username: String,
-game_id: u128,
-address: String,
-
-
-}
-
 
 
 pub struct Game{
