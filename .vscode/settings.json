@@ -1,8 +1,0 @@
-{
-    "rust-analyzer.linkedProjects": [
-        "./rust-server/Cargo.toml"
-    ],
-    "githubPullRequests.ignoredPullRequestBranches": [
-        "main"
-    ]
-}
