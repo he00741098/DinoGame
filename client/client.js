@@ -54,11 +54,11 @@ const atlasData = {
             spriteSourceSize: {x: 0, y: 0, w: 32, h:32}
 
         },
-	floor{
-		frame: {x:96, y: 128, w:60, h:60},
-		sourceSize: {w: 32, h:32},
-		spriteSourceSize: {x: 0, y:0, w:32, h:32}
-	},		
+	    floor: {
+		    frame: {x:128, y: 196, w:60, h:60},
+		    sourceSize: {w: 32, h:32},
+		    spriteSourceSize: {x: 0, y:0, w:32, h:32}
+	    },		
 	},
 	meta: {
 		image: image,
@@ -71,7 +71,7 @@ const atlasData = {
         duckDino: ['DuckDino1', 'DuckDino2'],
         jumpDino: ['JumpDino1', 'JumpDino2'],
         cactus: ['cactus'],
-	floor: ['floor']
+	    floor: ['floor']
 	}
 }
 //more images
@@ -138,7 +138,7 @@ function gameLoop() {
     
 	
     let floorSprite = new PIXI.AnimatedSprite(spritesheet.animations.floor);
-    app.stage.addchild(floorSprite);
+    app.stage.addChild(floorSprite);
 	
 	
     player.update();
@@ -158,7 +158,7 @@ function gameLoop() {
             mapSprite.zIndex = 4;
             mapSprite.width = 16;
             mapSprite.height = 16;
-            app.stage.addChild(mapSprite)
+            app.stage.addChild(mapSprite);
             mapSprites[username] = mapSprite;
 
             //console.log("added map sprite");
