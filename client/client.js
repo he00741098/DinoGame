@@ -54,6 +54,11 @@ const atlasData = {
             spriteSourceSize: {x: 0, y: 0, w: 32, h:32}
 
         },
+	floor{
+		frame: {x:96, y: 128, w:60, h:60},
+		sourceSize: {w: 32, h:32},
+		spriteSourceSize: {x: 0, y:0, w:32, h:32}
+	},		
 	},
 	meta: {
 		image: image,
@@ -65,7 +70,8 @@ const atlasData = {
 		dino: ['Dino1','Dino2'], //array of frames by name
         duckDino: ['DuckDino1', 'DuckDino2'],
         jumpDino: ['JumpDino1', 'JumpDino2'],
-        cactus: ['cactus']
+        cactus: ['cactus'],
+	floor: ['floor']
 	}
 }
 //more images
@@ -130,6 +136,11 @@ let spriteY = 285;
 
 function gameLoop() {
     
+	
+    let floorSprite = new PIXI.AnimatedSprite(spritesheet.animations.floor);
+    app.stage.addchild(floorSprite);
+	
+	
     player.update();
     //pos++;
     //checks if obstacles should be moved I think
