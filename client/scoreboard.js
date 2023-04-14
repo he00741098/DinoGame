@@ -17,4 +17,4 @@ function scoreTable() {
     });
 }
 
-setInterval(scoreTable, 1000);
+setInterval(scoreTable, 100);
