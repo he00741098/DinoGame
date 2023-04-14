@@ -55,7 +55,7 @@ const atlasData = {
 
         },
 	    floor: {
-		    frame: {x:128, y: 196, w:60, h:60},
+		    frame: {x:180, y: 240, w:60, h:60},
 		    sourceSize: {w: 32, h:32},
 		    spriteSourceSize: {x: 0, y:0, w:32, h:32}
 	    },		
