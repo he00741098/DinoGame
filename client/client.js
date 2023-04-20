@@ -129,7 +129,7 @@ window.onload = function (){
     app.stage.addChild(anim);
     app.stage.addChild(scoreText);
     anim.zIndex = 5;
-    app.stage.addChild(cloud);
+    //app.stage.addChild(cloud);
     //put dino on "map"
     //TODO: look at app ticker
 
