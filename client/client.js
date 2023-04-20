@@ -59,6 +59,11 @@ const atlasData = {
 		    sourceSize: {w: 32, h:32},
 		    spriteSourceSize: {x: 0, y:0, w:32, h:32}
 	    },		
+        cloud: {
+            frame: {x: 120, y: 230, w:60, h:60},
+            sourceSize: {w:32, h:32},
+            spriteSourceSize: {x:0,y:0,w:32,h:32}
+        }
 	},
 	meta: {
 		image: image,
@@ -71,6 +76,7 @@ const atlasData = {
         duckDino: ['DuckDino1', 'DuckDino2'],
         jumpDino: ['JumpDino1', 'JumpDino2'],
         cactus: ['cactus'],
+        cloud: ['cloud'],
 	    floor: ['floor']
 	}
 }
@@ -85,6 +91,8 @@ spritesheet.parse();
 let speedup = 1.5;
 let pos = 0;
 
+//clouds
+let clouds = [];
 
 //the player
 let anim = new PIXI.AnimatedSprite(spritesheet.animations.dino);
@@ -120,10 +128,17 @@ window.onload = function (){
     anim.y = (app.view.height / 2)+10;
     app.stage.addChild(anim);
     app.stage.addChild(scoreText);
+    app.stage.addChild(cloud);
     //put dino on "map"
     //TODO: look at app ticker
 
 
+}
+
+function getRandomInt(min, max) {
+    min = Math.ceil(min);
+    max = Math.floor(max);
+    return Math.floor(Math.random() * (max - min + 1)) + min;
 }
 
 //more variables for game
@@ -135,7 +150,33 @@ let started = false;
 //Updates player, increments position, moves obstacles
 let spriteY = 285;
 
+function cloudLoop() {
+    for(let c of clouds) {
+        c.x-=(4*speedup);
+        if(c.x<-100) {
+            c.x=1106;
+        }
+    }
+}
+
 function gameLoop() {
+    if(clouds.length<getRandomInt(3,5)) {
+        for(let i = 0; i<getRandomInt(3,5); i++) {
+            let cloud = new PIXI.AnimatedSprite(spritesheet.animations.cloud);
+            clouds.push(cloud);
+        }
+
+        let x = 0;
+        for(let c of clouds) {
+            app.stage.addChild(c);
+            c.x=x;
+            let randomsize=getRandomInt(60,70)
+            c.width=randomsize;
+            c.height=randomsize;
+            x+=getRandomInt(100,500);
+            c.y=getRandomInt(-50,30);
+        }
+    }
     
         //TODO: FLOOOOOOOOOOOR!!!!!!!!!!!!!!!
     if(floor.length<5){
@@ -217,6 +258,7 @@ function move(obstacle_list){
             if(boxesIntersect(obstacle_list[i].sprite, anim)){
                 clearInterval(gameLoop_interval);
                 clearInterval(scoreLoop_interval);
+                clearInterval(cloudLoop_interval);
                 window.removeEventListener("keydown", onkeydown);
                 window.removeEventListener("keyup", onkeyup);
                 anim.stop();
@@ -446,4 +488,5 @@ player = new Player(0xfcf8ec, 10, {x:0, y:0});
 window.addEventListener("keydown", onkeydown);
 window.addEventListener("keyup", onkeyup);
 let gameLoop_interval = setInterval(gameLoop, 1000/60);
+let cloudLoop_interval = setInterval(cloudLoop, 1000/30);
 let scoreLoop_interval = setInterval(scoreLoop, 100);
