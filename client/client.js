@@ -120,6 +120,7 @@ window.onload = function (){
     anim.y = (app.view.height / 2)+10;
     app.stage.addChild(anim);
     app.stage.addChild(scoreText);
+    anim.zIndex = 5;
     //put dino on "map"
     //TODO: look at app ticker
 
