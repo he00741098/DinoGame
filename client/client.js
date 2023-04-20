@@ -112,11 +112,12 @@ socket.emit("registerPlayer", new URLSearchParams(document.location.search).get(
 });
 
 //start the app
+let floor = [];
 window.onload = function (){
     container.appendChild(app.view);
     anim.anchor.set(0.5);
     anim.x = app.view.width / 6;
-    anim.y = app.view.height / 2;
+    anim.y = (app.view.height / 2)+10;
     app.stage.addChild(anim);
     app.stage.addChild(scoreText);
     //put dino on "map"
@@ -136,10 +137,24 @@ let spriteY = 285;
 
 function gameLoop() {
     
-	
-    let floorSprite = new PIXI.AnimatedSprite(spritesheet.animations.floor);
-    app.stage.addChild(floorSprite);
-	
+        //TODO: FLOOOOOOOOOOOR!!!!!!!!!!!!!!!
+    if(floor.length<5){
+            for(let g = 0; g<25; g++){
+                let floorSprite = new PIXI.AnimatedSprite(spritesheet.animations.floor);
+                floor.push(floorSprite);
+        
+            }
+             let x = 0;
+            for(let p of floor){
+                //console.log("Adding");
+                app.stage.addChild(p);
+                p.x=x;
+                x+=50;
+                p.y = (app.view.height / 2)+5;
+            }
+        }
+
+
 	
     player.update();
     //pos++;
@@ -181,11 +196,20 @@ function gameLoop() {
     move(using);
 }
 //move function - to be used by game loop to move obstacles
+let floorDex = 0;
+//let usingFloor = [];
+
 function move(obstacle_list){
     for(i = obstacle_list.length-1; i>=0; i--){
         if(obstacle_list[i].sprite.x<-220){
+            floorDex+=1;
+            if(floorDex>=floor.length){
+                floorDex = 0;
+            }
+
             using = using.splice(0, i).concat(using.splice(i+1));
             obstacle_list = using;
+            
         } else {
             //TODO: Slow down player instead of death in multiplayer game
             //TODO: Fix death when player reaches end of map. Instead show "you win" or something
@@ -207,8 +231,16 @@ function move(obstacle_list){
             //obstacles being moved across the screen
             obstacle_list[i].x-=(4*speedup);
             obstacle_list[i].sprite.x-=(4*speedup);
+ 
         }
     }
+    for(let o of floor){
+        o.x-=(4*speedup);
+        if(o.x<-100){
+            o.x=1106;
+        }
+    }
+
 }
 
 //array for movement handling
@@ -222,7 +254,7 @@ class Player{
         this.v = v;
         this.circle = anim;
         this.defX = app.view.width / 6;
-        this.defY = anim.y = app.view.height / 2;
+        this.defY = anim.y = (app.view.height / 2)+10;
         this.maxHeight = 25;
         this.score = 0;
         this.reset();
@@ -395,13 +427,14 @@ function generateTerrain(){
     return obstacles;
 }
 //collision detection
+//obstacle, terrain
 function boxesIntersect(a, b) {
     if (devMode) {
         return false;
     }
     const ab = a.getBounds();
     const bb = b.getBounds();
-    return ab.x + (ab.width*0.6) > bb.x && ab.x < bb.x + (bb.width*0.6) && ab.y + (ab.height*0.7) > bb.y && ab.y < bb.y + (bb.height*0.7);
+    return ab.x + (ab.width*0.6) > bb.x && ab.x < bb.x + (bb.width*0.6) && ab.y + (ab.height*0.9) > bb.y && ab.y < bb.y + (bb.height*0.7);
 }
 
 function toggleDev() {

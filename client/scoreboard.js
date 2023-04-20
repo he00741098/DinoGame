@@ -1,7 +1,7 @@
 const score_socket = io(location.hostname);
 
 var table = new Tabulator("#score-table", {
-    height:"200px",
+    height:"100px",
     layout:"fitDataTable",
     initialSort:[{column:"score", dir:"desc"}],
     columns:[{title:"Username", field:"username"},{title:"Score", field:"score", sorter: "number"}]
