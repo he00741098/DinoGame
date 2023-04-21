@@ -1,5 +1,6 @@
 html {
     color:black;
+    overflow: hidden;
 }
 
 a {
@@ -64,7 +65,7 @@ a:hover {
   left: 50%;
   width: fit-content;
   box-shadow: 10px 10px;
-  transform: translate(10%, 50%);
+  transform: translate(0%, 10%);
 }
 
 .centerer {
@@ -85,4 +86,5 @@ a:hover {
     margin-bottom: 20px;
     background-color: #f1f1c1;
     float:right;
+    transform: translate(0%, -170%);
 }
