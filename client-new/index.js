@@ -1,4 +1,4 @@
-const host = "he00741098-supreme-lamp-pq7gq4jpprj25gq-8125.preview.app.github.dev/";
+const host = "he00741098-curly-space-lamp-rv7rvq4pwv5hx9wq-8125.preview.app.github.dev/";
 
 let websocket = new WebSocket('wss://'+host);
 websocket.onmessage = function (event) {
