@@ -22,6 +22,7 @@ type PeerMap = Arc<Mutex<HashMap<SocketAddr, Tx>>>;
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
+    println!("{}", std::process::id());
     let addr = "127.0.0.1:".to_owned()+&env::var("PORT").unwrap_or("8125".to_string());
     
     let state = PeerMap::new(Mutex::new(HashMap::new()));
@@ -62,7 +63,6 @@ async fn process_connection(peer_map:PeerMap, RoomMap:Arc<Mutex<HashMap<String, 
     let mut current_room = "".to_string();
     let mut socket_index = 0;
     let mut name = "".to_string();
-    let mut namedex = 0;
     let mut registered = false;
 
     println!("Incoming TCP connection from: {}", addr);
@@ -84,7 +84,7 @@ async fn process_connection(peer_map:PeerMap, RoomMap:Arc<Mutex<HashMap<String, 
         println!("Received a message from {}: {}", addr, msg.to_text().unwrap());
 
         let command = serde_json::from_str::<client_command::client_command::ClientCommand>(msg.to_text().unwrap_or("Error")).unwrap_or(client_command::client_command::ClientCommand::Error);
-        println!("{:?}", command);
+        //println!("{:?}", command);
 
         match command{
 
@@ -92,12 +92,11 @@ async fn process_connection(peer_map:PeerMap, RoomMap:Arc<Mutex<HashMap<String, 
             ClientCommand::RegPlayer(string) if !registered=> {
                 let mut guard = names.lock().unwrap();
                 let count = guard.iter().filter(|x| x==&&string).count();
-                if count==0{
+                if count==0 && string.len()>1{
                     guard.push(string.clone());
                     let message = Message::Text("RegPlayer".to_string());
                     peer_map.lock().unwrap().get(&addr).unwrap().unbounded_send(message).unwrap();
                     name = string;
-                    namedex = guard.len()-1;
                     registered = true;
                 }else{
                     let message = Message::Text("NameTaken".to_string());
@@ -154,12 +153,12 @@ async fn process_connection(peer_map:PeerMap, RoomMap:Arc<Mutex<HashMap<String, 
             let room = guard.get_mut(&current_room);
             match room{
                 Some(x) =>{
-                    let player = x.players.get(socket_index).unwrap();
-
-                    let players:Vec<&Player> = x.players.iter().filter(|x| (player.x-x.x).abs()<2000.0).collect();
+                    
+                    //let player = x.players.get(socket_index).unwrap();
+                    let players:Vec<&Player> = x.players.iter().filter(|x| x.name.len()>1).collect();
                     let serde = serde_json::to_string(&players).unwrap();
                     let message = Message::Text(serde);
-                    println!("{:?}", message);
+                    //println!("{:?}", message);
                     peer_map.lock().unwrap().get(&addr).unwrap().unbounded_send(message).unwrap();
                     
                 },
@@ -209,6 +208,10 @@ async fn process_connection(peer_map:PeerMap, RoomMap:Arc<Mutex<HashMap<String, 
 
     println!("{} disconnected", &addr);
     peer_map.lock().unwrap().remove(&addr);
-    RoomMap.lock().unwrap().get_mut(&current_room).unwrap().players.remove(socket_index);
-    names.lock().unwrap().remove(namedex);
+    //RoomMap.lock().unwrap().get_mut(&current_room).unwrap().players.remove(socket_index);
+    if let Some(room) = RoomMap.lock().unwrap().get_mut(&current_room){
+        room.players[socket_index].name="".to_string();
+        println!("{}",room.players.len());
+    }
+    names.lock().unwrap().retain(|x|x!=&name);
 }
