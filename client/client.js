@@ -239,7 +239,8 @@ const floorData ={
         floor19:['floor19'],
         floor20:['floor20'],
         floor21:['floor21'],
-        floor22:['floor23'],
+        floor22:['floor22'],
+        floor23:['floor23'],
         floor24:['floor24'],
         floor25:['floor25']
 	}
