@@ -80,13 +80,182 @@ const atlasData = {
 	    floor: ['floor']
 	}
 }
+
+const floorData ={
+    frames: {
+        floor1: {
+            frame: {x: 0, y: 0, w:60, h:60},
+            sourceSize: {w:32, h:32},
+            spriteSourceSize: {x:0,y:0,w:32,h:32}
+        },
+        floor2: {
+            frame: {x: 60, y: 0, w:60, h:60},
+            sourceSize: {w:32, h:32},
+            spriteSourceSize: {x:0,y:0,w:32,h:32}
+        },
+        floor3: {
+            frame: {x: 120, y: 0, w:60, h:60},
+            sourceSize: {w:32, h:32},
+            spriteSourceSize: {x:0,y:0,w:32,h:32}
+        },
+        floor4: {
+            frame: {x: 180, y: 0, w:60, h:60},
+            sourceSize: {w:32, h:32},
+            spriteSourceSize: {x:0,y:0,w:32,h:32}
+        },
+        floor5: {
+            frame: {x: 240, y: 0, w:60, h:60},
+            sourceSize: {w:32, h:32},
+            spriteSourceSize: {x:0,y:0,w:32,h:32}
+        },
+        floor6: {
+            frame: {x: 0, y: 60, w:60, h:60},
+            sourceSize: {w:32, h:32},
+            spriteSourceSize: {x:0,y:0,w:32,h:32}
+        },
+        floor7: {
+            frame: {x: 60, y: 60, w:60, h:60},
+            sourceSize: {w:32, h:32},
+            spriteSourceSize: {x:0,y:0,w:32,h:32}
+        },
+        floor8: {
+            frame: {x: 120, y: 60, w:60, h:60},
+            sourceSize: {w:32, h:32},
+            spriteSourceSize: {x:0,y:0,w:32,h:32}
+        },
+        floor9: {
+            frame: {x: 180, y: 60, w:60, h:60},
+            sourceSize: {w:32, h:32},
+            spriteSourceSize: {x:0,y:0,w:32,h:32}
+        },
+        floor10: {
+            frame: {x: 240, y: 60, w:60, h:60},
+            sourceSize: {w:32, h:32},
+            spriteSourceSize: {x:0,y:0,w:32,h:32}
+        },
+        floor11: {
+            frame: {x: 0, y: 120, w:60, h:60},
+            sourceSize: {w:32, h:32},
+            spriteSourceSize: {x:0,y:0,w:32,h:32}
+        },
+        floor12: {
+            frame: {x: 60, y: 120, w:60, h:60},
+            sourceSize: {w:32, h:32},
+            spriteSourceSize: {x:0,y:0,w:32,h:32}
+        },
+        floor13: {
+            frame: {x: 120, y: 120, w:60, h:60},
+            sourceSize: {w:32, h:32},
+            spriteSourceSize: {x:0,y:0,w:32,h:32}
+        },
+        floor14: {
+            frame: {x: 180, y: 120, w:60, h:60},
+            sourceSize: {w:32, h:32},
+            spriteSourceSize: {x:0,y:0,w:32,h:32}
+        },
+        floor15: {
+            frame: {x: 240, y: 120, w:60, h:60},
+            sourceSize: {w:32, h:32},
+            spriteSourceSize: {x:0,y:0,w:32,h:32}
+        },
+        floor16: {
+            frame: {x: 0, y: 180, w:60, h:60},
+            sourceSize: {w:32, h:32},
+            spriteSourceSize: {x:0,y:0,w:32,h:32}
+        },
+        floor17: {
+            frame: {x: 60, y: 180, w:60, h:60},
+            sourceSize: {w:32, h:32},
+            spriteSourceSize: {x:0,y:0,w:32,h:32}
+        },
+        floor18: {
+            frame: {x: 120, y: 180, w:60, h:60},
+            sourceSize: {w:32, h:32},
+            spriteSourceSize: {x:0,y:0,w:32,h:32}
+        },
+        floor19: {
+            frame: {x: 180, y: 180, w:60, h:60},
+            sourceSize: {w:32, h:32},
+            spriteSourceSize: {x:0,y:0,w:32,h:32}
+        },
+        floor20: {
+            frame: {x: 240, y: 180, w:60, h:60},
+            sourceSize: {w:32, h:32},
+            spriteSourceSize: {x:0,y:0,w:32,h:32}
+        },
+        floor21: {
+            frame: {x: 0, y: 240, w:60, h:60},
+            sourceSize: {w:32, h:32},
+            spriteSourceSize: {x:0,y:0,w:32,h:32}
+        },
+        floor22: {
+            frame: {x: 60, y: 240, w:60, h:60},
+            sourceSize: {w:32, h:32},
+            spriteSourceSize: {x:0,y:0,w:32,h:32}
+        },
+        floor23: {
+            frame: {x: 120, y: 240, w:60, h:60},
+            sourceSize: {w:32, h:32},
+            spriteSourceSize: {x:0,y:0,w:32,h:32}
+        },
+        floor24: {
+            frame: {x: 180, y: 240, w:60, h:60},
+            sourceSize: {w:32, h:32},
+            spriteSourceSize: {x:0,y:0,w:32,h:32}
+        },
+        floor25: {
+            frame: {x: 240, y: 240, w:60, h:60},
+            sourceSize: {w:32, h:32},
+            spriteSourceSize: {x:0,y:0,w:32,h:32}
+        }
+	},
+	meta: {
+		image: image,
+		format: 'RGBA8888',
+		size: { w: 128, h: 32 },
+		scale: 1
+	},
+	animations: {
+        floor1:['floor1'],
+        floor2:['floor2'],
+        floor3:['floor3'],
+        floor4:['floor4'],
+        floor5:['floor5'],
+        floor6:['floor6'],
+        floor7:['floor7'],
+        floor8:['floor8'],
+        floor9:['floor9'],
+        floor10:['floor10'],
+        floor11:['floor11'],
+        floor12:['floor12'],
+        floor13:['floor13'],
+        floor14:['floor14'],
+        floor15:['floor15'],
+        floor16:['floor16'],
+        floor17:['floor17'],
+        floor18:['floor18'],
+        floor19:['floor19'],
+        floor20:['floor20'],
+        floor21:['floor21'],
+        floor22:['floor23'],
+        floor24:['floor24'],
+        floor25:['floor25']
+	}
+}
+
 //more images
 const spritesheet = new PIXI.Spritesheet(
 	PIXI.BaseTexture.from(atlasData.meta.image),
 	atlasData
 );
+
+const floorsheet = new PIXI.Spritesheet(
+    PIXI.BaseTexture.from(floorData.meta.image),
+    floorData
+);
 //parsing
 spritesheet.parse();
+floorsheet.parse();
 //speed and position variables
 let speedup = 1.5;
 let pos = 0;
@@ -182,7 +351,63 @@ function gameLoop() {
         //TODO: FLOOOOOOOOOOOR!!!!!!!!!!!!!!!
     if(floor.length<5){
             for(let g = 0; g<25; g++){
-                let floorSprite = new PIXI.AnimatedSprite(spritesheet.animations.floor);
+                let floorSprite;// = new PIXI.AnimatedSprite(spritesheet.animations.floor);
+                let randomFloor = Math.floor(Math.random()*26);
+                if(randomFloor == 0){
+                    floorSprite = new PIXI.AnimatedSprite(spritesheet.animations.floor);
+                }else if(randomFloor ==1){
+                    floorSprite = new PIXI.AnimatedSprite(floorsheet.animations.floor1);
+                }else if(randomFloor ==2){
+                    floorSprite = new PIXI.AnimatedSprite(floorsheet.animations.floor2);
+                }else if(randomFloor ==3){
+                    floorSprite = new PIXI.AnimatedSprite(floorsheet.animations.floor3);
+                }else if(randomFloor ==4){
+                    floorSprite = new PIXI.AnimatedSprite(floorsheet.animations.floor4);
+                }else if(randomFloor ==5){
+                    floorSprite = new PIXI.AnimatedSprite(floorsheet.animations.floor5);
+                }else if(randomFloor ==6){
+                    floorSprite = new PIXI.AnimatedSprite(floorsheet.animations.floor6);
+                }else if(randomFloor ==7){
+                    floorSprite = new PIXI.AnimatedSprite(floorsheet.animations.floor7);
+                }else if(randomFloor ==8){
+                    floorSprite = new PIXI.AnimatedSprite(floorsheet.animations.floor8);
+                }else if(randomFloor ==9){
+                    floorSprite = new PIXI.AnimatedSprite(floorsheet.animations.floor9);
+                }else if(randomFloor ==10){
+                    floorSprite = new PIXI.AnimatedSprite(floorsheet.animations.floor10);
+                }else if(randomFloor ==11){
+                    floorSprite = new PIXI.AnimatedSprite(floorsheet.animations.floor11);
+                }else if(randomFloor ==12){
+                    floorSprite = new PIXI.AnimatedSprite(floorsheet.animations.floor12);
+                }else if(randomFloor ==13){
+                    floorSprite = new PIXI.AnimatedSprite(floorsheet.animations.floor13);
+                }else if(randomFloor ==14){
+                    floorSprite = new PIXI.AnimatedSprite(floorsheet.animations.floor14);
+                }else if(randomFloor ==15){
+                    floorSprite = new PIXI.AnimatedSprite(floorsheet.animations.floor15);
+                }else if(randomFloor ==16){
+                    floorSprite = new PIXI.AnimatedSprite(floorsheet.animations.floor16);
+                }else if(randomFloor ==17){
+                    floorSprite = new PIXI.AnimatedSprite(floorsheet.animations.floor17);
+                }else if(randomFloor ==18){
+                    floorSprite = new PIXI.AnimatedSprite(floorsheet.animations.floor18);
+                }else if(randomFloor ==19){
+                    floorSprite = new PIXI.AnimatedSprite(floorsheet.animations.floor19);
+                }else if(randomFloor ==20){
+                    floorSprite = new PIXI.AnimatedSprite(floorsheet.animations.floor20);
+                }else if(randomFloor ==21){
+                    floorSprite = new PIXI.AnimatedSprite(floorsheet.animations.floor21);
+                }else if(randomFloor ==22){
+                    floorSprite = new PIXI.AnimatedSprite(floorsheet.animations.floor22);
+                }else if(randomFloor ==23){
+                    floorSprite = new PIXI.AnimatedSprite(floorsheet.animations.floor23);
+                }else if(randomFloor ==24){
+                    floorSprite = new PIXI.AnimatedSprite(floorsheet.animations.floor24);
+                }else if(randomFloor ==25){
+                    floorSprite = new PIXI.AnimatedSprite(floorsheet.animations.floor25);
+                }else{
+                    floorSprite = new PIXI.AnimatedSprite(spritesheet.animations.floor);
+                }
                 floor.push(floorSprite);
         
             }

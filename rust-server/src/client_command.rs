@@ -5,6 +5,8 @@ pub mod client_command {
     pub enum ClientCommand {
         RegPlayer(String),
         JoinRoom(String),
+        //posnum, x, y
+        PostPos(i32, f64, f64),
         LeaveRoom,
         QuickPlay,
         GetData,

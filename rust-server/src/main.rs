@@ -64,6 +64,7 @@ async fn process_connection(peer_map:PeerMap, RoomMap:Arc<Mutex<HashMap<String, 
     let mut socket_index = 0;
     let mut name = "".to_string();
     let mut registered = false;
+    let mut curNum = 0;
 
     println!("Incoming TCP connection from: {}", addr);
 
@@ -209,6 +210,19 @@ async fn process_connection(peer_map:PeerMap, RoomMap:Arc<Mutex<HashMap<String, 
                 },
                 _=>{},
             }
+        },
+        ClientCommand::PostPos(num, pos_x,pos_y) if registered =>{
+            let mut guard = RoomMap.lock().unwrap();
+            let room = guard.get_mut(&current_room);
+            match room{
+                Some(x) if num > curNum =>{
+                    curNum = num;
+                    x.players[socket_index].x=pos_x;
+                    x.players[socket_index].y=pos_y;
+                },
+                _=>{},
+            }
+
         },
         ClientCommand::Error => println!("Error"),
          _ => println!("Error"),   
