@@ -1,4 +1,4 @@
-const host = "he00741098-effective-eureka-5pv4pjgx5xv3xp5-8125.preview.app.github.dev/";
+const host = "he00741098-effective-acorn-pq7gq4jpp9wc7xrp-8125.preview.app.github.dev/";
 
 let websocket = new WebSocket('wss://'+host);
 websocket.onmessage = function (event) {
@@ -6,7 +6,13 @@ websocket.onmessage = function (event) {
     }
 websocket.onopen = function (event) {
     console.log('Connected to server');
-    let message = {"RegPlayer" : "Hi"};
+    let len = Math.floor(Math.random()*20);
+    let name = "";
+    for(let g = 0; g<len; g++){
+        name+=Math.floor(Math.random()*10);
+    }
+
+    let message = {"RegPlayer" : name};
     let json = JSON.stringify(message);
     websocket.send(json);
     message = {"JoinRoom" : "Hi"};

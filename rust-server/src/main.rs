@@ -109,10 +109,19 @@ async fn process_connection(peer_map:PeerMap, RoomMap:Arc<Mutex<HashMap<String, 
             let room_map = guard.get_mut(&string);
             match room_map{
                Some(x) =>{ 
+                let pos = x.players.iter().position(|p|p.name.len()<=1);
+                if let Some(thing) = pos{
+                    socket_index= thing;
+                    x.players[socket_index] = client_command::client_command::Player::new(name.clone());
+                }else{
+
                 socket_index = x.players.len();
+
                 x.players.push(client_command::client_command::Player::new(name.clone()));
-               current_room = string;
                
+                }
+                current_room = string;
+
             }, 
                 _=>{},
             }
@@ -125,7 +134,7 @@ async fn process_connection(peer_map:PeerMap, RoomMap:Arc<Mutex<HashMap<String, 
             let room = guard.get_mut(&current_room);
             match room{
                 Some(x) =>{
-                    x.players.remove(socket_index);
+                    x.players[socket_index].name="".to_string();
                 },
                 _=>{},
             }
@@ -138,9 +147,20 @@ async fn process_connection(peer_map:PeerMap, RoomMap:Arc<Mutex<HashMap<String, 
             let room_map = guard.get_mut(&string);
             match room_map{
                Some(x) =>{ 
+                let pos = x.players.iter().position(|p|p.name.len()<=1);
+                if let Some(thing) = pos{
+                    socket_index= thing;
+                    x.players[socket_index] = client_command::client_command::Player::new(name.clone());
+                }else{
+
                 socket_index = x.players.len();
+
                 x.players.push(client_command::client_command::Player::new(name.clone()));
-               current_room = string;
+               
+                }
+                current_room = string;
+
+
                
             }, 
                 _=>{},
@@ -212,6 +232,11 @@ async fn process_connection(peer_map:PeerMap, RoomMap:Arc<Mutex<HashMap<String, 
     if let Some(room) = RoomMap.lock().unwrap().get_mut(&current_room){
         room.players[socket_index].name="".to_string();
         println!("{}",room.players.len());
+        let count = room.players.iter().position(|x| x.name!="".to_string());
+        match count{
+            Some(_)=>{},
+            None=>room.players.retain(|_|false),
+        }
     }
     names.lock().unwrap().retain(|x|x!=&name);
 }
