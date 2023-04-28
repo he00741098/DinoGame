@@ -1,4 +1,4 @@
-const host = "he00741098-effective-acorn-pq7gq4jpp9wc7xrp-8125.preview.app.github.dev/";
+const host = "he00741098-effective-acorn-pq7gq4jpp9wc7xrp-6969.preview.app.github.dev/";
 
 let websocket = new WebSocket('wss://'+host);
 websocket.onmessage = function (event) {

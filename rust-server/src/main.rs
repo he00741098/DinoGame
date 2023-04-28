@@ -132,12 +132,20 @@ async fn process_connection(peer_map:PeerMap, RoomMap:Arc<Mutex<HashMap<String, 
         ClientCommand::LeaveRoom if registered=> {
             let mut guard = RoomMap.lock().unwrap();
             let room = guard.get_mut(&current_room);
+                
             match room{
                 Some(x) =>{
+                    if socket_index==x.players.len()-1{
+                        x.players.remove(socket_index);
+                    }else{
+                    
                     x.players[socket_index].name="".to_string();
+                    }
                 },
                 _=>{},
             }
+        
+
             current_room = "".to_string();
     
         },
@@ -230,13 +238,18 @@ async fn process_connection(peer_map:PeerMap, RoomMap:Arc<Mutex<HashMap<String, 
     peer_map.lock().unwrap().remove(&addr);
     //RoomMap.lock().unwrap().get_mut(&current_room).unwrap().players.remove(socket_index);
     if let Some(room) = RoomMap.lock().unwrap().get_mut(&current_room){
+        if room.players.len()-1==socket_index{
+            room.players.remove(socket_index);
+        }else{
         room.players[socket_index].name="".to_string();
+        }
         println!("{}",room.players.len());
         let count = room.players.iter().position(|x| x.name!="".to_string());
         match count{
             Some(_)=>{},
             None=>room.players.retain(|_|false),
         }
+
     }
     names.lock().unwrap().retain(|x|x!=&name);
 }
