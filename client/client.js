@@ -14,6 +14,8 @@ var ratio;
 //images
 const image = new Image();
 image.src = '/images/DinoSprites.png';
+const floorImage = new Image();
+floorImage.src = '/images/floor.png';
 //images
 const atlasData = {
 	frames: {
@@ -210,7 +212,7 @@ const floorData ={
         }
 	},
 	meta: {
-		image: image,
+		image: floorImage,
 		format: 'RGBA8888',
 		size: { w: 128, h: 32 },
 		scale: 1
