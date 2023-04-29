@@ -1,0 +1,3 @@
+cargo:rerun-if-changed=build/main.rs
+cargo:rustc-env=TYPENUM_BUILD_CONSTS=/workspaces/DinoGame/rust-server/target/release/build/typenum-29d4d56851fe265b/out/consts.rs
+cargo:rustc-env=TYPENUM_BUILD_OP=/workspaces/DinoGame/rust-server/target/release/build/typenum-29d4d56851fe265b/out/op.rs
