@@ -1,1 +1,1 @@
-web: node server/index.js
+web: ./rust-server/target/release/rust-server
