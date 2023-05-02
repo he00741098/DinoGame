@@ -58,6 +58,10 @@ fn serialize_test() {
     let serialized3 = serde_json::to_string(&clientCommand3).unwrap();
     println!("{}", serialized3);
 
+    let clientCommand4 = ClientCommand::QuickPlay;
+    let serialized4 = serde_json::to_string(&clientCommand4).unwrap();
+    println!("{}", serialized4);
+
 }
 
 
@@ -116,9 +120,11 @@ async fn process_connection(peer_map:PeerMap, RoomMap:Arc<Mutex<HashMap<String, 
                Some(x) =>{ 
                 let pos = x.players.iter().position(|p|p.name.len()<=1);
                 if let Some(thing) = pos{
+                    if current_room!=string{
                     socket_index= thing;
+                    }
                     x.players[socket_index] = client_command::client_command::Player::new(name.clone());
-                }else{
+                }else if current_room!=string{
 
                 socket_index = x.players.len();
 
@@ -161,10 +167,13 @@ async fn process_connection(peer_map:PeerMap, RoomMap:Arc<Mutex<HashMap<String, 
             match room_map{
                Some(x) =>{ 
                 let pos = x.players.iter().position(|p|p.name.len()<=1);
-                if let Some(thing) = pos{
+                if let Some(thing) = pos {
+                    if current_room!=string{
                     socket_index= thing;
+                    }
                     x.players[socket_index] = client_command::client_command::Player::new(name.clone());
-                }else{
+                    
+                }else if current_room!=string{
 
                 socket_index = x.players.len();
 
