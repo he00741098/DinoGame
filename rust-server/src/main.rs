@@ -54,6 +54,10 @@ fn serialize_test() {
     let serialized2 = serde_json::to_string(&clientCommand2).unwrap();
     println!("{}", serialized2);
 
+    let clientCommand3 = ClientCommand::PostPos(1, 1.0, 1.0);
+    let serialized3 = serde_json::to_string(&clientCommand3).unwrap();
+    println!("{}", serialized3);
+
 }
 
 
@@ -254,10 +258,15 @@ async fn process_connection(peer_map:PeerMap, RoomMap:Arc<Mutex<HashMap<String, 
     if let Some(room) = RoomMap.lock().unwrap().get_mut(&current_room){
         if room.players.len()-1==socket_index{
             room.players.remove(socket_index);
+            //cull
+            let mut working = true;
+            let mut popdex = 0;
+            room.players.iter().rev().for_each(|x| if working && x.name.len()<=1 {popdex+=1;} else {working=false;});
+            room.players.truncate(room.players.len()-1-popdex);
         }else{
         room.players[socket_index].name="".to_string();
         }
-        println!("{}",room.players.len());
+        println!("{}, {}",room.players.len(), peer_map.lock().unwrap().len());
         let count = room.players.iter().position(|x| x.name!="".to_string());
         match count{
             Some(_)=>{},
