@@ -28,6 +28,7 @@ pub mod client_command {
         pub isEnded: bool,
         pub isSpectatingAllowed: bool,
         pub playerAdjust: Vec<Vec<Player>>,
+        pub length:u64,
 
     }
 
@@ -46,12 +47,23 @@ pub mod client_command {
                 isEnded: false,
                 isSpectatingAllowed: false,
                 playerAdjust: Vec::new(),
-
+                length: 100000,
             }
         }
 
 
     }
+
+    pub enum obstacle{
+        Cactus1(u64),
+        Cactus2(u64),
+        Cactus3(u64),
+        Cactus4(u64),
+        Cactus5(u64),
+        Bird1(u64),
+        Bird2(u64),
+    }
+
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
     pub struct Player {

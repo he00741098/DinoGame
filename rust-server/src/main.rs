@@ -6,7 +6,7 @@ use std::{
     env,
     io::Error as IoError,
     net::SocketAddr,
-    sync::{Arc, Mutex},
+    sync::{Arc, Mutex}, thread::current,
 };
 
 use crate::client_command::client_command::{ClientCommand, Player};
@@ -113,7 +113,7 @@ async fn process_connection(peer_map:PeerMap, RoomMap:Arc<Mutex<HashMap<String, 
                 }
 
             },
-        ClientCommand::JoinRoom(string) if registered=> {
+        ClientCommand::JoinRoom(string) if registered&&current_room!="".to_string()=> {
             let mut guard = RoomMap.lock().unwrap();
             let room_map = guard.get_mut(&string);
             match room_map{
@@ -160,7 +160,7 @@ async fn process_connection(peer_map:PeerMap, RoomMap:Arc<Mutex<HashMap<String, 
             current_room = "".to_string();
     
         },
-        ClientCommand::QuickPlay if registered=> {
+        ClientCommand::QuickPlay if registered&&current_room!="".to_string() => {
             let string = "QuickPlay".to_string();
             let mut guard = RoomMap.lock().unwrap();
             let room_map = guard.get_mut(&string);
@@ -190,7 +190,7 @@ async fn process_connection(peer_map:PeerMap, RoomMap:Arc<Mutex<HashMap<String, 
             
         
         },
-        ClientCommand::GetData if registered=> {
+        ClientCommand::GetData if registered&&current_room!="".to_string()=> {
             let mut guard = RoomMap.lock().unwrap();
             let room = guard.get_mut(&current_room);
             match room{
@@ -229,9 +229,12 @@ async fn process_connection(peer_map:PeerMap, RoomMap:Arc<Mutex<HashMap<String, 
             let room = guard.get_mut(&current_room);
             match room{
                 Some(x) if num > curNum =>{
+
                     curNum = num;
-                    x.players[socket_index].x=pos_x;
-                    x.players[socket_index].y=pos_y;
+                    if x.players[socket_index].isReady{
+                        x.players[socket_index].x=pos_x;
+                        x.players[socket_index].y=pos_y;
+                    }
                 },
                 _=>{},
             }
