@@ -20,9 +20,9 @@ use tokio_tungstenite::tungstenite::protocol::Message;
 type Tx = UnboundedSender<Message>;
 type PeerMap = Arc<Mutex<HashMap<SocketAddr, Tx>>>;
 
-struct ShuttleGame{
+struct ShuttleGame{}
 
-
+impl ShuttleGame{
 
 #[tokio::main]
 async fn start(port:u16) -> Result<(), Box<dyn std::error::Error>> {
