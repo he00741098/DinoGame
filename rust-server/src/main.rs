@@ -23,7 +23,7 @@ type PeerMap = Arc<Mutex<HashMap<SocketAddr, Tx>>>;
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("{}", std::process::id());
-    let addr = "0.0.0.0:".to_owned()+&env::var("PORT").unwrap_or("8000".to_string());
+    let addr = "0.0.0.0:".to_owned()+&env::var("PORT").unwrap_or("8125".to_string());
     
     let state = PeerMap::new(Mutex::new(HashMap::new()));
     let room_map = Arc::new(Mutex::new(HashMap::<String, Room>::new()));
