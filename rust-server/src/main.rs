@@ -1,3 +1,4 @@
+
 use client_command::client_command::Room;
 use tungstenite::client;
 mod client_command;
@@ -19,9 +20,12 @@ use tokio_tungstenite::tungstenite::protocol::Message;
 type Tx = UnboundedSender<Message>;
 type PeerMap = Arc<Mutex<HashMap<SocketAddr, Tx>>>;
 
+struct ShuttleGame{
+
+
 
 #[tokio::main]
-async fn main() -> Result<(), Box<dyn std::error::Error>> {
+async fn start(port:u16) -> Result<(), Box<dyn std::error::Error>> {
     println!("{}", std::process::id());
     let addr = "0.0.0.0:".to_owned()+&env::var("PORT").unwrap_or("8125".to_string());
     
@@ -287,4 +291,17 @@ async fn process_connection(peer_map:PeerMap, RoomMap:Arc<Mutex<HashMap<String, 
 
     }
     names.lock().unwrap().retain(|x|x!=&name);
+}
+
+}
+
+impl Service for ShuttleGame{
+
+    #[shuttle_runtime::main]
+    fn bind<'async_trait>(self, addr:SocketAddr)-> Pin<Box<dyn Future<Output = Result<(), Error>> + Send + 'async_trait>>
+    where Self: 'async_trait,{
+        self.start(addr.port());
+        
+    }
+
 }
