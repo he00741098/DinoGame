@@ -25,7 +25,7 @@ struct ShuttleGame{}
 impl ShuttleGame{
 
 #[tokio::main]
-async fn start(port:u16) -> Result<(), Box<dyn std::error::Error>> {
+async fn start(&mut self, port:u16) -> Result<(), Box<dyn std::error::Error>> {
     println!("{}", std::process::id());
     let addr = "127.0.0.1:".to_owned()+&env::var("PORT").unwrap_or(port.to_string());
     
@@ -40,7 +40,7 @@ async fn start(port:u16) -> Result<(), Box<dyn std::error::Error>> {
 
 
     while let Ok((stream, addr)) = listener.accept().await {
-        tokio::spawn(process_connection(state.clone(), room_map.clone(), names.clone(), stream, addr));
+        tokio::spawn(self.process_connection(state.clone(), room_map.clone(), names.clone(), stream, addr));
 
     }
     
