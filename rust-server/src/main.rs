@@ -305,3 +305,5 @@ impl Service for ShuttleGame{
     }
 
 }
+
+fn main(){}
