@@ -20,12 +20,9 @@ use tokio_tungstenite::tungstenite::protocol::Message;
 type Tx = UnboundedSender<Message>;
 type PeerMap = Arc<Mutex<HashMap<SocketAddr, Tx>>>;
 
-struct ShuttleGame{}
-
-impl ShuttleGame{
 
 #[tokio::main]
-async fn start(&self, port:u16) -> Result<(), Box<dyn std::error::Error>> {
+async fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("{}", std::process::id());
     let addr = "127.0.0.1:".to_owned()+port.to_string();
     
@@ -40,7 +37,7 @@ async fn start(&self, port:u16) -> Result<(), Box<dyn std::error::Error>> {
 
 
     while let Ok((stream, addr)) = listener.accept().await {
-        tokio::spawn(Self::process_connection(state.clone(), room_map.clone(), names.clone(), stream, addr));
+        tokio::spawn(process_connection(state.clone(), room_map.clone(), names.clone(), stream, addr));
 
     }
     
