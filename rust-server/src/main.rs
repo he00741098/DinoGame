@@ -25,7 +25,7 @@ struct ShuttleGame{}
 impl ShuttleGame{
 
 #[tokio::main]
-async fn start(&mut self, port:u16) -> Result<(), Box<dyn std::error::Error>> {
+async fn start(&self, port:u16) -> Result<(), Box<dyn std::error::Error>> {
     println!("{}", std::process::id());
     let addr = "127.0.0.1:".to_owned()+&env::var("PORT").unwrap_or(port.to_string());
     
@@ -297,9 +297,9 @@ async fn process_connection(peer_map:PeerMap, RoomMap:Arc<Mutex<HashMap<String, 
 
 impl shuttle_runtime::Service for ShuttleGame{
 
-    #[shuttle_runtime::main]
+    //#[shuttle_runtime::main]
     fn bind<'async_trait>(self, addr:std::net::SocketAddr)-> Pin<Box<dyn Future<Output = Result<(), shuttle_runtime::Error>> + Send + 'async_trait>>
-    where Self: 'async_trait,{
+    {
         self.start(addr.port());
         
     }
