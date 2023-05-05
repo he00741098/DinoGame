@@ -40,7 +40,7 @@ async fn start(&mut self, port:u16) -> Result<(), Box<dyn std::error::Error>> {
 
 
     while let Ok((stream, addr)) = listener.accept().await {
-        tokio::spawn(self.process_connection(state.clone(), room_map.clone(), names.clone(), stream, addr));
+        tokio::spawn(Self::process_connection(state.clone(), room_map.clone(), names.clone(), stream, addr));
 
     }
     
@@ -298,7 +298,7 @@ async fn process_connection(peer_map:PeerMap, RoomMap:Arc<Mutex<HashMap<String, 
 impl shuttle_runtime::Service for ShuttleGame{
 
     #[shuttle_runtime::main]
-    fn bind<'async_trait>(self, addr:SocketAddr)-> Pin<Box<dyn Future<Output = Result<(), Error>> + Send + 'async_trait>>
+    fn bind<'async_trait>(self, addr:std::net::SocketAddr)-> Pin<Box<dyn Future<Output = Result<(), shuttle_runtime::Error>> + Send + 'async_trait>>
     where Self: 'async_trait,{
         self.start(addr.port());
         
