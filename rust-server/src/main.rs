@@ -27,7 +27,7 @@ impl ShuttleGame{
 #[tokio::main]
 async fn start(&self, port:u16) -> Result<(), Box<dyn std::error::Error>> {
     println!("{}", std::process::id());
-    let addr = "127.0.0.1:".to_owned()+&env::var("PORT").unwrap_or(port.to_string());
+    let addr = "127.0.0.1:".to_owned()+port.to_string();
     
     let state = PeerMap::new(Mutex::new(HashMap::new()));
     let room_map = Arc::new(Mutex::new(HashMap::<String, Room>::new()));
@@ -293,17 +293,3 @@ async fn process_connection(peer_map:PeerMap, RoomMap:Arc<Mutex<HashMap<String, 
     names.lock().unwrap().retain(|x|x!=&name);
 }
 
-}
-
-impl shuttle_runtime::Service for ShuttleGame{
-
-    //#[shuttle_runtime::main]
-    fn bind<'async_trait>(self, addr:std::net::SocketAddr)-> std::pin::Pin<Box<dyn futures_util::Future<Output = Result<(), shuttle_runtime::Error>> + Send + 'async_trait>>
-    {
-        self.start(addr.port());
-        
-    }
-
-}
-
-fn main(){}
