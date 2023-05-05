@@ -298,7 +298,7 @@ async fn process_connection(peer_map:PeerMap, RoomMap:Arc<Mutex<HashMap<String, 
 impl shuttle_runtime::Service for ShuttleGame{
 
     //#[shuttle_runtime::main]
-    fn bind<'async_trait>(self, addr:std::net::SocketAddr)-> Pin<Box<dyn Future<Output = Result<(), shuttle_runtime::Error>> + Send + 'async_trait>>
+    fn bind<'async_trait>(self, addr:std::net::SocketAddr)-> std::pin::Pin<Box<dyn futures_util::Future<Output = Result<(), shuttle_runtime::Error>> + Send + 'async_trait>>
     {
         self.start(addr.port());
         
