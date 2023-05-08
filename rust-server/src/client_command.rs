@@ -1,6 +1,6 @@
 pub mod client_command {
     use serde::{Deserialize, Serialize};
-
+    use rand::prelude::*;
     #[derive(Debug, Clone, Serialize, Deserialize)]
     pub enum ClientCommand {
         RegPlayer(String),
@@ -11,6 +11,7 @@ pub mod client_command {
         QuickPlay,
         GetData,
         GetRoomList,
+        GetObstacles,
         Ready,
         Error,
     }
@@ -29,11 +30,29 @@ pub mod client_command {
         pub isSpectatingAllowed: bool,
         pub playerAdjust: Vec<Vec<Player>>,
         pub length:u64,
+        pub obstacles: Vec<obstacle>,
 
     }
 
     impl Room{
         pub fn new(name:String, players: Vec<Player>) -> Room{
+            let mut obstacleList = Vec::new();
+                    //gameSeed = generateTerrain(100000);
+            let length = 100000;
+            let mut obstacle_distance = 1000;
+            let mut i = 1106;
+            loop{
+                let mut rng = rand::thread_rng();
+                obstacle_distance = rng.gen_range(0..1000)+400;
+                
+                obstacleList.push(obstacle::Cactus1(i));
+                //console.log("added new obstacle at "+i+","+0);
+                i+=obstacle_distance;
+                if i>=length{
+                    break;
+                }
+            }      
+
             Room{
                 name,
                 players,
@@ -47,13 +66,15 @@ pub mod client_command {
                 isEnded: false,
                 isSpectatingAllowed: false,
                 playerAdjust: Vec::new(),
-                length: 100000,
+                length: length,
+                obstacles: obstacleList,
             }
         }
 
 
     }
 
+    #[derive(Debug, Clone, Serialize, Deserialize)]
     pub enum obstacle{
         Cactus1(u64),
         Cactus2(u64),

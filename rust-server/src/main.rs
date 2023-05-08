@@ -199,7 +199,7 @@ async fn process_connection(peer_map:PeerMap, RoomMap:Arc<Mutex<HashMap<String, 
                     //let player = x.players.get(socket_index).unwrap();
                     let players:Vec<&Player> = x.players.iter().filter(|x| x.name.len()>1).collect();
                     let serde = serde_json::to_string(&players).unwrap();
-                    let message = Message::Text(serde);
+                    let message = Message::Text("Data!".to_owned()+&serde);
                     //println!("{:?}", message);
                     peer_map.lock().unwrap().get(&addr).unwrap().unbounded_send(message).unwrap();
                     
@@ -209,6 +209,23 @@ async fn process_connection(peer_map:PeerMap, RoomMap:Arc<Mutex<HashMap<String, 
 
 
 
+        },
+        ClientCommand::GetObstacles if registered&&current_room!=*""=>{
+            let mut guard = RoomMap.lock().unwrap();
+            let room = guard.get_mut(&current_room);
+            match room{
+                Some(x) =>{
+                    
+                    //let player = x.players.get(socket_index).unwrap();
+                    //let players:Vec<&Player> = x.players.iter().filter(|x| x.name.len()>1).collect();
+                    let serde = serde_json::to_string(&x.obstacles).unwrap();
+                    let message = Message::Text("Obstacles!".to_owned()+&serde);
+                    //println!("{:?}", message);
+                    peer_map.lock().unwrap().get(&addr).unwrap().unbounded_send(message).unwrap();
+                    
+                },
+                _=>{},
+            }
         },
         ClientCommand::Ready if registered=>{
             let mut guard = RoomMap.lock().unwrap();
