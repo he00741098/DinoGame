@@ -1,4 +1,4 @@
-const score_socket = io(location.hostname);
+//const score_socket = io(location.hostname);
 
 var table = new Tabulator("#score-table", {
     height:"300px",
@@ -11,10 +11,10 @@ table.on("tableBuilt", () => {
     table.setPage(2);
 });
 
-function scoreTable() {
-    score_socket.emit("getAllScores", (res) => {
-        table.setData(res);
-    });
-}
+// function scoreTable() {
+//     score_socket.emit("getAllScores", (res) => {
+//         table.setData(res);
+//     });
+// }
 
-setInterval(scoreTable, 100);
+// setInterval(scoreTable, 100);

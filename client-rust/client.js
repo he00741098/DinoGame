@@ -1,10 +1,14 @@
+document.getElementById("inputer").style.display = "block";
+document.getElementById("GamePage").style.display = "none";
+
 const host = location.hostname;
 const container = document.getElementById("container");
-const socket = new WebSocket("rustdinogame.herokuapp.com/");
+const socket = new WebSocket("wss://rustdinogame.herokuapp.com/");
 const deathSound = new Audio("./sounds/hit.mp3");
 const jumpSound = new Audio("./sounds/press.mp3");
 const scoreSound = new Audio("./sounds/reached.mp3");
-const username = new URLSearchParams(document.location.search).get("username");
+let username = "";
+let box = document.getElementById("usernamebox");
 var devMode = false;
 var mapSprites = [];
 
@@ -281,11 +285,22 @@ let scoreText = new PIXI.Text("0", {fontFamily: 'Arial', fontSize: 24, fill: "bl
 //TODO: get obstacles from server
 const obstacles = [];
 //register player
-socket.onopen = function (Event){
-socket.send(JSON.stringify({"RegPlayer":new URLSearchParams(document.location.search).get("username")}));
-socket.send(JSON.stringify("GetObstacles"));
-
+function reg(){
+    
+    if(box.value == "") {
+        alert("please input a username");
+        return;
+    }
+    username = box.value;
+    socket.send(JSON.stringify({"RegPlayer":box.value}));
+    socket.send(JSON.stringify("Ready"));
+    socket.send(JSON.stringify("QuickPlay"));
+    socket.send(JSON.stringify("GetObstacles"));
+    document.getElementById("inputer").style.display = "none";
+    document.getElementById("GamePage").style.display = "block";
 }
+
+
 var thing;
 socket.onmessage = function (Event){
 
@@ -294,17 +309,21 @@ socket.onmessage = function (Event){
             console.log("Registered");
             break;
         case "NameTaken":
+            //box.value = "";
             console.log("NameTaken");
+            alert("Name taken");
             break;
         default:
             let type = Event.data.slice(0, Event.data.indexOf("!"));
             let data = JSON.parse(Event.data.slice(Event.data.indexOf("!")+1));
+            console.log(type +", "+data);
             switch(type){
                 case "Data":
-                
+                let tableData = [];
                 for(let res of data){
                     if(res['name']==username) {
                         player.score = res['x']*speedup;
+                        tableData.push({username : res['name'], score: player.score});
                         continue;
                     }
                     if(mapSprites[res['name']]!=null) {
@@ -318,7 +337,9 @@ socket.onmessage = function (Event){
                         mapSprites[res['name']].tint = "#d9ad4e";
                         app.stage.addChild(mapSprites[res['name']]);
                     }
+                    tableData.push({username : res['name'], score: res['x']*speedup});
                 }
+                table.setData(tableData);
                 break;
                 case "Obstacles":
                     thing = JSON.parse(data);
@@ -646,6 +667,11 @@ function onkeydown(ev) {
                 anim.play();
             }
             break;
+
+        case "Enter":
+            //play();
+            reg();
+            break;
         case "ArrowDown": 
         case "s":
             jumpSound.play();
@@ -703,30 +729,6 @@ function scoreLoop() {
         mapSprites[username].x = pos * ratio;
     }
     socket.send(JSON.stringify("GetData"));
-    // , (result) => {
-    //     let resi = JSON.parse(result);
-    //     //console.log(resi);
-
-    //     for(let res of resi){
-    //         if(res['username']==username) {
-    //             continue;
-    //         }
-    //     if(mapSprites[res['username']]!=null) {
-    //         mapSprites[res['username']].x=res['pos']*ratio;
-    //     }else{
-    //         mapSprites[res['username']]= new PIXI.AnimatedSprite(spritesheet.animations.dino);
-    //         mapSprites[res['username']].x=res['pos']*ratio;
-    //         mapSprites[res['username']].y = spriteY;
-    //         mapSprites[res['username']].width = 16;
-    //         mapSprites[res['username']].height = 16;
-    //         mapSprites[res['username']].tint = "#d9ad4e";
-    //         app.stage.addChild(mapSprites[res['username']]);
-    //     }
-    //     }
-
-    // });
-
-
 
 
 }
@@ -759,6 +761,9 @@ function toggleDev() {
 player = new Player(0xfcf8ec, 10, {x:0, y:0});
 window.addEventListener("keydown", onkeydown);
 window.addEventListener("keyup", onkeyup);
-let gameLoop_interval = setInterval(gameLoop, 1000/60);
-let cloudLoop_interval = setInterval(cloudLoop, 1000/30);
-let scoreLoop_interval = setInterval(scoreLoop, 100);
+
+function startGame(){
+    let gameLoop_interval = setInterval(gameLoop, 1000/60);
+    let cloudLoop_interval = setInterval(cloudLoop, 1000/30);
+    let scoreLoop_interval = setInterval(scoreLoop, 100);
+}

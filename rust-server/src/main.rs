@@ -160,7 +160,7 @@ async fn process_connection(peer_map:PeerMap, RoomMap:Arc<Mutex<HashMap<String, 
             current_room = "".to_string();
     
         },
-        ClientCommand::QuickPlay if registered&&current_room!="".to_string() => {
+        ClientCommand::QuickPlay if registered&&current_room==*"" => {
             let string = "QuickPlay".to_string();
             let mut guard = RoomMap.lock().unwrap();
             let room_map = guard.get_mut(&string);

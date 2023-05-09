@@ -1,19 +1,35 @@
-<!DOCTYPE html>
 <html>
     <head>
-        <title>Multiplayer dino game</title>
-        <link rel="stylesheet" href="./start.css">
+        <title>Multiplayer chrome dino</title>
+        <link rel="stylesheet" href="./css/index.css">
+        <link href="./lib/tabulator.min.css" rel="stylesheet">
+        <link rel="stylesheet" href="./css/start.css">
         <script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
     </head>
 
     <body>
-        <div class="center">
+        <div id = "GamePage" style = display:none">
+        <div class = "centerer">
+        <div id="container"></div>
+        </div>
+        <br><br><br><br><br><br><br><br><br>
+        <div id="score-table"></div>
+        </div>
+
+        <div class="center" id="inputer">
             <input id="usernamebox" placeholder="PUT USERNAME HERE" type="text">
-            <a href="javascript:play()">
-                <img src="./start.png" height="300px">
+            <a href="javascript:reg()">
+                <img src="./images/start.png" height="300px">
             </a>
         </div>
     </body>
-    <script src="./socket.io.min.js"></script>
-    <script src="./start.js"></script>
+
+    <script type="text/javascript" src="./lib/tabulator.min.js"></script>
+    <script src="./lib/socket.io.min.js"></script>
+    <script src="./lib/pixi.min.js"></script>
+    <script src="./obstacles.js"></script>
+    <script src="./scoreboard.js"></script>
+    <script src="./client.js"></script>
+    
+    
 </html>

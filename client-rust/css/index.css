@@ -1,0 +1,38 @@
+html {
+    color:black;
+    overflow: hidden;
+}
+
+
+
+
+#container {
+  border-style: solid;
+  border-color: black;
+  top: 50%;
+  left: 50%;
+  width: fit-content;
+  box-shadow: 10px 10px;
+  transform: translate(0%, 10%);
+}
+
+.centerer {
+    margin: auto;
+    width: 100%;
+    padding: 10px;
+}
+#score-table{
+
+
+    border: 1px solid black;
+    border-collapse: collapse;
+    text-align: center;
+    font-size: 20px;
+    font-family: Arial, Helvetica, sans-serif;
+    margin: 0 auto;
+    margin-top: 20px;
+    margin-bottom: 20px;
+    background-color: #f1f1c1;
+    float:right;
+    transform: translate(0%, -170%);
+}
