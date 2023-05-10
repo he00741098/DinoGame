@@ -16,6 +16,7 @@ let deathText;
 let gameLoop_interval;
 let cloudLoop_interval;
 let scoreLoop_interval;
+let socketRenew_interval;
 let table_interval;
 let w = 512, h=512;
 var ratio;
@@ -951,6 +952,7 @@ function startGame(){
     cloudLoop_interval = setInterval(cloudLoop, 1000/30);
     scoreLoop_interval = setInterval(scoreLoop, 100);
     table_interval = setInterval(updateTable, 100);
+    socketRenew_interval = setInterval(checkSocket, 5000);
     //socket.send(JSON.stringify("Ready"));
 }
 
