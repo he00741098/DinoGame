@@ -14,3 +14,4 @@ http://sweep.rs/
 - Speed up - Sort of done
 - No death, just slow down
 - Waiting room
+- Deploy in vercel or something
