@@ -448,13 +448,60 @@ function onMessager(Event){
                 break;
                 case "Obstacles":
                     thing = data;
-                    for(const i of thing){
+                    for(let i of thing){
                     //TODO: add different types of obstacles and also object pool
-                    let sprite = new PIXI.AnimatedSprite(spritesheet.animations.cactus);
+                    let obstacle_type = i["obstacleType"];
+                    //= new PIXI.AnimatedSprite(spritesheet.animations.cactus)
+                    let sprite;
+                    switch(obstacle_type){
+                        case "Cactus":
+                        sprite = new PIXI.AnimatedSprite(spritesheet.animations.cactus);
+                        break;
+                        case "Cactus2":
+                        sprite = new PIXI.AnimatedSprite(spritesheet.animations.cactus2);
+                        break;
+                        case "Cactus3":
+                            sprite = new PIXI.AnimatedSprite(spritesheet.animations.cactus3);
+                            break;
+                        case "Cactus4":
+                            sprite = new PIXI.AnimatedSprite(spritesheet.animations.cactus4);
+                            break;
+                        case "Cactus5":
+                            sprite = new PIXI.AnimatedSprite(spritesheet.animations.cactus5);
+                            break;
+                        case "Cactus6":
+                            sprite = new PIXI.AnimatedSprite(spritesheet.animations.cactus6);
+                            break;
+                        case "Cactus7":
+                            sprite = new PIXI.AnimatedSprite(spritesheet.animations.cactus7);
+                            break;
+                        case "Cactus8":
+                            sprite = new PIXI.AnimatedSprite(spritesheet.animations.cactus8);
+                            break;
+                        case "Cactus9":
+                            sprite = new PIXI.AnimatedSprite(spritesheet.animations.cactus9);
+                            break;
+                        case "Cactus10":
+                            sprite = new PIXI.AnimatedSprite(spritesheet.animations.cactus10);
+                            break;
+                        case "Cactus11":
+                            sprite = new PIXI.AnimatedSprite(spritesheet.animations.cactus11);
+                            break;
+                        case "Cactus12":
+                            sprite = new PIXI.AnimatedSprite(spritesheet.animations.cactus12);
+                            break;
+                        default:
+                            sprite =new PIXI.AnimatedSprite(spritesheet.animations.cactus);
+                    }
+
+
+
                     let defY = (h/4);
                     sprite.x = app.view.width;
                     sprite.y = defY-sprite.height;
-                    obstacles.push(new obstacle(i['Cactus1'], 0, 2, 5, sprite));
+
+
+                    obstacles.push(new obstacle(i['xPos'], 0, 2, 5, sprite));
                 }
                     startGame();
                 break;
