@@ -67,12 +67,6 @@ const atlasData = {
             sourceSize: {w: 32, h:32},
             spriteSourceSize: {x: 0, y: 0, w: 32, h:32}
         },
-        cactus: {
-            frame: {x: 0, y:180, w:60, h:60},
-            sourceSize: {w: 32, h:32},
-            spriteSourceSize: {x: 0, y: 0, w: 32, h:32}
-
-        },
 	    floor: {
 		    frame: {x:180, y: 240, w:60, h:60},
 		    sourceSize: {w: 32, h:32},
@@ -82,7 +76,80 @@ const atlasData = {
             frame: {x: 120, y: 230, w:60, h:60},
             sourceSize: {w:32, h:32},
             spriteSourceSize: {x:0,y:0,w:32,h:32}
+        },
+        cactus: {
+            frame: {x: 0, y:180, w:60, h:60},
+            sourceSize: {w: 32, h:32},
+            spriteSourceSize: {x: 0, y: 0, w: 32, h:32}
+
+        },
+        cactus2: {
+            frame: {x: 60, y:180, w:60, h:60},
+            sourceSize: {w: 32, h:32},
+            spriteSourceSize: {x: 0, y: 0, w: 32, h:32}
+
+        },
+        cactus3: {
+            frame: {x: 120, y:180, w:60, h:60},
+            sourceSize: {w: 32, h:32},
+            spriteSourceSize: {x: 0, y: 0, w: 32, h:32}
+
+        },
+        cactus4: {
+            frame: {x: 180, y:180, w:60, h:60},
+            sourceSize: {w: 32, h:32},
+            spriteSourceSize: {x: 0, y: 0, w: 32, h:32}
+
+        },
+        cactus5: {
+            frame: {x: 0, y:120, w:60, h:60},
+            sourceSize: {w: 32, h:32},
+            spriteSourceSize: {x: 0, y: 0, w: 32, h:32}
+
+        },
+        cactus6: {
+            frame: {x: 60, y:120, w:60, h:60},
+            sourceSize: {w: 32, h:32},
+            spriteSourceSize: {x: 0, y: 0, w: 32, h:32}
+
+        },
+        cactus7: {
+            frame: {x: 120, y:120, w:60, h:60},
+            sourceSize: {w: 32, h:32},
+            spriteSourceSize: {x: 0, y: 0, w: 32, h:32}
+
+        },
+        cactus8: {
+            frame: {x: 180, y:120, w:60, h:60},
+            sourceSize: {w: 32, h:32},
+            spriteSourceSize: {x: 0, y: 0, w: 32, h:32}
+
+        },
+        cactus9: {
+            frame: {x: 240, y:120, w:60, h:60},
+            sourceSize: {w: 32, h:32},
+            spriteSourceSize: {x: 0, y: 0, w: 32, h:32}
+
+        },
+        cactus10: {
+            frame: {x: 120, y:60, w:60, h:60},
+            sourceSize: {w: 32, h:32},
+            spriteSourceSize: {x: 0, y: 0, w: 32, h:32}
+
+        },
+        cactus11: {
+            frame: {x: 180, y:60, w:60, h:60},
+            sourceSize: {w: 32, h:32},
+            spriteSourceSize: {x: 0, y: 0, w: 32, h:32}
+
+        },
+        cactus12: {
+            frame: {x: 240, y:60, w:60, h:60},
+            sourceSize: {w: 32, h:32},
+            spriteSourceSize: {x: 0, y: 0, w: 32, h:32}
+
         }
+
 	},
 	meta: {
 		image: image,
@@ -95,6 +162,26 @@ const atlasData = {
         duckDino: ['DuckDino1', 'DuckDino2'],
         jumpDino: ['JumpDino1', 'JumpDino2'],
         cactus: ['cactus'],
+        cactus2: ['cactus2'],
+        cactus3: ['cactus3'],
+        cactus4: ['cactus4'],
+        cactus5: ['cactus5'],
+        cactus6: ['cactus6'],
+        cactus7: ['cactus7'],
+        cactus8: ['cactus8'],
+        cactus9: ['cactus9'],
+        cactus10: ['cactus10'],
+        cactus11: ['cactus11'],
+        cactus12: ['cactus12'],
+        // oh wait theres only 12  >:[
+        // cactus13: ['cactus13'],
+        // cactus14: ['cactus14'],
+        // cactus15: ['cactus15'],
+        // cactus16: ['cactus16'],
+        // cactus17: ['cactus17'],
+        // cactus18: ['cactus18'],
+        // cactus19: ['cactus19'],
+        // cactus20: ['cactus20'],
         cloud: ['cloud'],
 	    floor: ['floor']
 	}

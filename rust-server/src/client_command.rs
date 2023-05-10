@@ -1,6 +1,10 @@
 pub mod client_command {
+
+
     use serde::{Deserialize, Serialize};
     use rand::prelude::*;
+    const obstacleTypes:[obstacle_type; 13] = [obstacle_type::Cactus, obstacle_type::Cactus1,obstacle_type::Cactus2,obstacle_type::Cactus3,obstacle_type::Cactus4,obstacle_type::Cactus5,obstacle_type::Cactus6,obstacle_type::Cactus7,obstacle_type::Cactus8,obstacle_type::Cactus9,obstacle_type::Cactus10,obstacle_type::Cactus11,obstacle_type::Cactus12];
+
     #[derive(Debug, Clone, Serialize, Deserialize)]
     pub enum ClientCommand {
         RegPlayer(String),
@@ -31,6 +35,7 @@ pub mod client_command {
         pub playerAdjust: Vec<Vec<Player>>,
         pub length:u64,
         pub obstacles: Vec<obstacle>,
+        
 
     }
 
@@ -41,11 +46,15 @@ pub mod client_command {
             let length = 100000;
             let mut obstacle_distance = 1000;
             let mut i = 1106;
+            let mut rng = rand::thread_rng();
             loop{
-                let mut rng = rand::thread_rng();
                 obstacle_distance = rng.gen_range(0..1000)+400;
                 
-                obstacleList.push(obstacle::Cactus1(i));
+                let obstacleVariation = rng.gen_range(0..obstacleTypes.len());
+
+
+                obstacleList.push(obstacle::new(obstacleTypes[obstacleVariation].clone(), i));
+
                 //console.log("added new obstacle at "+i+","+0);
                 i+=obstacle_distance;
                 if i>=length{
@@ -75,16 +84,34 @@ pub mod client_command {
     }
 
     #[derive(Debug, Clone, Serialize, Deserialize)]
-    pub enum obstacle{
-        Cactus1(u64),
-        Cactus2(u64),
-        Cactus3(u64),
-        Cactus4(u64),
-        Cactus5(u64),
-        Bird1(u64),
-        Bird2(u64),
+    pub enum obstacle_type{
+        Cactus,
+        Cactus1,
+        Cactus2,
+        Cactus3,
+        Cactus4,
+        Cactus5,
+        Cactus6,
+        Cactus7,
+        Cactus8,
+        Cactus9,
+        Cactus10,
+        Cactus11,
+        Cactus12,
     }
 
+    #[derive(Debug, Clone, Serialize, Deserialize)]
+    pub struct obstacle{
+        obstacleType:obstacle_type,
+        xPos:u64,
+    }
+
+    impl obstacle{
+        fn new(obstacleType:obstacle_type, xPos:u64)->obstacle{
+            return obstacle{obstacleType, xPos};
+        }
+
+    }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
     pub struct Player {
