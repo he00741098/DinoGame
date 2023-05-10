@@ -62,6 +62,10 @@ fn serialize_test() {
     let serialized4 = serde_json::to_string(&clientCommand4).unwrap();
     println!("{}", serialized4);
 
+    let room = Room::new("Quick".to_string(), Vec::new());
+    let serializedObstacles = serde_json::to_string(&room.obstacles).unwrap();
+    println!("{}", serializedObstacles);
+
 }
 
 

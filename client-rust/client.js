@@ -11,16 +11,18 @@ let username = "";
 let box = document.getElementById("usernamebox");
 var devMode = false;
 var mapSprites = [];
-
-//width and height
+var dead = false;
+let deathText;
+let gameLoop_interval;
+let cloudLoop_interval;
+let scoreLoop_interval;
+let table_interval;
 let w = 512, h=512;
 var ratio;
-//images
 const image = new Image();
 image.src = '/images/DinoSprites.png';
 const floorImage = new Image();
 floorImage.src = '/images/floor.png';
-//images
 const atlasData = {
 	frames: {
 		Dino1: {
@@ -86,7 +88,6 @@ const atlasData = {
 	    floor: ['floor']
 	}
 }
-
 const floorData ={
     frames: {
         floor1: {
@@ -249,41 +250,35 @@ const floorData ={
         floor25:['floor25']
 	}
 }
-
-//more images
-const spritesheet = new PIXI.Spritesheet(
-	PIXI.BaseTexture.from(atlasData.meta.image),
-	atlasData
-);
-
-const floorsheet = new PIXI.Spritesheet(
-    PIXI.BaseTexture.from(floorData.meta.image),
-    floorData
-);
-//parsing
+const spritesheet = new PIXI.Spritesheet(PIXI.BaseTexture.from(atlasData.meta.image),atlasData);
+const floorsheet = new PIXI.Spritesheet(PIXI.BaseTexture.from(floorData.meta.image),floorData);
 spritesheet.parse();
 floorsheet.parse();
-//speed and position variables
 let speedup = 1.5;
 let pos = 0;
-
-//clouds
 let clouds = [];
-
-//the player
 let anim = new PIXI.AnimatedSprite(spritesheet.animations.dino);
 anim.animationSpeed = 0.1666;
 anim.play();
-
-//rendering the app
 let app = new PIXI.Application({width: 1106, height: 310});
 app.renderer.backgroundColor = 0xffffff;
 app.stage.sortableChildren = true;
-//score
 let scoreText = new PIXI.Text("0", {fontFamily: 'Arial', fontSize: 24, fill: "black", align: 'right'});
-//obstacles
-//TODO: get obstacles from server
 const obstacles = [];
+var thing;
+let floor = [];
+let index = 0;
+let using = [];
+let started = false;
+let floorDex = 0;
+let pressed = {};
+pressed['holding']=false;
+pressed['holdingDown'] = false;
+let postNum = 0;
+let spriteY = 285;
+
+
+
 //register player
 function reg(){
     
@@ -301,7 +296,8 @@ function reg(){
 }
 
 
-var thing;
+
+let tableData = [];
 socket.onmessage = function (Event){
 
     switch(Event.data){
@@ -316,33 +312,34 @@ socket.onmessage = function (Event){
         default:
             let type = Event.data.slice(0, Event.data.indexOf("!"));
             let data = JSON.parse(Event.data.slice(Event.data.indexOf("!")+1));
-            console.log(type +", "+data);
+            //console.log(type +", "+data);
             switch(type){
                 case "Data":
-                let tableData = [];
+                //console.log(data);
+                tableData = [];
                 for(let res of data){
                     if(res['name']==username) {
-                        player.score = res['x']*speedup;
+                        player.score = Math.floor(res['x']/70*speedup);
                         tableData.push({username : res['name'], score: player.score});
                         continue;
                     }
                     if(mapSprites[res['name']]!=null) {
-                        mapSprites[res['name']].x=res['x']*ratio;
+                        mapSprites[res['name']].x= Math.floor(res['x']/70*ratio);
                     }else{
                         mapSprites[res['name']]= new PIXI.AnimatedSprite(spritesheet.animations.dino);
-                        mapSprites[res['name']].x=res['x']*ratio;
+                        mapSprites[res['name']].x= Math.floor(res['x']/70*ratio);
                         mapSprites[res['name']].y = spriteY;
                         mapSprites[res['name']].width = 16;
                         mapSprites[res['name']].height = 16;
                         mapSprites[res['name']].tint = "#d9ad4e";
                         app.stage.addChild(mapSprites[res['name']]);
                     }
-                    tableData.push({username : res['name'], score: res['x']*speedup});
+                    tableData.push({username : res['name'], score: Math.floor(res['x']/70*speedup)});
                 }
-                table.setData(tableData);
+                //table.setData(tableData);
                 break;
                 case "Obstacles":
-                    thing = JSON.parse(data);
+                    thing = data;
                     for(const i of thing){
                     //TODO: add different types of obstacles and also object pool
                     let sprite = new PIXI.AnimatedSprite(spritesheet.animations.cactus);
@@ -351,6 +348,7 @@ socket.onmessage = function (Event){
                     sprite.y = defY-sprite.height;
                     obstacles.push(new obstacle(i['Cactus1'], 0, 2, 5, sprite));
                 }
+                    startGame();
                 break;
             }
             break;
@@ -369,7 +367,8 @@ socket.onmessage = function (Event){
 // });
 
 //start the app
-let floor = [];
+
+
 window.onload = function (){
     container.appendChild(app.view);
     anim.anchor.set(0.5);
@@ -392,13 +391,7 @@ function getRandomInt(min, max) {
 }
 
 //more variables for game
-let index = 0;
-//TODO: object pool?
-let using = [];
-let started = false;
-//game loop function
-//Updates player, increments position, moves obstacles
-let spriteY = 285;
+
 
 function cloudLoop() {
     for(let c of clouds) {
@@ -543,7 +536,7 @@ function gameLoop() {
     move(using);
 }
 //move function - to be used by game loop to move obstacles
-let floorDex = 0;
+
 //let usingFloor = [];
 
 function move(obstacle_list){
@@ -562,18 +555,25 @@ function move(obstacle_list){
             //TODO: Fix death when player reaches end of map. Instead show "you win" or something
             //console.log(obstacle_list[i].sprite);
             if(boxesIntersect(obstacle_list[i].sprite, anim)){
-                clearInterval(gameLoop_interval);
-                clearInterval(scoreLoop_interval);
-                clearInterval(cloudLoop_interval);
-                window.removeEventListener("keydown", onkeydown);
-                window.removeEventListener("keyup", onkeyup);
-                anim.stop();
-                socket.close();
-                let deathText = new PIXI.Text("You died! -- Press ENTER to retry", {fontFamily: 'Arial', fontSize: 24, fill: "black", align: 'right'});
-                deathText.anchor.x = -1;
-                deathText.anchor.y = -5;
-                app.stage.addChild(deathText);
-                window.addEventListener("keydown", deathKey);
+                // dead = true;
+                // clearInterval(gameLoop_interval);
+                // clearInterval(scoreLoop_interval);
+                // clearInterval(cloudLoop_interval);
+                // window.removeEventListener("keydown", onkeydown);
+                // window.removeEventListener("keyup", onkeyup);
+                // anim.stop();
+                
+                //socket.close();
+                obstacle_list[i].sprite.x=-200;
+                speedup*=0.8;
+                
+                //app.stage.removeChild(obstacle_list[i.sprite]);
+                // deathText = new PIXI.Text("You died! -- Press ENTER to retry", {fontFamily: 'Arial', fontSize: 24, fill: "black", align: 'right'});
+                // deathText.anchor.x = -1;
+                // deathText.anchor.y = -5;
+                // app.stage.addChild(deathText);
+                // window.addEventListener("keydown", deathKey);
+            
             }
 
             //obstacles being moved across the screen
@@ -592,9 +592,7 @@ function move(obstacle_list){
 }
 
 //array for movement handling
-let pressed = {};
-pressed['holding']=false;
-pressed['holdingDown'] = false;
+
 //player class
 class Player{
     constructor(color, radius, v) {
@@ -714,7 +712,7 @@ function onkeyup(ev) {
     }
 }
 
-let postNum = 0;
+
 //score
 
 function scoreLoop() {
@@ -724,23 +722,30 @@ function scoreLoop() {
     scoreText.text = player.score.toString();
     //socket.emit("move");
     socket.send(JSON.stringify({"PostPos":[postNum, pos, anim.y]}));
+    postNum++;
     //update map positions;
     if(started) {
         mapSprites[username].x = pos * ratio;
     }
     socket.send(JSON.stringify("GetData"));
 
-
+    //table.setData(tableData);
 }
 //death
 function deathKey(ev) {
     switch(ev.key) {
         case "Enter":
-            document.location.reload();
+            //document.location.reload();
+            window.addEventListener("keydown", onkeydown);
+            window.addEventListener("keyup", onkeyup);
+            app.stage.removeChild(deathText);
+            for(i of using){
+                app.stage.removeChild(i);
+            }
+            startGame();
             break;
     }
 }
-//Generate terrain - WILL BE REMOVED
 
 //collision detection
 //obstacle, terrain
@@ -762,8 +767,36 @@ player = new Player(0xfcf8ec, 10, {x:0, y:0});
 window.addEventListener("keydown", onkeydown);
 window.addEventListener("keyup", onkeyup);
 
-function startGame(){
-    let gameLoop_interval = setInterval(gameLoop, 1000/60);
-    let cloudLoop_interval = setInterval(cloudLoop, 1000/30);
-    let scoreLoop_interval = setInterval(scoreLoop, 100);
+function updateTable(){
+    console.log(tableData);
+    table.setData(tableData);
 }
+
+function startGame(){
+    mapSprites = [];
+    dead = false;
+    speedup = 1.5;
+    pos = 0;
+    //clouds = [];
+    anim.play();
+    //obstacles = [];
+    thing=null;
+    //floor = [];
+    index = 0;
+    using = [];
+    started = false;
+    floorDex = 0;
+    pressed = {};
+    pressed['holding']=false;
+    pressed['holdingDown'] = false;
+    postNum = 0;
+    spriteY = 285;
+    
+    gameLoop_interval = setInterval(gameLoop, 1000/60);
+    cloudLoop_interval = setInterval(cloudLoop, 1000/30);
+    scoreLoop_interval = setInterval(scoreLoop, 100);
+    table_interval = setInterval(updateTable, 1000);
+    socket.send(JSON.stringify("Ready"));
+}
+
+//startGame();
