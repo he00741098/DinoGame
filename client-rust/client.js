@@ -432,10 +432,10 @@ function onMessager(Event){
                         continue;
                     }
                     if(mapSprites[res['name']]!=null) {
-                        mapSprites[res['name']].x= Math.floor(res['x']/70*ratio);
+                        mapSprites[res['name']].x= res['x']*ratio;
                     }else{
                         mapSprites[res['name']]= new PIXI.AnimatedSprite(spritesheet.animations.dino);
-                        mapSprites[res['name']].x= Math.floor(res['x']/70*ratio);
+                        mapSprites[res['name']].x= res['x']*ratio;
                         mapSprites[res['name']].y = spriteY;
                         mapSprites[res['name']].width = 16;
                         mapSprites[res['name']].height = 16;
