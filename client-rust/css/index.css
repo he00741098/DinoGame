@@ -29,9 +29,13 @@ html {
     text-align: center;
     font-size: 20px;
     font-family: Arial, Helvetica, sans-serif;
+    /* 
+    Major preformance issues for some reason.
     margin: 0 auto;
+    margin-left: 10px;
     margin-top: 20px;
-    margin-bottom: 20px;
+    margin-bottom: 20px; 
+    */
     background-color: #f1f1c1;
     float:right;
     transform: translate(0%, -170%);

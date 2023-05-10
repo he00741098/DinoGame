@@ -1,7 +1,7 @@
 document.getElementById("inputer").style.display = "block";
 document.getElementById("GamePage").style.display = "none";
 
-const host = location.hostname;
+const host = "wss://rustdinogame.herokuapp.com/";
 const container = document.getElementById("container");
 const socket = new WebSocket("wss://rustdinogame.herokuapp.com/");
 const deathSound = new Audio("./sounds/hit.mp3");
@@ -19,6 +19,17 @@ let scoreLoop_interval;
 let table_interval;
 let w = 512, h=512;
 var ratio;
+var table = new Tabulator("#score-table", {
+    height:"300px",
+    layout:"fitDataTable",
+    initialSort:[{column:"score", dir:"desc"}],
+    columns:[{title:"Username", field:"username"},{title:"Score", field:"score", sorter: "number"}]
+});
+
+table.on("tableBuilt", () => {
+    table.setPage(2);
+});
+
 const image = new Image();
 image.src = '/images/DinoSprites.png';
 const floorImage = new Image();
@@ -288,11 +299,7 @@ function reg(){
     }
     username = box.value;
     socket.send(JSON.stringify({"RegPlayer":box.value}));
-    socket.send(JSON.stringify("Ready"));
-    socket.send(JSON.stringify("QuickPlay"));
-    socket.send(JSON.stringify("GetObstacles"));
-    document.getElementById("inputer").style.display = "none";
-    document.getElementById("GamePage").style.display = "block";
+
 }
 
 
@@ -300,9 +307,23 @@ function reg(){
 let tableData = [];
 socket.onmessage = function (Event){
 
+onMessager(Event);
+
+}
+
+function onMessager(Event){
     switch(Event.data){
         case "RegPlayer":
             console.log("Registered");
+
+            socket.send(JSON.stringify("QuickPlay"));
+            socket.send(JSON.stringify("Ready"));
+            socket.send(JSON.stringify("GetObstacles"));
+            document.getElementById("inputer").style.display = "none";
+            document.getElementById("GamePage").style.display = "block";
+            
+
+
             break;
         case "NameTaken":
             //box.value = "";
@@ -353,21 +374,7 @@ socket.onmessage = function (Event){
             }
             break;
     }
-
 }
-
-//emit("registerPlayer", new URLSearchParams(document.location.search).get("username"), (res) => {
-//     switch(res) {
-//         case "ETAKEN":
-//             document.location.href = "/";
-//             break;
-//         default:
-//             break;
-//     }
-// });
-
-//start the app
-
 
 window.onload = function (){
     container.appendChild(app.view);
@@ -403,6 +410,8 @@ function cloudLoop() {
 }
 
 function gameLoop() {
+    //TODO: better speedup;
+    speedup+=0.001;
     if(clouds.length<getRandomInt(3,5)) {
         for(let i = 0; i<getRandomInt(3,5); i++) {
             let cloud = new PIXI.AnimatedSprite(spritesheet.animations.cloud);
@@ -768,8 +777,20 @@ window.addEventListener("keydown", onkeydown);
 window.addEventListener("keyup", onkeyup);
 
 function updateTable(){
-    console.log(tableData);
+    //console.log(tableData);
+    //console.time('test');
     table.setData(tableData);
+    //console.timeEnd('test');
+}
+function checkSocket(){
+    
+    if (socket.readyState == WebSocket.CLOSED || socket.readyState == WebSocket.CLOSING){
+        socket = new WebSocket(host);
+    }
+    socket.send(JSON.stringify({"RegPlayer":username}));
+    //TODO:DO room thingies
+    socket.send(JSON.stringify("QuickPlay"));
+    socket.send(JSON.stringify("Ready"));
 }
 
 function startGame(){
@@ -795,8 +816,8 @@ function startGame(){
     gameLoop_interval = setInterval(gameLoop, 1000/60);
     cloudLoop_interval = setInterval(cloudLoop, 1000/30);
     scoreLoop_interval = setInterval(scoreLoop, 100);
-    table_interval = setInterval(updateTable, 1000);
-    socket.send(JSON.stringify("Ready"));
+    table_interval = setInterval(updateTable, 100);
+    //socket.send(JSON.stringify("Ready"));
 }
 
 //startGame();

@@ -13,6 +13,7 @@ table.on("tableBuilt", () => {
 
 function scoreTable() {
     score_socket.emit("getAllScores", (res) => {
+        console.log(res);
         table.setData(res);
     });
 }
