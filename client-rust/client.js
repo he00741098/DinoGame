@@ -1,9 +1,10 @@
 document.getElementById("inputer").style.display = "block";
 document.getElementById("GamePage").style.display = "none";
 
+//wss://rustdinogame.herokuapp.com/
 const host = "wss://rustdinogame.herokuapp.com/";
 const container = document.getElementById("container");
-const socket = new WebSocket("wss://rustdinogame.herokuapp.com/");
+const socket = new WebSocket(host);
 const deathSound = new Audio("./sounds/hit.mp3");
 const jumpSound = new Audio("./sounds/press.mp3");
 const scoreSound = new Audio("./sounds/reached.mp3");
@@ -504,8 +505,27 @@ function onMessager(Event){
 
                     obstacles.push(new obstacle(i['xPos'], 0, 2, 5, sprite));
                 }
-                    startGame();
+                //    startGame();
                 break;
+                case "Countdown":
+                    switch(data){
+                        case "start":
+                            startGame();
+                        break;
+                        case "stopped":
+                            //TODO: implement stop, gameover thing
+                        break;
+                        default:
+                        let obj = JSON.parse(data);
+                        if (obj["time"] !=null){
+                            //TODO: do something with countdown data
+                        }
+                        break;    
+
+                    }
+                break;
+                case "GameOver":
+                    alert("Winner: "+data);
             }
             break;
     }
@@ -871,7 +891,7 @@ function scoreLoop() {
     if(started) {
         mapSprites[username].x = pos * ratio;
     }
-    socket.send(JSON.stringify("GetData"));
+    //socket.send(JSON.stringify("GetData"));
 
     //table.setData(tableData);
 }
@@ -921,11 +941,12 @@ function checkSocket(){
     
     if (socket.readyState == WebSocket.CLOSED || socket.readyState == WebSocket.CLOSING){
         socket = new WebSocket(host);
+        socket.send(JSON.stringify({"RegPlayer":username}));
+        //TODO:DO room thingies
+        socket.send(JSON.stringify("QuickPlay"));
+        socket.send(JSON.stringify("Ready"));
     }
-    socket.send(JSON.stringify({"RegPlayer":username}));
-    //TODO:DO room thingies
-    socket.send(JSON.stringify("QuickPlay"));
-    socket.send(JSON.stringify("Ready"));
+
 }
 
 function startGame(){

@@ -1,4 +1,4 @@
-use client_command::client_command::Room;
+use client_command::client_command::{Room, countDownTime};
 use tungstenite::client;
 mod client_command;
 use std::{
@@ -8,6 +8,7 @@ use std::{
     net::SocketAddr,
     sync::{Arc, Mutex}, thread::current,
 };
+use tokio::time::{sleep, Duration};
 
 use crate::client_command::client_command::{ClientCommand, Player};
 use futures_channel::mpsc::{unbounded, UnboundedSender};
@@ -117,9 +118,10 @@ async fn process_connection(peer_map:PeerMap, RoomMap:Arc<Mutex<HashMap<String, 
                 }
 
             },
-        ClientCommand::JoinRoom(string) if registered&&current_room!="".to_string()=> {
+        ClientCommand::JoinRoom(string) if registered&&current_room==*""=> {
             let mut guard = RoomMap.lock().unwrap();
             let room_map = guard.get_mut(&string);
+            let mut ready = false;
             match room_map{
                Some(x) =>{ 
                 let pos = x.players.iter().position(|p|p.name.len()<=1);
@@ -137,6 +139,18 @@ async fn process_connection(peer_map:PeerMap, RoomMap:Arc<Mutex<HashMap<String, 
                 }
                 current_room = string;
 
+                //TODO: start new thread for room proccessing if it does not exist already
+                //ALSO DO QUICKPLAY
+
+                if !x.isReady{
+                    //TODO:Fix error
+                    x.isReady = true;
+                    ready = true;
+                    //drop(guard);
+                    //drop(room_map);
+                    drop(x);
+                    tokio::spawn(gameProccessThread(current_room.clone(),peer_map.clone(), RoomMap.clone()));
+                }
             }, 
                 _=>{},
             }
@@ -168,6 +182,7 @@ async fn process_connection(peer_map:PeerMap, RoomMap:Arc<Mutex<HashMap<String, 
             let string = "QuickPlay".to_string();
             let mut guard = RoomMap.lock().unwrap();
             let room_map = guard.get_mut(&string);
+            let mut ready = false;
             match room_map{
                Some(x) =>{ 
                 let pos = x.players.iter().position(|p|p.name.len()<=1);
@@ -185,11 +200,40 @@ async fn process_connection(peer_map:PeerMap, RoomMap:Arc<Mutex<HashMap<String, 
                
                 }
                 current_room = string;
-
-
+                println!("Current room {}", &current_room);
+                if !x.isReady{
+                    //TODO:Fix error
+                    x.isReady = true;
+                    ready = true;
+                    //drop(guard);
+                    //drop(room_map);
+                    drop(x);
+                    tokio::spawn(gameProccessThread(current_room.clone(),peer_map.clone(), RoomMap.clone()));
+                }
                
             }, 
-                _=>{},
+                _=>{
+                    //TODO: Make QUICKPLAY if it doesn't exist.
+                    let y = Room::new("QuickPlay".to_string(), Vec::new());
+                    guard.insert("QuickPlay".to_string(), y);
+                    //println!("219 Guard: {:?}", guard);
+                    let x = guard.get_mut("QuickPlay").unwrap();    
+                    socket_index = x.players.len();
+    
+                    x.players.push(client_command::client_command::Player::new(name.clone()));
+                   
+                    current_room = string;
+    
+                    if !x.isReady{
+                        //TODO:Fix error
+                        x.isReady = true;
+                        ready = true;
+                        //drop(guard);
+                        //drop(room_map);
+                        drop(x);
+                        tokio::spawn(gameProccessThread(current_room.clone(),peer_map.clone(), RoomMap.clone()));
+                    }
+                },
             }
             
         
@@ -252,12 +296,16 @@ async fn process_connection(peer_map:PeerMap, RoomMap:Arc<Mutex<HashMap<String, 
                 Some(x) if num > curNum =>{
 
                     curNum = num;
+                    //TODO: anticheat thing?
+
                     if x.players[socket_index].isReady{
                         x.players[socket_index].x=pos_x;
                         x.players[socket_index].y=pos_y;
                     }
                 },
-                _=>{},
+                _=>{
+                    //current_room = "".to_string();
+                },
             }
 
         },
@@ -265,15 +313,6 @@ async fn process_connection(peer_map:PeerMap, RoomMap:Arc<Mutex<HashMap<String, 
          _ => println!("Error"),   
         }
 
-        //let peers = peer_map.lock().unwrap();
-
-        // We want to broadcast the message to everyone except ourselves.
-        // let broadcast_recipients =
-        //     peers.iter().filter(|(peer_addr, _)| peer_addr != &&addr).map(|(_, ws_sink)| ws_sink);
-
-        // for recp in broadcast_recipients {
-        //     recp.unbounded_send(msg.clone()).unwrap();
-        // }
 
         future::ok(())
     });
@@ -287,15 +326,20 @@ async fn process_connection(peer_map:PeerMap, RoomMap:Arc<Mutex<HashMap<String, 
 
     println!("{} disconnected", &addr);
     peer_map.lock().unwrap().remove(&addr);
-    //RoomMap.lock().unwrap().get_mut(&current_room).unwrap().players.remove(socket_index);
+    println!("Removed from peerMap");
+    println!("Looking for room {}", &current_room);
     if let Some(room) = RoomMap.lock().unwrap().get_mut(&current_room){
+        println!("Room found");
         if room.players.len()-1==socket_index{
             room.players.remove(socket_index);
-            //cull
+            //TODO: Make culling better somehow
             let mut working = true;
             let mut popdex = 0;
             room.players.iter().rev().for_each(|x| if working && x.name.len()<=1 {popdex+=1;} else {working=false;});
-            room.players.truncate(room.players.len()-1-popdex);
+            println!("Pretruncated {:?}", &room.players);
+            room.players.truncate(room.players.len()-popdex);
+            println!("Truncated {:?}", &room.players);
+
         }else{
         room.players[socket_index].name="".to_string();
         }
@@ -307,5 +351,125 @@ async fn process_connection(peer_map:PeerMap, RoomMap:Arc<Mutex<HashMap<String, 
         }
 
     }
+    println!("Names removing");
     names.lock().unwrap().retain(|x|x!=&name);
+}
+
+async fn gameProccessThread(cur_room:String,peer_map:PeerMap, RoomMap:Arc<Mutex<HashMap<String, Room>>>){
+    println!("Thread Starting, 328");
+    sleep(Duration::from_millis(10000)).await;
+    let mut waiting = true;
+
+    loop{
+        
+            if true {
+            let rooms = RoomMap.lock();
+            if let Ok(x) = rooms{
+                if let Some(y) = x.get(&cur_room){
+                    let mut count = 0;
+                    let mut total = 0;
+                    y.players.iter().for_each(|x|{if x.isReady{count+=1} if x.name!=*""{total+=1}});
+                    println!("Count: {}, Total: {}, Ratio: {}", count, total, count as f64 / total as f64);
+                    if count as f64 / total as f64 > 0.7 {
+                        waiting = false;   
+                    }
+                }
+            }
+        }
+    if waiting{
+        println!("WAITING, 349");
+        sleep(Duration::from_millis(5000)).await;
+    }else{
+        
+        let serde = serde_json::to_string(&countDownTime::time(20)).unwrap();
+        let message = Message::Text("Countdown!".to_owned()+&serde);
+        broadcast(peer_map.clone(), message).await;
+        break;
+    }
+
+
+    }
+    let mut truth = false;
+    if true{
+    let rooms = RoomMap.lock();
+    if let Ok(x) = rooms{
+        if let Some(y) = x.get(&cur_room){
+            //TODO: figure out why I put this here
+            truth = true;
+        }
+    }
+    }
+    if truth{
+        let serde = serde_json::to_string(&countDownTime::start).unwrap();
+        let message = Message::Text("Countdown!".to_owned()+&serde);
+        broadcast(peer_map.clone(), message).await;
+    }
+
+    //DATA SENDING, TODO: REMOVE GET DATA
+    loop{
+        let mut message = Message::Text("Data! error".to_owned());
+        let mut len = -1;
+        let mut winner:String = "".to_owned();
+
+        {
+        let mut guard = RoomMap.lock().unwrap();
+        let room = guard.get_mut(&cur_room);
+        
+        match room{
+            Some(x) =>{
+                
+                //let player = x.players.get(socket_index).unwrap();
+                let players:Vec<&Player> = x.players.iter().filter(|x| x.name.len()>1).collect();
+                let serde = serde_json::to_string(&players).unwrap();
+                //println!("Players, 427, {:?}", players);
+                len = players.len() as i32;
+                message = Message::Text("Data!".to_owned()+&serde);
+                //println!("{:?}", message);
+                let pos = x.players.iter().position(|p| p.x>100000 as f64);
+                if let Some(winnerPos) = pos{
+                    len = 0;
+                    let name = &x.players[winnerPos].name;
+                    winner = name.clone();
+                }
+            },
+            _=>{},
+        }
+        if len==0{
+            //TODO: make all other threads return or something
+            println!("Deleting room 441");
+            guard.remove(&cur_room);
+            break;
+        }
+
+        }
+
+        if len==0{
+            //TODO: make all other threads return
+            broadcast(peer_map.clone(), Message::Text("GameOver!".to_owned()+&winner)).await;
+            break;
+        }
+        broadcast(peer_map.clone(), message).await;  
+        sleep(Duration::from_millis(100)).await;
+    }
+
+    //TODO: Delete room once game ends/no one is playing.
+
+
+
+}
+
+async fn broadcast(peer_map:PeerMap, msg:Message){
+        //println!("Broadcasting {}", &msg);
+
+        let peers = peer_map.lock().unwrap();
+
+        let broadcast_recipients =
+            peers.iter().map(|(_, ws_sink)| ws_sink);
+
+        for recp in broadcast_recipients {
+            recp.unbounded_send(msg.clone()).unwrap();
+        }
+
+        
+
 }

@@ -20,6 +20,7 @@ pub mod client_command {
         Error,
     }
 
+    #[derive(Debug)]
     pub struct Room {
         pub name: String,
         pub players: Vec<Player>,
@@ -137,5 +138,11 @@ pub mod client_command {
         }
     }
 
+    #[derive(Serialize, Deserialize, Debug, Clone)]
+    pub enum countDownTime{
+        time(u16),
+        stopped,
+        start,
+    }
 
 }
