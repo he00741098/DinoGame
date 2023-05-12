@@ -1,15 +1,32 @@
-const host = location.hostname;
+//const host = location.host;
 const container = document.getElementById("container");
 const socket = io(host);
 const deathSound = new Audio("./sounds/hit.mp3");
 const jumpSound = new Audio("./sounds/press.mp3");
 const scoreSound = new Audio("./sounds/reached.mp3");
 const username = new URLSearchParams(document.location.search).get("username");
+let gameLoop_interval;
+let cloudLoop_interval;
+let scoreLoop_interval;
+let scoreTableLoop_interval;
+let pollStart_interval;
 var devMode = false;
+var gameStarted = false;
 var mapSprites = [];
 
+//scoreboard stuff
+var table = new Tabulator("#score-table", {
+    height: "300px",
+    layout: "fitDataTable",
+    initialSort: [{ column: "score", dir: "desc" }],
+    columns: [{ title: "Username", field: "username" }, { title: "Score", field: "score", sorter: "number" }]
+});
+table.on("tableBuilt", () => {
+    table.setPage(2);
+});
+
 //width and height
-let w = 512, h=512;
+let w = 512, h = 512;
 var ratio;
 //images
 const image = new Image();
@@ -18,69 +35,69 @@ const floorImage = new Image();
 floorImage.src = '/images/floor.png';
 //images
 const atlasData = {
-	frames: {
-		Dino1: {
-			frame: { x: 0, y:0, w:60, h:60 },
-			sourceSize: { w: 32, h: 32 },
-			spriteSourceSize: { x: 0, y: 0, w: 32, h: 32 }
-		},
-		Dino2: {
-			frame: { x: 60, y:0, w:60, h:60 },
-			sourceSize: { w: 32, h: 32 },
-			spriteSourceSize: { x: 0, y: 0, w: 32, h: 32 }
-		},
+    frames: {
+        Dino1: {
+            frame: { x: 0, y: 0, w: 60, h: 60 },
+            sourceSize: { w: 32, h: 32 },
+            spriteSourceSize: { x: 0, y: 0, w: 32, h: 32 }
+        },
+        Dino2: {
+            frame: { x: 60, y: 0, w: 60, h: 60 },
+            sourceSize: { w: 32, h: 32 },
+            spriteSourceSize: { x: 0, y: 0, w: 32, h: 32 }
+        },
         DuckDino1: {
-            frame: { x: 240, y:0, w: 60, h:60 },
-            sourceSize: {w: 32, h:32},
-            spriteSourceSize: {x: 0, y: 0, w: 32, h: 32}
+            frame: { x: 240, y: 0, w: 60, h: 60 },
+            sourceSize: { w: 32, h: 32 },
+            spriteSourceSize: { x: 0, y: 0, w: 32, h: 32 }
         },
         DuckDino2: {
-            frame: {x: 0, y:60, w:60, h:60},
-            sourceSize: {w: 32, h:32},
-            spriteSourceSize: {x: 0, y: 0, w: 32, h:32}
+            frame: { x: 0, y: 60, w: 60, h: 60 },
+            sourceSize: { w: 32, h: 32 },
+            spriteSourceSize: { x: 0, y: 0, w: 32, h: 32 }
 
         },
-        JumpDino1:{
-            frame: {x:120, y:0, w:60, h:60},
-            sourceSize: {w: 32, h:32},
-            spriteSourceSize: {x: 0, y: 0, w: 32, h:32}
+        JumpDino1: {
+            frame: { x: 120, y: 0, w: 60, h: 60 },
+            sourceSize: { w: 32, h: 32 },
+            spriteSourceSize: { x: 0, y: 0, w: 32, h: 32 }
         },
-        JumpDino2:{
-            frame: {x:180, y:0, w:60, h:60},
-            sourceSize: {w: 32, h:32},
-            spriteSourceSize: {x: 0, y: 0, w: 32, h:32}
+        JumpDino2: {
+            frame: { x: 180, y: 0, w: 60, h: 60 },
+            sourceSize: { w: 32, h: 32 },
+            spriteSourceSize: { x: 0, y: 0, w: 32, h: 32 }
         },
         cactus: {
-            frame: {x: 0, y:180, w:60, h:60},
-            sourceSize: {w: 32, h:32},
-            spriteSourceSize: {x: 0, y: 0, w: 32, h:32}
+            frame: { x: 0, y: 180, w: 60, h: 60 },
+            sourceSize: { w: 32, h: 32 },
+            spriteSourceSize: { x: 0, y: 0, w: 32, h: 32 }
 
         },
-	    floor: {
-		    frame: {x:180, y: 240, w:60, h:60},
-		    sourceSize: {w: 32, h:32},
-		    spriteSourceSize: {x: 0, y:0, w:32, h:32}
-	    },		
+        floor: {
+            frame: { x: 180, y: 240, w: 60, h: 60 },
+            sourceSize: { w: 32, h: 32 },
+            spriteSourceSize: { x: 0, y: 0, w: 32, h: 32 }
+        },
         cloud: {
-            frame: {x: 120, y: 230, w:60, h:60},
-            sourceSize: {w:32, h:32},
-            spriteSourceSize: {x:0,y:0,w:32,h:32}
+            frame: { x: 120, y: 230, w: 60, h: 60 },
+            sourceSize: { w: 32, h: 32 },
+            spriteSourceSize: { x: 0, y: 0, w: 32, h: 32 }
         }
-	},
-	meta: {
-		image: image,
-		format: 'RGBA8888',
-		size: { w: 128, h: 32 },
-		scale: 1
-	},
-	animations: {
-		dino: ['Dino1','Dino2'], //array of frames by name
+    },
+    meta: {
+        image: image,
+        format: 'RGBA8888',
+        size: { w: 128, h: 32 },
+        scale: 1
+    },
+    animations: {
+        dino: ['Dino1', 'Dino2'], //array of frames by name
         duckDino: ['DuckDino1', 'DuckDino2'],
         jumpDino: ['JumpDino1', 'JumpDino2'],
         cactus: ['cactus'],
         cloud: ['cloud'],
-	    floor: ['floor']
-	}
+        floor: ['floor']
+    }
 }
 
 const floorData ={
@@ -248,8 +265,8 @@ const floorData ={
 
 //more images
 const spritesheet = new PIXI.Spritesheet(
-	PIXI.BaseTexture.from(atlasData.meta.image),
-	atlasData
+    PIXI.BaseTexture.from(atlasData.meta.image),
+    atlasData
 );
 
 const floorsheet = new PIXI.Spritesheet(
@@ -272,41 +289,40 @@ anim.animationSpeed = 0.1666;
 anim.play();
 
 //rendering the app
-let app = new PIXI.Application({width: 1106, height: 310});
+let app = new PIXI.Application({ width: 1106, height: 310 });
 app.renderer.backgroundColor = 0xffffff;
 app.stage.sortableChildren = true;
 //score
-let scoreText = new PIXI.Text("0", {fontFamily: 'Arial', fontSize: 24, fill: "black", align: 'right'});
+let scoreText = new PIXI.Text("0", { fontFamily: 'Arial', fontSize: 24, fill: "black", align: 'right' });
 //obstacles
 //TODO: get obstacles from server
 const obstacles = generateTerrain();
 //register player
-socket.emit("registerPlayer", new URLSearchParams(document.location.search).get("username"), (res) => {
-    switch(res) {
+
+//start the app
+let floor = [];
+socket.emit("registerPlayer", new URLSearchParams(document.location.search).get("username"), new URLSearchParams(document.location.search).get("room"), (res) => {
+    switch (res) {
         case "ETAKEN":
+            document.location.href = "/";
+            break;
+        case "EALREADYSTARTED":
             document.location.href = "/";
             break;
         default:
             break;
     }
 });
-
-//start the app
-let floor = [];
-window.onload = function (){
-    container.appendChild(app.view);
-    anim.anchor.set(0.5);
-    anim.x = app.view.width / 6;
-    anim.y = (app.view.height / 2)+10;
-    app.stage.addChild(anim);
-    app.stage.addChild(scoreText);
-    anim.zIndex = 5;
+container.appendChild(app.view);
+anim.anchor.set(0.5);
+anim.x = app.view.width / 6;
+anim.y = (app.view.height / 2) + 10;
+app.stage.addChild(anim);
+app.stage.addChild(scoreText);
+anim.zIndex = 5;
     //app.stage.addChild(cloud);
     //put dino on "map"
     //TODO: look at app ticker
-
-
-}
 
 function getRandomInt(min, max) {
     min = Math.ceil(min);
@@ -324,30 +340,30 @@ let started = false;
 let spriteY = 285;
 
 function cloudLoop() {
-    for(let c of clouds) {
-        c.x-=(4*speedup);
-        if(c.x<-100) {
-            c.x=1106;
+    for (let c of clouds) {
+        c.x -= (4 * speedup);
+        if (c.x < -100) {
+            c.x = 1106;
         }
     }
 }
 
 function gameLoop() {
-    if(clouds.length<getRandomInt(3,5)) {
-        for(let i = 0; i<getRandomInt(3,5); i++) {
+    if (clouds.length < getRandomInt(3, 5)) {
+        for (let i = 0; i < getRandomInt(3, 5); i++) {
             let cloud = new PIXI.AnimatedSprite(spritesheet.animations.cloud);
             clouds.push(cloud);
         }
 
         let x = 0;
-        for(let c of clouds) {
+        for (let c of clouds) {
             app.stage.addChild(c);
-            c.x=x;
-            let randomsize=getRandomInt(60,70)
-            c.width=randomsize;
-            c.height=randomsize;
-            x+=getRandomInt(100,500);
-            c.y=getRandomInt(-50,30);
+            c.x = x;
+            let randomsize = getRandomInt(60, 70)
+            c.width = randomsize;
+            c.height = randomsize;
+            x += getRandomInt(100, 500);
+            c.y = getRandomInt(-50, 30);
         }
     }
     
@@ -425,19 +441,19 @@ function gameLoop() {
         }
 
 
-	
+
     player.update();
     //pos++;
     //checks if obstacles should be moved I think
-    if(obstacles.length>0&&(!started||obstacles[index].x<pos+1106)){
-        if(!started){
+    if (obstacles.length > 0 && (!started || obstacles[index].x < pos + 1106)) {
+        if (!started) {
             //TODO: show a map of all the player positions, also make a width variable
-            ratio = 1106/obstacles[obstacles.length-1]["x"];
+            ratio = 1106 / obstacles[obstacles.length - 1]["x"];
             //console.log("the ration:" + ratio);
             let mapSprite = new PIXI.AnimatedSprite(spritesheet.animations.dino);
             //mapSprite.height= 60;
             //mapSprite.width= 30;
-            mapSprite.x = pos*ratio;
+            mapSprite.x = pos * ratio;
             //console.log("mapSpriteX:"+mapSprite.x);
             mapSprite.y = spriteY;
             mapSprite.zIndex = 4;
@@ -458,9 +474,9 @@ function gameLoop() {
         obstacles[index].sprite.x = app.view.width;
         app.stage.addChild(obstacles[index].sprite);
         using.push(obstacles[index]);
-        if(index<obstacles.length-1){
-        index++;
-    }
+        if (index < obstacles.length - 1) {
+            index++;
+        }
     }
 
     move(using);
@@ -469,30 +485,31 @@ function gameLoop() {
 let floorDex = 0;
 //let usingFloor = [];
 
-function move(obstacle_list){
-    for(i = obstacle_list.length-1; i>=0; i--){
-        if(obstacle_list[i].sprite.x<-220){
-            floorDex+=1;
-            if(floorDex>=floor.length){
+function move(obstacle_list) {
+    for (i = obstacle_list.length - 1; i >= 0; i--) {
+        if (obstacle_list[i].sprite.x < -220) {
+            floorDex += 1;
+            if (floorDex >= floor.length) {
                 floorDex = 0;
             }
 
-            using = using.splice(0, i).concat(using.splice(i+1));
+            using = using.splice(0, i).concat(using.splice(i + 1));
             obstacle_list = using;
-            
+
         } else {
             //TODO: Slow down player instead of death in multiplayer game
             //TODO: Fix death when player reaches end of map. Instead show "you win" or something
             //console.log(obstacle_list[i].sprite);
-            if(boxesIntersect(obstacle_list[i].sprite, anim)){
+            if (boxesIntersect(obstacle_list[i].sprite, anim)) {
                 clearInterval(gameLoop_interval);
                 clearInterval(scoreLoop_interval);
                 clearInterval(cloudLoop_interval);
                 window.removeEventListener("keydown", onkeydown);
                 window.removeEventListener("keyup", onkeyup);
                 anim.stop();
-                socket.disconnect();
-                let deathText = new PIXI.Text("You died! -- Press ENTER to retry", {fontFamily: 'Arial', fontSize: 24, fill: "black", align: 'right'});
+                //socket.disconnect();
+                socket.emit("endPlayer");
+                let deathText = new PIXI.Text("You died! -- Press ENTER to retry", { fontFamily: 'Arial', fontSize: 24, fill: "black", align: 'right' });
                 deathText.anchor.x = -1;
                 deathText.anchor.y = -5;
                 app.stage.addChild(deathText);
@@ -500,15 +517,15 @@ function move(obstacle_list){
             }
 
             //obstacles being moved across the screen
-            obstacle_list[i].x-=(4*speedup);
-            obstacle_list[i].sprite.x-=(4*speedup);
- 
+            obstacle_list[i].x -= (4 * speedup);
+            obstacle_list[i].sprite.x -= (4 * speedup);
+
         }
     }
-    for(let o of floor){
-        o.x-=(4*speedup);
-        if(o.x<-100){
-            o.x=1106;
+    for (let o of floor) {
+        o.x -= (4 * speedup);
+        if (o.x < -100) {
+            o.x = 1106;
         }
     }
 
@@ -516,45 +533,45 @@ function move(obstacle_list){
 
 //array for movement handling
 let pressed = {};
-pressed['holding']=false;
+pressed['holding'] = false;
 pressed['holdingDown'] = false;
 //player class
-class Player{
+class Player {
     constructor(color, radius, v) {
         this.radius = radius;
         this.v = v;
         this.circle = anim;
         this.defX = app.view.width / 6;
-        this.defY = anim.y = (app.view.height / 2)+10;
+        this.defY = anim.y = (app.view.height / 2) + 10;
         this.maxHeight = 25;
         this.score = 0;
         this.reset();
     }
 
     reset() {
-        this.circle.x = w/2;
-        this.circle.y = h/2;
-        this.speed = 4*speedup;
+        this.circle.x = w / 2;
+        this.circle.y = h / 2;
+        this.speed = 4 * speedup;
     }
 
     update() {
-        this.speed = 4*speedup;
+        this.speed = 4 * speedup;
         //TODO: send pos to server
-        pos+=this.speed;
+        pos += this.speed;
         //console.log(pos);
 
-        if(this.circle.y<this.maxHeight){
+        if (this.circle.y < this.maxHeight) {
             //pressed['up'] = false;
-            this.v.y=this.speed;
+            this.v.y = this.speed;
             //console.log("too high");
             anim.stop();
             anim.textures = spritesheet.animations.dino;
             anim.play();
             pressed['holding'] = true;
         }
-        if(this.circle.y>this.defY){
+        if (this.circle.y > this.defY) {
             //pressed['down'] = false;
-            this.v.y=0;
+            this.v.y = 0;
             this.circle.y = this.defY;
             pressed['holding'] = false;
             //console.log("too low");
@@ -563,9 +580,9 @@ class Player{
         let x = this.circle.x + this.v.x;
         let y = this.circle.y + this.v.y;
 
-        this.circle.x = Math.min(Math.max(x, this.radius), w-this.radius);
-        this.circle.y = Math.min(Math.max(y, this.radius), w-this.radius);
-        if((this.score % 100) == 0) {
+        this.circle.x = Math.min(Math.max(x, this.radius), w - this.radius);
+        this.circle.y = Math.min(Math.max(y, this.radius), w - this.radius);
+        if ((this.score % 100) == 0) {
             scoreSound.play();
         }
     }
@@ -579,27 +596,27 @@ function onkeydown(ev) {
         case " ":
         case "w":
             jumpSound.play();
-            if(player.circle.y==player.defY) {
+            if (player.circle.y == player.defY) {
                 player.v.y = -player.speed;
                 //console.log("jump");
             }
             pressed['up'] = true;
-            if(!pressed['holding']) {
+            if (!pressed['holding']) {
                 anim.stop();
                 anim.textures = spritesheet.animations.jumpDino;
                 anim.play();
             }
             break;
-        case "ArrowDown": 
+        case "ArrowDown":
         case "s":
             jumpSound.play();
-            if(player.circle.y!=player.defY) {
-                player.v.y = player.speed*3;
+            if (player.circle.y != player.defY) {
+                player.v.y = player.speed * 3;
             }
             pressed['down'] = true;
             //anim = new PIXI.AnimatedSprite(spritesheet.animations.duckDino);
             //anim.play();
-            if(!pressed['holdingDown']) {
+            if (!pressed['holdingDown']) {
                 anim.stop();
                 anim.textures = spritesheet.animations.duckDino;
                 anim.play();
@@ -611,7 +628,7 @@ function onkeydown(ev) {
 //moves on keydown
 function onkeyup(ev) {
     switch (ev.key) {
-        case "ArrowUp": 
+        case "ArrowUp":
         case "Spacebar":
         //spacebar is " " apparently
         case " ":
@@ -620,7 +637,7 @@ function onkeyup(ev) {
             pressed['up'] = false;
             pressed['holding'] = false;
             break;
-        case "ArrowDown": 
+        case "ArrowDown":
         case "s":
             //player.v.y = 0; 
             pressed['down'] = false;
@@ -640,56 +657,56 @@ function scoreLoop() {
     });
     scoreText.text = player.score.toString();
     socket.emit("move");
-    socket.emit("sendPos", pos, () =>{});
+    socket.emit("sendPos", pos, () => { });
     //update map positions;
-    if(started) {
+    if (started) {
         mapSprites[username].x = pos * ratio;
     }
     socket.emit("getAllPos", (result) => {
         let resi = JSON.parse(result);
         //console.log(resi);
 
-        for(let res of resi){
-            if(res['username']==username) {
+        for (let res of resi) {
+            if (res['username'] == username) {
                 continue;
             }
-        if(mapSprites[res['username']]!=null) {
-            mapSprites[res['username']].x=res['pos']*ratio;
-        }else{
-            mapSprites[res['username']]= new PIXI.AnimatedSprite(spritesheet.animations.dino);
-            mapSprites[res['username']].x=res['pos']*ratio;
-            mapSprites[res['username']].y = spriteY;
-            mapSprites[res['username']].width = 16;
-            mapSprites[res['username']].height = 16;
-            mapSprites[res['username']].tint = "#d9ad4e";
-            app.stage.addChild(mapSprites[res['username']]);
-        }
+            if (mapSprites[res['username']] != null) {
+                mapSprites[res['username']].x = res['pos'] * ratio;
+            } else {
+                mapSprites[res['username']] = new PIXI.AnimatedSprite(spritesheet.animations.dino);
+                mapSprites[res['username']].x = res['pos'] * ratio;
+                mapSprites[res['username']].y = spriteY;
+                mapSprites[res['username']].width = 16;
+                mapSprites[res['username']].height = 16;
+                mapSprites[res['username']].tint = "#d9ad4e";
+                app.stage.addChild(mapSprites[res['username']]);
+            }
         }
 
     });
 }
 //death
 function deathKey(ev) {
-    switch(ev.key) {
+    switch (ev.key) {
         case "Enter":
-            document.location.reload();
+            document.location.href = document.location.toString().split("?")[0];
             break;
     }
 }
 //Generate terrain - WILL BE REMOVED
 var thing;
-function generateTerrain(){
+function generateTerrain() {
     let obstacles = [];
-    socket.emit("getObstacles", (res)=>{
+    socket.emit("getObstacles", (res) => {
 
         thing = JSON.parse(res);
         //console.log(thing);
-        for(const i of thing){
+        for (const i of thing) {
             //TODO: add different types of obstacles and also object pool
             let sprite = new PIXI.AnimatedSprite(spritesheet.animations.cactus);
-            let defY = (h/4);
+            let defY = (h / 4);
             sprite.x = app.view.width;
-            sprite.y = defY-sprite.height;
+            sprite.y = defY - sprite.height;
             obstacles.push(new obstacle(i['x'], i['y'], 2, 5, sprite));
             //console.log("added obstacle: " + i['x'] + " " + i['y']);
         }
@@ -705,17 +722,58 @@ function boxesIntersect(a, b) {
     }
     const ab = a.getBounds();
     const bb = b.getBounds();
-    return ab.x + (ab.width*0.6) > bb.x && ab.x < bb.x + (bb.width*0.6) && ab.y + (ab.height*0.9) > bb.y && ab.y < bb.y + (bb.height*0.7);
+    return ab.x + (ab.width * 0.6) > bb.x && ab.x < bb.x + (bb.width * 0.6) && ab.y + (ab.height * 0.9) > bb.y && ab.y < bb.y + (bb.height * 0.7);
 }
 
 function toggleDev() {
     devMode = !devMode;
 }
 
+function hostCommandStartGame() {
+    socket.emit("startRoom", (res) => {
+        //console.log(res);
+    });
+}
+
+function scoreTableLoop() {
+    socket.emit("getAllScores", (res) => {
+        table.setData(res);
+    });
+}
+
+function startGame() {
+    if (pollStart_interval != undefined) {
+        clearInterval(pollStart_interval);
+    }
+    gameStarted = true;
+    player = new Player(0xfcf8ec, 10, { x: 0, y: 0 });
+    window.addEventListener("keydown", onkeydown);
+    window.addEventListener("keyup", onkeyup);
+    gameLoop_interval = setInterval(gameLoop, 1000 / 60);
+    cloudLoop_interval = setInterval(cloudLoop, 1000 / 30);
+    scoreLoop_interval = setInterval(scoreLoop, 100);
+    scoreTableLoop_interval = setInterval(scoreTableLoop, 100);
+}
+
+function pollStart() {
+    socket.emit("getStarted", (res) => {
+        if (res == "started") {
+            startGame();
+        }
+    });
+}
+
 //game starts and everything
-player = new Player(0xfcf8ec, 10, {x:0, y:0});
-window.addEventListener("keydown", onkeydown);
-window.addEventListener("keyup", onkeyup);
-let gameLoop_interval = setInterval(gameLoop, 1000/60);
-let cloudLoop_interval = setInterval(cloudLoop, 1000/30);
-let scoreLoop_interval = setInterval(scoreLoop, 100);
+if (new URLSearchParams(document.location.search).get("room") == "global") {
+    startGame();
+}
+
+if (!gameStarted) {
+    pollStart_interval = setInterval(pollStart, 100);
+}
+
+socket.emit("checkHost", (res) => {
+    if (res == "HOST") {
+        document.getElementById("HostStartGameButton").style.display = "block";
+    }
+});

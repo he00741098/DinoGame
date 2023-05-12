@@ -5,6 +5,7 @@ var path = require('path');
 var port = process.env.PORT || 8125;
 
 let scores = [];
+let rooms = {};
 let gameStarted = false;
 let gameSeed = 0;
 const httpServer = require('http').createServer(function (request, response) {
@@ -77,7 +78,7 @@ io.on("connection", (socket) => {
   //scores[socket.data.id] = 0;
 
 
-  socket.on("registerPlayer", (username, callback) => {
+  socket.on("registerPlayer", (username, roomid, callback) => {
     if(typeof callback !== "function") {
       return;
     }
@@ -89,17 +90,58 @@ io.on("connection", (socket) => {
       callback("EBADREQ");
       return;
     }
+    if(typeof roomid !== "string") {
+      callback("EBADREQ");
+      return;
+    }
     if(typeof scores[username] != "undefined") {
       callback("ETAKEN");
       return;
     }
+
+    if(roomid != "global") {
+      if(typeof rooms[roomid] == "undefined") {
+        rooms[roomid] = {started:false, host:username};
+      }
+      if(rooms[roomid].started) {
+        callback("EALREADYSTARTED");
+        return;
+      }
+    }
+
+    socket.join(roomid);
     socket.data.id = username;
+    socket.data.room = roomid;
     socket.data.registered = true;
-    scores[socket.data.id] = {score:0, pos:0};
+    scores[socket.data.id] = {score:0, pos:0, room:roomid, username:username};
     callback("SUCCESS");
   });
+//Object.values(scores).filter((h) => h.roomid == "hello"); 
+  socket.on("startRoom", (callback) => {
+    if(typeof callback !== "function") {
+      return;
+    }
+    if(!socket.data.registered) {
+      callback("ENOTREG");
+      return;
+    }
+    if(socket.data.room == "global") {
+      callback("EBADREQ")
+      return;
+    }
+    if(typeof rooms[socket.data.room] == "undefined") {
+      callback("EBADREQ");
+      return;
+    }
+    if(rooms[socket.data.room].host != socket.data.id) {
+      callback("ENOTHOST");
+      return;
+    }
+    rooms[socket.data.room].started = true;
+    socket.to(socket.data.room).emit("startGame");
+  });
 
-  socket.on("checkPlayerUsername", (username, callback) => {
+  socket.on("checkPlayerStatus", (username, roomid, callback) => {
     if(typeof callback !== "function") {
       return;
     }
@@ -107,6 +149,17 @@ io.on("connection", (socket) => {
       callback("EBADREQ");
       return;
     }
+    if(typeof roomid !== "string") {
+      callback("EBADREQ");
+      return;
+    }
+    if(typeof rooms[roomid] !== "undefined") {
+      if(rooms[roomid].started) {
+        callback("EALREADYSTARTED");
+        return;
+      }
+    }
+
     if(typeof scores[username] != "undefined") {
       callback("TAKEN");
     } else {
@@ -121,7 +174,50 @@ io.on("connection", (socket) => {
     scores[socket.data.id]["score"] = scores[socket.data.id]["score"]+1;
   });
 
+  socket.on("getStarted", (callback) => {
+    if(typeof callback !== "function") {
+      return;
+    }
+    if(!socket.data.registered) {
+      callback("ENOTREG");
+      return;
+    }
+    if(socket.data.room == "global") {
+      callback("EBADREQ");
+      return;
+    }
+    if(typeof rooms[socket.data.room] !== "undefined") {
+      if(rooms[socket.data.room].started) {
+        callback("started");
+        return;
+      }
+    }
+  });
+
+  socket.on("checkHost", (callback) => {
+    if(typeof callback !== "function") {
+      return;
+    }
+    if(!socket.data.registered) {
+      callback("ENOTREG");
+      return;
+    }
+    if(socket.data.room == "global") {
+      callback("EBADREQ");
+      return;
+    }
+    if(typeof rooms[socket.data.room] !== "undefined") {
+      if(rooms[socket.data.room].host == socket.data.id) {
+        callback("HOST");
+        return;
+      }
+      callback("NOT HOST");
+      return;
+    }
+  });
+
   socket.on("getScore", (callback) => {
+    //Object.values(scores).filter((h) => h.roomid == socket.data.room);
     if(typeof callback !== "function") {
       return;
     }
@@ -137,15 +233,21 @@ io.on("connection", (socket) => {
     if(typeof callback !== "function") {  
       return;
     }
+    let filter = Object.values(scores).filter((h) => h.room == socket.data.room); // NEVER CALLED BECASUE SCORE SOCKET IS SEPERATE
     let score_compat = [];
-    for (let i in scores) {
-      score_compat.push({username: i, score: scores[i]["score"]});
+    for (let i of filter) {
+      score_compat.push({username: i.username, score: i.score});
     }
     callback(score_compat);
   });
 
   socket.on("disconnect", () => {
     delete scores[socket.data.id];
+  });
+
+  socket.on("endPlayer", () => {
+    delete scores[socket.data.id];
+    socket.data.registered = false;
   });
 
   socket.on("sendPos", (pos, callback) => {
@@ -164,12 +266,13 @@ io.on("connection", (socket) => {
   });
 
   socket.on("getAllPos", (callback) => {
-      if(typeof callback !== "function") {
+    if(typeof callback !== "function") {
         return;
     }
+    let filter = Object.values(scores).filter((h) => h.room == socket.data.room);
     let pos_compat = [];
-    for (let i in scores) {
-      pos_compat.push({username: i, pos: scores[i]["pos"]});
+    for (let i of filter) {
+      pos_compat.push({username: i.username, pos: i.pos});
     }
     callback(JSON.stringify(pos_compat));
 
