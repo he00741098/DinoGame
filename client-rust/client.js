@@ -993,11 +993,12 @@ function updateTable(){
 function checkSocket(){
     
     if (socket.readyState == WebSocket.CLOSED || socket.readyState == WebSocket.CLOSING){
-        socket = new WebSocket(host);
-        socket.send(JSON.stringify({"RegPlayer":username}));
-        //TODO:DO room thingies
-        socket.send(JSON.stringify("QuickPlay"));
-        socket.send(JSON.stringify("Ready"));
+        let disconnectText = PIXI.Text("Socket Disconnected - Reload page...", {fontFamily: 'Arial', fontSize: 24, fill: "black", align: 'right'});
+        // socket = new WebSocket(host);
+        // socket.send(JSON.stringify({"RegPlayer":username}));
+        // //TODO:DO room thingies
+        // socket.send(JSON.stringify("QuickPlay"));
+        // socket.send(JSON.stringify("Ready"));
     }
 
 }
