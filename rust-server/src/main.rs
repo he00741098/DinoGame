@@ -129,12 +129,12 @@ async fn process_connection(peer_map:PeerMap, RoomMap:Arc<Mutex<HashMap<String, 
                     if current_room!=string{
                     socket_index= thing;
                     }
-                    x.players[socket_index] = client_command::client_command::Player::new(name.clone());
+                    x.players[socket_index] = client_command::client_command::Player::new(name.clone(), addr);
                 }else if current_room!=string{
 
                 socket_index = x.players.len();
 
-                x.players.push(client_command::client_command::Player::new(name.clone()));
+                x.players.push(client_command::client_command::Player::new(name.clone(), addr));
                
                 }
                 current_room = string;
@@ -190,13 +190,13 @@ async fn process_connection(peer_map:PeerMap, RoomMap:Arc<Mutex<HashMap<String, 
                     if current_room!=string{
                     socket_index= thing;
                     }
-                    x.players[socket_index] = client_command::client_command::Player::new(name.clone());
+                    x.players[socket_index] = client_command::client_command::Player::new(name.clone(), addr);
                     
                 }else if current_room!=string{
 
                 socket_index = x.players.len();
 
-                x.players.push(client_command::client_command::Player::new(name.clone()));
+                x.players.push(client_command::client_command::Player::new(name.clone(), addr));
                
                 }
                 current_room = string;
@@ -220,7 +220,7 @@ async fn process_connection(peer_map:PeerMap, RoomMap:Arc<Mutex<HashMap<String, 
                     let x = guard.get_mut("QuickPlay").unwrap();    
                     socket_index = x.players.len();
     
-                    x.players.push(client_command::client_command::Player::new(name.clone()));
+                    x.players.push(client_command::client_command::Player::new(name.clone(), addr));
                    
                     current_room = string;
     
@@ -360,6 +360,22 @@ async fn gameProccessThread(cur_room:String,peer_map:PeerMap, RoomMap:Arc<Mutex<
     let mut totalTime = 20;
     sleep(Duration::from_millis(10000)).await;
     let mut waiting = true;
+    let mut addrVec= Vec::new();
+//blocks are nice i guess
+    
+    {
+        let rooms = RoomMap.lock();
+        if let Ok(x) = rooms{
+            if let Some(y) = x.get(&cur_room){
+                //let mut count = 0;
+                //let mut total = 0;
+                y.players.iter().for_each(|x|{addrVec.push(x.addr)});
+ 
+            }
+        }
+
+    }
+
 
     loop{
         
@@ -385,7 +401,7 @@ async fn gameProccessThread(cur_room:String,peer_map:PeerMap, RoomMap:Arc<Mutex<
         let serde = serde_json::to_string(&countDownTime::time(totalTime)).unwrap();
         totalTime-=1;
         let message = Message::Text("Countdown!".to_owned()+&serde);
-        broadcast(peer_map.clone(), message).await;
+        pres_broadcast(peer_map.clone(), message, &addrVec).await;
         break;
     }
 
@@ -398,7 +414,7 @@ async fn gameProccessThread(cur_room:String,peer_map:PeerMap, RoomMap:Arc<Mutex<
     let serde = serde_json::to_string(&countDownTime::time(totalTime)).unwrap();
     totalTime-=1;
     let message = Message::Text("Countdown!".to_owned()+&serde);
-    broadcast(peer_map.clone(), message).await;
+    pres_broadcast(peer_map.clone(), message, &addrVec).await;
     if totalTime<=0{
         break;
     }
@@ -435,7 +451,7 @@ if true {
     if truth{
         let serde = serde_json::to_string(&countDownTime::start).unwrap();
         let message = Message::Text("Countdown!".to_owned()+&serde);
-        broadcast(peer_map.clone(), message).await;
+        pres_broadcast(peer_map.clone(), message,&addrVec).await;
     }
 
     //DATA SENDING, TODO: REMOVE GET DATA
@@ -479,10 +495,10 @@ if true {
         if len==0{
             //TODO: make all other threads return
             println!("Winner: {}", &winner);
-            broadcast(peer_map.clone(), Message::Text("GameOver!".to_owned()+&winner)).await;
+            pres_broadcast(peer_map.clone(), Message::Text("GameOver!".to_owned()+&winner),&addrVec).await;
             break;
         }
-        broadcast(peer_map.clone(), message).await;  
+        pres_broadcast(peer_map.clone(), message, &addrVec).await;  
         sleep(Duration::from_millis(100)).await;
     }
 
@@ -505,5 +521,21 @@ async fn broadcast(peer_map:PeerMap, msg:Message){
         }
 
         
+
+}
+
+async fn pres_broadcast(peer_map:PeerMap, msg:Message, addrVec:&Vec<SocketAddr>){
+    //println!("Broadcasting {}", &msg);
+
+    let peers = peer_map.lock().unwrap();
+
+    let broadcast_recipients =
+        peers.iter().filter(|x|addrVec.contains(x.0)).map(|(_, ws_sink)| ws_sink);
+
+    for recp in broadcast_recipients {
+        recp.unbounded_send(msg.clone()).unwrap();
+    }
+
+    
 
 }

@@ -20,7 +20,7 @@ let scoreLoop_interval;
 let socketRenew_interval;
 //let countdown_interval;
 let countdown_Time;
-let table_interval;
+//let table_interval;
 let countingDown = false;
 let w = 512, h=512;
 var ratio;
@@ -458,7 +458,8 @@ function onMessager(Event){
                     }
                     tableData.push({username : res['name'], score: Math.floor(res['x']/70*speedup)});
                 }
-                //table.setData(tableData);
+                updateTable();
+
                 break;
                 case "Obstacles":
                     thing = data;
@@ -563,6 +564,7 @@ function onMessager(Event){
 
 function countdown(){
     console.log("Time Left: " + countdown_Time);
+    socket.send(JSON.stringify("GetData"));
     if(countdown_Time==0){
         deathText.text = "Starting...";
         //clearInterval(countdown_interval);
@@ -1023,7 +1025,7 @@ function startGame(){
     gameLoop_interval = setInterval(gameLoop, 1000/60);
     cloudLoop_interval = setInterval(cloudLoop, 1000/30);
     scoreLoop_interval = setInterval(scoreLoop, 100);
-    table_interval = setInterval(updateTable, 100);
+    //table_interval = setInterval(updateTable, 100);
     socketRenew_interval = setInterval(checkSocket, 5000);
     //socket.send(JSON.stringify("Ready"));
 }

@@ -4,7 +4,14 @@ pub mod client_command {
     use serde::{Deserialize, Serialize};
     use rand::prelude::*;
     const obstacleTypes:[obstacle_type; 13] = [obstacle_type::Cactus, obstacle_type::Cactus1,obstacle_type::Cactus2,obstacle_type::Cactus3,obstacle_type::Cactus4,obstacle_type::Cactus5,obstacle_type::Cactus6,obstacle_type::Cactus7,obstacle_type::Cactus8,obstacle_type::Cactus9,obstacle_type::Cactus10,obstacle_type::Cactus11,obstacle_type::Cactus12];
-
+    use std::{
+        collections::HashMap,
+        env,
+        io::Error as IoError,
+        net::SocketAddr,
+        sync::{Arc, Mutex}, thread::current,
+    };
+    
     #[derive(Debug, Clone, Serialize, Deserialize)]
     pub enum ClientCommand {
         RegPlayer(String),
@@ -122,11 +129,12 @@ pub mod client_command {
         pub x: f64,
         pub y: f64,
         pub speed: f64,   
+        pub addr: SocketAddr,
         
     }
 
     impl Player{
-        pub fn new(name:String) -> Player{
+        pub fn new(name:String, addr: SocketAddr) -> Player{
             Player{
                 name,
                 isReady: false,
@@ -134,6 +142,7 @@ pub mod client_command {
                 x: 0.0,
                 y: 0.0,
                 speed: 3.0,
+                addr:addr,
             }
         }
     }
