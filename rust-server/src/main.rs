@@ -357,6 +357,7 @@ async fn process_connection(peer_map:PeerMap, RoomMap:Arc<Mutex<HashMap<String, 
 
 async fn gameProccessThread(cur_room:String,peer_map:PeerMap, RoomMap:Arc<Mutex<HashMap<String, Room>>>){
     println!("Thread Starting, 328");
+    let mut totalTime = 20;
     sleep(Duration::from_millis(10000)).await;
     let mut waiting = true;
 
@@ -381,7 +382,8 @@ async fn gameProccessThread(cur_room:String,peer_map:PeerMap, RoomMap:Arc<Mutex<
         sleep(Duration::from_millis(5000)).await;
     }else{
         
-        let serde = serde_json::to_string(&countDownTime::time(20)).unwrap();
+        let serde = serde_json::to_string(&countDownTime::time(totalTime)).unwrap();
+        totalTime-=1;
         let message = Message::Text("Countdown!".to_owned()+&serde);
         broadcast(peer_map.clone(), message).await;
         break;
@@ -389,6 +391,37 @@ async fn gameProccessThread(cur_room:String,peer_map:PeerMap, RoomMap:Arc<Mutex<
 
 
     }
+    //better countdown
+    let mut playerCount = 0;
+    loop{
+    sleep(Duration::from_millis(1000)).await;
+    let serde = serde_json::to_string(&countDownTime::time(totalTime)).unwrap();
+    totalTime-=1;
+    let message = Message::Text("Countdown!".to_owned()+&serde);
+    broadcast(peer_map.clone(), message).await;
+    if totalTime<=0{
+        break;
+    }
+
+//check for new players joining
+if true {
+    let rooms = RoomMap.lock();
+    if let Ok(x) = rooms{
+        if let Some(y) = x.get(&cur_room){
+            let mut count = 0;
+            let mut total = 0;
+            y.players.iter().for_each(|x|{if x.isReady{count+=1} if x.name!=*""{total+=1}});
+            if total>playerCount{
+                totalTime+=5;
+                playerCount = total;
+            }
+        }
+    }
+}
+
+    }
+
+
     let mut truth = false;
     if true{
     let rooms = RoomMap.lock();
@@ -438,13 +471,14 @@ async fn gameProccessThread(cur_room:String,peer_map:PeerMap, RoomMap:Arc<Mutex<
             //TODO: make all other threads return or something
             println!("Deleting room 441");
             guard.remove(&cur_room);
-            break;
+            //break;
         }
 
         }
 
         if len==0{
             //TODO: make all other threads return
+            println!("Winner: {}", &winner);
             broadcast(peer_map.clone(), Message::Text("GameOver!".to_owned()+&winner)).await;
             break;
         }

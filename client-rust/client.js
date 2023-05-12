@@ -18,7 +18,10 @@ let gameLoop_interval;
 let cloudLoop_interval;
 let scoreLoop_interval;
 let socketRenew_interval;
+//let countdown_interval;
+let countdown_Time;
 let table_interval;
+let countingDown = false;
 let w = 512, h=512;
 var ratio;
 var table = new Tabulator("#score-table", {
@@ -410,7 +413,10 @@ function onMessager(Event){
             socket.send(JSON.stringify("GetObstacles"));
             document.getElementById("inputer").style.display = "none";
             document.getElementById("GamePage").style.display = "block";
-            
+            deathText = new PIXI.Text("Waiting for game to start...", {fontFamily: 'Arial', fontSize: 24, fill: "black", align: 'right'});
+            deathText.anchor.x = -1;
+            deathText.anchor.y = -5;
+            app.stage.addChild(deathText);
 
 
             break;
@@ -421,7 +427,13 @@ function onMessager(Event){
             break;
         default:
             let type = Event.data.slice(0, Event.data.indexOf("!"));
-            let data = JSON.parse(Event.data.slice(Event.data.indexOf("!")+1));
+            let data = "";
+            try{
+            data = JSON.parse(Event.data.slice(Event.data.indexOf("!")+1));
+            }catch{
+                console.log("O_O");
+                data="";
+            }
             //console.log(type +", "+data);
             switch(type){
                 case "Data":
@@ -510,25 +522,63 @@ function onMessager(Event){
                 case "Countdown":
                     switch(data){
                         case "start":
+                            app.stage.removeChild(deathText);
                             startGame();
                         break;
                         case "stopped":
                             //TODO: implement stop, gameover thing
                         break;
                         default:
-                        let obj = JSON.parse(data);
-                        if (obj["time"] !=null){
-                            //TODO: do something with countdown data
+                        console.log(data);
+                        //let obj = JSON.parse(data);
+                        if (data["time"] !=null){
+                            countdown_Time = data["time"];
+                            //countdown_interval = setInterval(countdown, 1000);
+                            countdown();
                         }
                         break;    
 
                     }
                 break;
                 case "GameOver":
-                    alert("Winner: "+data);
+                    //gameLoop_interval = setInterval(gameLoop, 1000/60);
+                    //cloudLoop_interval = setInterval(cloudLoop, 1000/30);
+                    //scoreLoop_interval = setInterval(scoreLoop, 100);
+                    clearInterval(gameLoop_interval);
+                    clearInterval(scoreLoop_interval);
+                    
+                    deathText.text = Event.data.slice(Event.data.indexOf("!")+1)+" Wins!";
+                    deathText.anchor.x=-3;
+                    deathText.anchor.y=-2.9;
+                    deathText.width*=1.5;
+                    deathText.height*=1.5;
+                    app.stage.addChild(deathText);
+                    break;
             }
             break;
     }
+}
+
+//counts down with countdown_Time variable
+
+function countdown(){
+    console.log("Time Left: " + countdown_Time);
+    if(countdown_Time==0){
+        deathText.text = "Starting...";
+        //clearInterval(countdown_interval);
+    }
+    else if (!countingDown){
+        countingDown = true;
+        deathText.text = deathText.text + countdown_Time;
+    console.log("Countdown Started");
+    }
+    else{
+        //console.log("Counting Down: "+(deathText.text.length-((countingDown+1)+"").length));
+        //;-; - console.log("Debugging: "+(""+(countingDown+1)).length+" "+(""+(countingDown+1)) +"\n"+"Total len: "+deathText.text.length);
+        deathText.text = deathText.text.slice(0, deathText.text.length-(""+(countdown_Time+1)).length) + countdown_Time;
+    }
+    //countdown_Time--;
+
 }
 
 window.onload = function (){
@@ -968,6 +1018,7 @@ function startGame(){
     pressed['holdingDown'] = false;
     postNum = 0;
     spriteY = 285;
+    countingDown = false;
     
     gameLoop_interval = setInterval(gameLoop, 1000/60);
     cloudLoop_interval = setInterval(cloudLoop, 1000/30);
