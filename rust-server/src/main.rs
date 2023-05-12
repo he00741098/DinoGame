@@ -397,7 +397,19 @@ async fn gameProccessThread(cur_room:String,peer_map:PeerMap, RoomMap:Arc<Mutex<
         println!("WAITING, 349");
         sleep(Duration::from_millis(5000)).await;
     }else{
-        
+        //reload room map stuff while here
+        {
+            let rooms = RoomMap.lock();
+            if let Ok(x) = rooms{
+                if let Some(y) = x.get(&cur_room){
+                    //let mut count = 0;
+                    //let mut total = 0;
+                    y.players.iter().for_each(|x|{addrVec.push(x.addr)});
+     
+                }
+            }
+    
+        }
         let serde = serde_json::to_string(&countDownTime::time(totalTime)).unwrap();
         totalTime-=1;
         let message = Message::Text("Countdown!".to_owned()+&serde);
@@ -410,6 +422,19 @@ async fn gameProccessThread(cur_room:String,peer_map:PeerMap, RoomMap:Arc<Mutex<
     //better countdown
     let mut playerCount = 0;
     loop{
+        {
+            let rooms = RoomMap.lock();
+            if let Ok(x) = rooms{
+                if let Some(y) = x.get(&cur_room){
+                    //let mut count = 0;
+                    //let mut total = 0;
+                    y.players.iter().for_each(|x|{addrVec.push(x.addr)});
+     
+                }
+            }
+    
+        }
+
     sleep(Duration::from_millis(1000)).await;
     let serde = serde_json::to_string(&countDownTime::time(totalTime)).unwrap();
     totalTime-=1;
