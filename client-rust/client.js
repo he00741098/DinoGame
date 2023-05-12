@@ -441,7 +441,8 @@ function onMessager(Event){
                 tableData = [];
                 for(let res of data){
                     if(res['name']==username) {
-                        player.score = Math.floor(res['x']/70*speedup);
+                        //TODO: Maybe do dynamic thingies
+                        player.score = Math.floor(res['x']/70);
                         tableData.push({username : res['name'], score: player.score});
                         continue;
                     }
@@ -456,7 +457,7 @@ function onMessager(Event){
                         mapSprites[res['name']].tint = "#d9ad4e";
                         app.stage.addChild(mapSprites[res['name']]);
                     }
-                    tableData.push({username : res['name'], score: Math.floor(res['x']/70*speedup)});
+                    tableData.push({username : res['name'], score: Math.floor(res['x']/70)});
                 }
                 updateTable();
 
