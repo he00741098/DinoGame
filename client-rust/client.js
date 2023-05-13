@@ -993,7 +993,7 @@ function updateTable(){
 function checkSocket(){
     
     if (socket.readyState == WebSocket.CLOSED || socket.readyState == WebSocket.CLOSING){
-        let disconnectText = PIXI.Text("Socket Disconnected - Reload page...", {fontFamily: 'Arial', fontSize: 24, fill: "black", align: 'right'});
+        let disconnectText = new PIXI.Text("Socket Disconnected - Reload page...", {fontFamily: 'Arial', fontSize: 24, fill: "black", align: 'right'});
         // socket = new WebSocket(host);
         // socket.send(JSON.stringify({"RegPlayer":username}));
         // //TODO:DO room thingies
@@ -1028,8 +1028,8 @@ function startGame(){
     cloudLoop_interval = setInterval(cloudLoop, 1000/30);
     scoreLoop_interval = setInterval(scoreLoop, 100);
     //table_interval = setInterval(updateTable, 100);
-    socketRenew_interval = setInterval(checkSocket, 5000);
+    
     //socket.send(JSON.stringify("Ready"));
 }
-
+socketRenew_interval = setInterval(checkSocket, 5000);
 //startGame();
