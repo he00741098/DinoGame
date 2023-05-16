@@ -39,6 +39,9 @@ const image = new Image();
 image.src = '/images/DinoSprites.png';
 const floorImage = new Image();
 floorImage.src = '/images/floor.png';
+const stunImage = new Image();
+stunImage.src = '/images/DinoStunned.png';
+
 const atlasData = {
 	frames: {
 		Dino1: {
@@ -353,10 +356,64 @@ const floorData ={
         floor25:['floor25']
 	}
 }
+const stunData ={
+    frames: {
+        frame1: {
+            frame: {x: 0, y: 0, w:60, h:60},
+            sourceSize: {w:32, h:32},
+            spriteSourceSize: {x:0,y:0,w:32,h:32}
+        },
+        frame2: {
+            frame: {x: 60, y: 0, w:60, h:60},
+            sourceSize: {w:32, h:32},
+            spriteSourceSize: {x:0,y:0,w:32,h:32}
+        },
+        frame3: {
+            frame: {x: 120, y: 0, w:60, h:60},
+            sourceSize: {w:32, h:32},
+            spriteSourceSize: {x:0,y:0,w:32,h:32}
+        },
+        frame4: {
+            frame: {x: 180, y: 0, w:60, h:60},
+            sourceSize: {w:32, h:32},
+            spriteSourceSize: {x:0,y:0,w:32,h:32}
+        },
+        frame5: {
+            frame: {x: 240, y: 0, w:60, h:60},
+            sourceSize: {w:32, h:32},
+            spriteSourceSize: {x:0,y:0,w:32,h:32}
+        },
+        frame6: {
+            frame: {x: 0, y: 60, w:60, h:60},
+            sourceSize: {w:32, h:32},
+            spriteSourceSize: {x:0,y:0,w:32,h:32}
+        },
+        frame7: {
+            frame: {x: 60, y: 60, w:60, h:60},
+            sourceSize: {w:32, h:32},
+            spriteSourceSize: {x:0,y:0,w:32,h:32}
+        }
+	},
+	meta: {
+		image: stunImage,
+		format: 'RGBA8888',
+		size: { w: 128, h: 32 },
+		scale: 1
+	},
+	animations: {
+        stuned:['frame1', 'frame2','frame3','frame4','frame5','frame6','frame7']
+
+	}
+}
+
+
+
 const spritesheet = new PIXI.Spritesheet(PIXI.BaseTexture.from(atlasData.meta.image),atlasData);
 const floorsheet = new PIXI.Spritesheet(PIXI.BaseTexture.from(floorData.meta.image),floorData);
+const stunSheet = new PIXI.Spritesheet(PIXI.BaseTexture.from(stunData.meta.image), stunData);
 spritesheet.parse();
 floorsheet.parse();
+stunSheet.parse();
 let speedup = 1.5;
 let pos = 0;
 let clouds = [];
@@ -790,6 +847,9 @@ function move(obstacle_list){
                 // deathText.anchor.y = -5;
                 // app.stage.addChild(deathText);
                 // window.addEventListener("keydown", deathKey);
+                anim.stop();
+                anim.textures=stunSheet.animations.stuned;
+                anim.play();
             
             }
 
