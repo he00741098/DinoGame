@@ -1,5 +1,6 @@
 document.getElementById("inputer").style.display = "block";
 document.getElementById("GamePage").style.display = "none";
+document.getElementById("rooms").style.display = "none";
 
 //wss://rustdinogame.herokuapp.com/
 const host = "wss://rustdinogame.herokuapp.com/";
@@ -10,6 +11,7 @@ const jumpSound = new Audio("./sounds/press.mp3");
 const scoreSound = new Audio("./sounds/reached.mp3");
 let username = "";
 let box = document.getElementById("usernamebox");
+let roomBox = document.getElementById("roomname");
 var devMode = false;
 var mapSprites = [];
 var dead = false;
@@ -460,27 +462,62 @@ onMessager(Event);
 
 }
 
+function quickPlay(){
+    console.log("Joining QuickPlay");
+    socket.send(JSON.stringify("QuickPlay"));
+
+
+}
+
+function createRoom(){
+    console.log("Creating "+roomBox.value);
+    socket.send(JSON.stringify({"CreateRoom":roomBox.value}));
+
+}
+
+function joinRoom(){
+    console.log("Joining "+roomBox.value);
+    socket.send(JSON.stringify({"JoinRoom":roomBox.value}));  
+
+}
+
+
 function onMessager(Event){
     switch(Event.data){
         case "RegPlayer":
             console.log("Registered");
-
-            socket.send(JSON.stringify("QuickPlay"));
-            socket.send(JSON.stringify("Ready"));
-            socket.send(JSON.stringify("GetObstacles"));
+            //quickPlay();
             document.getElementById("inputer").style.display = "none";
-            document.getElementById("GamePage").style.display = "block";
-            deathText = new PIXI.Text("Waiting for game to start...", {fontFamily: 'Arial', fontSize: 24, fill: "black", align: 'right'});
-            deathText.anchor.x = -1;
-            deathText.anchor.y = -5;
-            app.stage.addChild(deathText);
-
+            document.getElementById("rooms").style.display = "block";
+            //document.getElementById("GamePage").style.display = "block";
 
             break;
         case "NameTaken":
             //box.value = "";
             console.log("NameTaken");
             alert("Name taken");
+            break;
+        case "RoomAlreadyExists":
+            console.log("RoomAlreadyExists");
+            alert("Room already exists");
+            break;
+        case "RoomCreated":
+            console.log("RoomCreated");
+            joinRoom();
+            break;
+        case "RoomDoesNotExist":
+            alert("Room does not exist");
+            break;
+        case "RoomJoined":
+            socket.send(JSON.stringify("Ready"));
+            socket.send(JSON.stringify("GetObstacles"));
+            document.getElementById("inputer").style.display = "none";
+            document.getElementById("rooms").style.display = "none";
+            document.getElementById("GamePage").style.display = "block";
+            deathText = new PIXI.Text("Waiting for game to start...", {fontFamily: 'Arial', fontSize: 24, fill: "black", align: 'right'});
+            deathText.anchor.x = -1;
+            deathText.anchor.y = -5;
+            app.stage.addChild(deathText);
             break;
         default:
             let type = Event.data.slice(0, Event.data.indexOf("!"));
@@ -573,8 +610,9 @@ function onMessager(Event){
                     sprite.x = app.view.width;
                     sprite.y = defY-sprite.height;
 
-
+                    //TODO recycle.
                     obstacles.push(new obstacle(i['xPos'], 0, 2, 5, sprite));
+
                 }
                 //    startGame();
                 break;
@@ -618,6 +656,20 @@ function onMessager(Event){
     }
 }
 
+
+function back(){
+    clearInterval(gameLoop_interval);
+    clearInterval(scoreLoop_interval);
+    clearInterval(cloudLoop_interval);
+    app.stage.removeChild(deathText);
+    //app.stage.removeChild()
+    socket.send(JSON.stringify("LeaveRoom"));
+    document.getElementById("inputer").style.display = "none";
+    document.getElementById("rooms").style.display = "block";
+    document.getElementById("GamePage").style.display = "none";
+}
+
+
 //counts down with countdown_Time variable
 
 function countdown(){
@@ -635,7 +687,7 @@ function countdown(){
     else{
         //console.log("Counting Down: "+(deathText.text.length-((countingDown+1)+"").length));
         //;-; - console.log("Debugging: "+(""+(countingDown+1)).length+" "+(""+(countingDown+1)) +"\n"+"Total len: "+deathText.text.length);
-        deathText.text = deathText.text.slice(0, deathText.text.length-(""+(countdown_Time+1)).length) + countdown_Time;
+        deathText.text = "Waiting for game to start... " + countdown_Time;
     }
     //countdown_Time--;
 

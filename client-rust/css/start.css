@@ -3,6 +3,11 @@ html {
     background-size: cover;
 }
 
+@font-face {
+    font-family: minecraft;
+    src: url("../fonts/Minecraft.ttf");
+}
+
 .center {
     margin: 0;
     position: absolute;
@@ -19,7 +24,7 @@ a:hover {
     filter: invert(100%);
 }
 
-input {
+#inputer input {
     height: 100px;
     width: 582px;
     font-size: 48px;
@@ -27,6 +32,72 @@ input {
     color: white;
 }
 
+
+
+
+
 ::placeholder {
     color: darkgray;
+}
+
+#rooms{
+    margin:auto;
+    position:relative;
+    display:none;
+    text-align: center;
+    top:25%;
+    padding:10px;
+}
+
+#rooms ul{
+    list-style-type: none;
+    margin: 0;
+    padding: 0;
+    overflow: hidden;
+    left:50%;
+    top:50%;
+}
+#rooms ul button{
+    font-family: minecraft;
+    background-color: #0b6ace;
+    border: none;
+    color: white;
+    padding: 15px 32px;
+    text-align: center;
+    margin: 4px 2px;
+    cursor: pointer;
+    font-size: 26px;
+    transition: all 0.2s ease-in-out;
+    width:40%;
+}
+
+#rooms input{
+
+    height: 100px;
+    width: 40%;
+    font-size: 35px;
+    background-color: gray;
+    color: white;
+
+}
+
+#GamePage{
+    display:none;
+
+}
+
+
+#GamePage button{
+    font-family: minecraft;
+    background-color: #0b6ace;
+    border: none;
+    color: white;
+    padding: 15px 32px;
+    text-align: center;
+    margin: 4px 2px;
+    cursor: pointer;
+    font-size: 26px;
+    transition: all 0.2s ease-in-out;
+    width:30%;
+    box-shadow: #0b6ace 0px 0px 10px 0px;
 }

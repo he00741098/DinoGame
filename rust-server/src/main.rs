@@ -151,8 +151,13 @@ async fn process_connection(peer_map:PeerMap, RoomMap:Arc<Mutex<HashMap<String, 
                     drop(x);
                     tokio::spawn(gameProccessThread(current_room.clone(),peer_map.clone(), RoomMap.clone()));
                 }
+                let message = Message::Text("RoomJoined".to_owned());
+                peer_map.lock().unwrap().get(&addr).unwrap().unbounded_send(message).unwrap();
             }, 
-                _=>{},
+                _=>{
+                    let message = Message::Text("RoomDoesNotExist".to_owned());
+                    peer_map.lock().unwrap().get(&addr).unwrap().unbounded_send(message).unwrap();
+                },
             }
             
         
@@ -210,7 +215,8 @@ async fn process_connection(peer_map:PeerMap, RoomMap:Arc<Mutex<HashMap<String, 
                     drop(x);
                     tokio::spawn(gameProccessThread(current_room.clone(),peer_map.clone(), RoomMap.clone()));
                 }
-               
+                let message = Message::Text("RoomJoined".to_owned());
+                peer_map.lock().unwrap().get(&addr).unwrap().unbounded_send(message).unwrap();
             }, 
                 _=>{
                     //TODO: Make QUICKPLAY if it doesn't exist.
@@ -233,6 +239,8 @@ async fn process_connection(peer_map:PeerMap, RoomMap:Arc<Mutex<HashMap<String, 
                         drop(x);
                         tokio::spawn(gameProccessThread(current_room.clone(),peer_map.clone(), RoomMap.clone()));
                     }
+                    let message = Message::Text("RoomJoined".to_owned());
+                    peer_map.lock().unwrap().get(&addr).unwrap().unbounded_send(message).unwrap();
                 },
             }
             
@@ -308,6 +316,32 @@ async fn process_connection(peer_map:PeerMap, RoomMap:Arc<Mutex<HashMap<String, 
                 },
             }
 
+        },
+        ClientCommand::GetRoomList =>{
+            
+            let guard = RoomMap.lock().unwrap();
+            let serde = serde_json::to_string(&guard.keys().collect::<Vec<&String>>()).unwrap();
+            let message = Message::Text("Rooms!".to_owned()+&serde);
+            peer_map.lock().unwrap().get(&addr).unwrap().unbounded_send(message).unwrap();
+
+        },
+        ClientCommand::CreateRoom(x) if registered&&current_room==*""=>{
+            let mut guard = RoomMap.lock().unwrap();
+            let room = guard.get_mut(&x);
+            match room{
+                Some(y) =>{
+                    //TODO: Create ROOM
+                    let message = Message::Text("RoomAlreadyExists".to_string());
+                    peer_map.lock().unwrap().get(&addr).unwrap().unbounded_send(message).unwrap();
+                },
+                _=>{
+                    let y = Room::new(x.clone(), Vec::new());
+                    guard.insert(x.clone(), y);
+                    let message = Message::Text("RoomCreated".to_string());
+                    peer_map.lock().unwrap().get(&addr).unwrap().unbounded_send(message).unwrap();
+                },
+            }
+        
         },
         ClientCommand::Error => println!("Error"),
          _ => println!("Error"),   

@@ -8,12 +8,13 @@
     </head>
 
     <body>
-        <div id = "GamePage" style = display:none">
+        <div id = "GamePage">
         <div class = "centerer">
         <div id="container"></div>
         </div>
         <br><br><br><br><br><br><br><br><br>
         <div id="score-table"></div>
+        <a href="javascript:back()"><button id="back">Back</button></a>
         </div>
 
         <div class="center" id="inputer">
@@ -22,6 +23,16 @@
                 <img src="./images/start.png" height="300px">
             </a>
         </div>
+        <div class="Room_list" id = "rooms">
+            <ul>
+                <li><a href="javascript:quickPlay()"><button>Quick Play</button></a></li>
+                <li><input id="roomname" placeholder="PUT ROOM NAME HERE" type="text"></li>
+                <li><a href="javascript:joinRoom()"><button>JOIN ROOM</button></a></li>
+                <li><a href="javascript:createRoom()"><button>CREATE ROOM</button></a></li>
+            </ul>
+        </div>
+
+
     </body>
 
     <script type="text/javascript" src="./lib/tabulator.min.js"></script>
