@@ -3,7 +3,7 @@ document.getElementById("GamePage").style.display = "none";
 document.getElementById("rooms").style.display = "none";
 
 //wss://rustdinogame.herokuapp.com/
-const host = "wss://he00741098-opulent-space-cod-xqr9q75vxprf67w5-8125.preview.app.github.dev/";
+const host = "wss://rustdinogame.herokuapp.com/";
 const container = document.getElementById("container");
 const socket = new WebSocket(host);
 const deathSound = new Audio("./sounds/hit.mp3");
