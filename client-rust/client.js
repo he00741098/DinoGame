@@ -3,7 +3,7 @@ document.getElementById("GamePage").style.display = "none";
 document.getElementById("rooms").style.display = "none";
 
 //wss://rustdinogame.herokuapp.com/
-const host = "wss://rustdinogame.herokuapp.com/";
+const host = "wss://he00741098-opulent-space-cod-xqr9q75vxprf67w5-8125.preview.app.github.dev/";
 const container = document.getElementById("container");
 const socket = new WebSocket(host);
 const deathSound = new Audio("./sounds/hit.mp3");
@@ -426,7 +426,7 @@ let app = new PIXI.Application({width: 1106, height: 310});
 app.renderer.backgroundColor = 0xffffff;
 app.stage.sortableChildren = true;
 let scoreText = new PIXI.Text("0", {fontFamily: 'Arial', fontSize: 24, fill: "black", align: 'right'});
-const obstacles = [];
+var obstacles = [];
 var thing;
 let floor = [];
 let index = 0;
@@ -509,6 +509,12 @@ function onMessager(Event){
             alert("Room does not exist");
             break;
         case "RoomJoined":
+            app.stage.removeChild(deathText);
+            // if(mapSprite!=null){
+            //     app.stage.removeChild(mapSprite);
+            app.stage.addChild(scoreText);
+            app.stage.addChild(anim);
+            // }
             socket.send(JSON.stringify("Ready"));
             socket.send(JSON.stringify("GetObstacles"));
             document.getElementById("inputer").style.display = "none";
@@ -519,6 +525,9 @@ function onMessager(Event){
             deathText.anchor.y = -5;
             app.stage.addChild(deathText);
             break;
+        case "RoomStarted":
+            alert("Room Started Already");
+        break;
         default:
             let type = Event.data.slice(0, Event.data.indexOf("!"));
             let data = "";
@@ -643,7 +652,6 @@ function onMessager(Event){
                     //scoreLoop_interval = setInterval(scoreLoop, 100);
                     clearInterval(gameLoop_interval);
                     clearInterval(scoreLoop_interval);
-                    
                     deathText.text = Event.data.slice(Event.data.indexOf("!")+1)+" Wins!";
                     deathText.anchor.x=-3;
                     deathText.anchor.y=-2.9;
@@ -661,7 +669,36 @@ function back(){
     clearInterval(gameLoop_interval);
     clearInterval(scoreLoop_interval);
     clearInterval(cloudLoop_interval);
+    //deathText.text = "";
+    obstacles = [];
     app.stage.removeChild(deathText);
+    for(i of mapSprites){
+        app.stage.removeChild(i);
+    }
+    app.stage.removeChildren();
+    // for(i of obstacle_list){
+    //     app.stage.removeChild(i);
+    // }
+    let x = 0;
+    for(let c of clouds) {
+        app.stage.addChild(c);
+        c.x=x;
+        let randomsize=getRandomInt(60,70)
+        c.width=randomsize;
+        c.height=randomsize;
+        x+=getRandomInt(100,500);
+        c.y=getRandomInt(-50,30);
+    }
+    x=0;
+    for(let p of floor){
+        //console.log("Adding");
+        app.stage.addChild(p);
+        p.x=x;
+        x+=50;
+        p.y = (app.view.height / 2)+5;
+    }
+    scoreText.text = "0";
+    pos = 0;
     //app.stage.removeChild()
     socket.send(JSON.stringify("LeaveRoom"));
     document.getElementById("inputer").style.display = "none";
@@ -698,8 +735,8 @@ window.onload = function (){
     anim.anchor.set(0.5);
     anim.x = app.view.width / 6;
     anim.y = (app.view.height / 2)+10;
-    app.stage.addChild(anim);
-    app.stage.addChild(scoreText);
+    //app.stage.addChild(anim);
+    //app.stage.addChild(scoreText);
     anim.zIndex = 5;
     //app.stage.addChild(cloud);
     //put dino on "map"

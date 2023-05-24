@@ -124,6 +124,11 @@ async fn process_connection(peer_map:PeerMap, RoomMap:Arc<Mutex<HashMap<String, 
             let mut ready = false;
             match room_map{
                Some(x) =>{ 
+                if x.isStarted{
+                    let message = Message::Text("RoomStarted".to_owned());
+                    peer_map.lock().unwrap().get(&addr).unwrap().unbounded_send(message).unwrap();    
+                }else{
+
                 let pos = x.players.iter().position(|p|p.name.len()<=1);
                 if let Some(thing) = pos{
                     if current_room!=string{
@@ -153,7 +158,7 @@ async fn process_connection(peer_map:PeerMap, RoomMap:Arc<Mutex<HashMap<String, 
                 }
                 let message = Message::Text("RoomJoined".to_owned());
                 peer_map.lock().unwrap().get(&addr).unwrap().unbounded_send(message).unwrap();
-            }, 
+            }}, 
                 _=>{
                     let message = Message::Text("RoomDoesNotExist".to_owned());
                     peer_map.lock().unwrap().get(&addr).unwrap().unbounded_send(message).unwrap();
@@ -190,6 +195,11 @@ async fn process_connection(peer_map:PeerMap, RoomMap:Arc<Mutex<HashMap<String, 
             let mut ready = false;
             match room_map{
                Some(x) =>{ 
+                if x.isStarted{
+                    let message = Message::Text("RoomStarted".to_owned());
+                    peer_map.lock().unwrap().get(&addr).unwrap().unbounded_send(message).unwrap();    
+                }else{
+
                 let pos = x.players.iter().position(|p|p.name.len()<=1);
                 if let Some(thing) = pos {
                     if current_room!=string{
@@ -217,6 +227,7 @@ async fn process_connection(peer_map:PeerMap, RoomMap:Arc<Mutex<HashMap<String, 
                 }
                 let message = Message::Text("RoomJoined".to_owned());
                 peer_map.lock().unwrap().get(&addr).unwrap().unbounded_send(message).unwrap();
+               }
             }, 
                 _=>{
                     //TODO: Make QUICKPLAY if it doesn't exist.
@@ -390,7 +401,7 @@ async fn process_connection(peer_map:PeerMap, RoomMap:Arc<Mutex<HashMap<String, 
 }
 
 async fn gameProccessThread(cur_room:String,peer_map:PeerMap, RoomMap:Arc<Mutex<HashMap<String, Room>>>){
-    println!("Thread Starting, 328");
+    println!("Thread Starting");
     let mut totalTime = 20;
     sleep(Duration::from_millis(10000)).await;
     let mut waiting = true;
@@ -454,7 +465,7 @@ async fn gameProccessThread(cur_room:String,peer_map:PeerMap, RoomMap:Arc<Mutex<
 
     }
     //better countdown
-    let mut playerCount = 0;
+    let mut playerCount = 1;
     loop{
         {
             let rooms = RoomMap.lock();
@@ -500,9 +511,11 @@ if true {
     let mut truth = false;
     if true{
     let rooms = RoomMap.lock();
-    if let Ok(x) = rooms{
-        if let Some(y) = x.get(&cur_room){
+    if let Ok(mut x) = rooms{
+        if let Some(y) = x.get_mut(&cur_room){
             //TODO: figure out why I put this here
+            println!("Room ready: {}",y.isStarted);
+            y.isStarted=true;
             truth = true;
         }
     }
