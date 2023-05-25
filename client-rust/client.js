@@ -697,7 +697,7 @@ function back(){
         x+=50;
         p.y = (app.view.height / 2)+5;
     }
-    scoreText.text = "0";
+    //scoreText.text = "0";
     pos = 0;
     //app.stage.removeChild()
     socket.send(JSON.stringify("LeaveRoom"));
@@ -1085,6 +1085,7 @@ function scoreLoop() {
     // socket.emit("getScore", (res) => {
     //     player.score = res;
     // });
+    //console.log("posting: ");
     scoreText.text = player.score.toString();
     //socket.emit("move");
     socket.send(JSON.stringify({"PostPos":[postNum, pos, anim.y]}));
@@ -1169,7 +1170,7 @@ function startGame(){
     pressed = {};
     pressed['holding']=false;
     pressed['holdingDown'] = false;
-    postNum = 0;
+    //postNum = 0;
     spriteY = 285;
     countingDown = false;
     
