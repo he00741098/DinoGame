@@ -88,14 +88,14 @@ async fn process_connection(peer_map:PeerMap, RoomMap:Arc<Mutex<HashMap<String, 
 
     // Insert the write part of this peer to the peer map.
     let (tx, rx) = unbounded();
-    peer_map.lock().unwrap().insert(addr, tx);
+    peer_map.lock().expect("Peer lock error 91").insert(addr, tx);
 
 
     let (outgoing, incoming) = ws_stream.split();
 
     let broadcast_incoming = incoming.try_for_each(|msg| {
         
-        println!("Received a message from {}: {}", addr, msg.to_text().unwrap());
+        println!("Received a message from {}: {}", addr, msg.to_text().expect("TO Text error 98"));
 
         let command = serde_json::from_str::<client_command::client_command::ClientCommand>(msg.to_text().unwrap_or("Error")).unwrap_or(client_command::client_command::ClientCommand::Error);
         //println!("{:?}", command);
@@ -104,29 +104,29 @@ async fn process_connection(peer_map:PeerMap, RoomMap:Arc<Mutex<HashMap<String, 
 
 
             ClientCommand::RegPlayer(string) if !registered=> {
-                let mut guard = names.lock().unwrap();
+                let mut guard = names.lock().expect("Name lock error 107");
                 let count = guard.iter().filter(|x| x==&&string).count();
                 if count==0 && string.len()>1{
                     guard.push(string.clone());
                     let message = Message::Text("RegPlayer".to_string());
-                    peer_map.lock().unwrap().get(&addr).unwrap().unbounded_send(message).unwrap();
+                    peer_map.lock().expect("Peer map lock error 112").get(&addr).expect("Get error 112").unbounded_send(message).expect("Send error 112");
                     name = string;
                     registered = true;
                 }else{
                     let message = Message::Text("NameTaken".to_string());
-                    peer_map.lock().unwrap().get(&addr).unwrap().unbounded_send(message).unwrap();
+                    peer_map.lock().expect("Peer map lock error 117").get(&addr).expect("Get error 117").unbounded_send(message).expect("Send error 117");
                 }
 
             },
         ClientCommand::JoinRoom(string) if registered&&current_room==*""=> {
-            let mut guard = RoomMap.lock().unwrap();
+            let mut guard = RoomMap.lock().expect("Room lock error 122");
             let room_map = guard.get_mut(&string);
             let mut ready = false;
             match room_map{
                Some(x) =>{ 
                 if x.isStarted{
                     let message = Message::Text("RoomStarted".to_owned());
-                    peer_map.lock().unwrap().get(&addr).unwrap().unbounded_send(message).unwrap();    
+                    peer_map.lock().expect("Peer lock error 129").get(&addr).expect("Peer lock error 129").unbounded_send(message).expect("Send error 129");    
                 }else{
 
                 let pos = x.players.iter().position(|p|p.name.len()<=1);
@@ -153,15 +153,16 @@ async fn process_connection(peer_map:PeerMap, RoomMap:Arc<Mutex<HashMap<String, 
                     ready = true;
                     //drop(guard);
                     //drop(room_map);
+                    println!("Dropping x");
                     drop(x);
                     tokio::spawn(gameProccessThread(current_room.clone(),peer_map.clone(), RoomMap.clone()));
                 }
                 let message = Message::Text("RoomJoined".to_owned());
-                peer_map.lock().unwrap().get(&addr).unwrap().unbounded_send(message).unwrap();
+                peer_map.lock().expect("Peer lock error 160").get(&addr).expect("Get error 160").unbounded_send(message).expect("Send error 160");
             }}, 
                 _=>{
                     let message = Message::Text("RoomDoesNotExist".to_owned());
-                    peer_map.lock().unwrap().get(&addr).unwrap().unbounded_send(message).unwrap();
+                    peer_map.lock().expect("Peer lock error 164").get(&addr).expect("Get error 164").unbounded_send(message).expect("Get error 164");
                 },
             }
             
@@ -169,7 +170,7 @@ async fn process_connection(peer_map:PeerMap, RoomMap:Arc<Mutex<HashMap<String, 
         
         },
         ClientCommand::LeaveRoom if registered=> {
-            let mut guard = RoomMap.lock().unwrap();
+            let mut guard = RoomMap.lock().expect("Room map lock error 172");
             let room = guard.get_mut(&current_room);
                 
             match room{
@@ -177,11 +178,12 @@ async fn process_connection(peer_map:PeerMap, RoomMap:Arc<Mutex<HashMap<String, 
                     if socket_index==x.players.len()-1{
                         x.players.remove(socket_index);
                     }else{
-                    
                     x.players[socket_index].name="".to_string();
                     }
                 },
-                _=>{},
+                _=>{
+                    println!("Room not found 185");
+                },
             }
         
 
@@ -190,14 +192,14 @@ async fn process_connection(peer_map:PeerMap, RoomMap:Arc<Mutex<HashMap<String, 
         },
         ClientCommand::QuickPlay if registered&&current_room==*"" => {
             let string = "QuickPlay".to_string();
-            let mut guard = RoomMap.lock().unwrap();
+            let mut guard = RoomMap.lock().expect("Lock error 193");
             let room_map = guard.get_mut(&string);
             let mut ready = false;
             match room_map{
                Some(x) =>{ 
                 if x.isStarted{
                     let message = Message::Text("RoomStarted".to_owned());
-                    peer_map.lock().unwrap().get(&addr).unwrap().unbounded_send(message).unwrap();    
+                    peer_map.lock().expect("Lock error 200").get(&addr).expect("Get error 200").unbounded_send(message).expect("Send error 200");    
                 }else{
 
                 let pos = x.players.iter().position(|p|p.name.len()<=1);
@@ -222,19 +224,21 @@ async fn process_connection(peer_map:PeerMap, RoomMap:Arc<Mutex<HashMap<String, 
                     ready = true;
                     //drop(guard);
                     //drop(room_map);
+                    println!("Dropping x 225");
                     drop(x);
                     tokio::spawn(gameProccessThread(current_room.clone(),peer_map.clone(), RoomMap.clone()));
                 }
                 let message = Message::Text("RoomJoined".to_owned());
-                peer_map.lock().unwrap().get(&addr).unwrap().unbounded_send(message).unwrap();
+                peer_map.lock().expect("Peer Lock error 229").get(&addr).expect("Get error 229").unbounded_send(message).expect("Send error 229");
                }
             }, 
                 _=>{
                     //TODO: Make QUICKPLAY if it doesn't exist.
+                    println!("QuickPlay Does Not exist, creating QuickPlay");
                     let y = Room::new("QuickPlay".to_string(), Vec::new());
                     guard.insert("QuickPlay".to_string(), y);
                     //println!("219 Guard: {:?}", guard);
-                    let x = guard.get_mut("QuickPlay").unwrap();    
+                    if let Some(x) = guard.get_mut("QuickPlay"){   
                     socket_index = x.players.len();
     
                     x.players.push(client_command::client_command::Player::new(name.clone(), addr));
@@ -251,65 +255,67 @@ async fn process_connection(peer_map:PeerMap, RoomMap:Arc<Mutex<HashMap<String, 
                         tokio::spawn(gameProccessThread(current_room.clone(),peer_map.clone(), RoomMap.clone()));
                     }
                     let message = Message::Text("RoomJoined".to_owned());
-                    peer_map.lock().unwrap().get(&addr).unwrap().unbounded_send(message).unwrap();
+                    peer_map.lock().expect("Peer map lock 254").get(&addr).expect("Get error 254").unbounded_send(message).expect("Send Error 254");
+                }else{println!("QuickPlay not found 256");}
                 },
             }
             
         
         },
         ClientCommand::GetData if registered&&current_room!="".to_string()=> {
-            let mut guard = RoomMap.lock().unwrap();
+            let mut guard = RoomMap.lock().expect("Lock error 262");
             let room = guard.get_mut(&current_room);
             match room{
                 Some(x) =>{
                     
                     //let player = x.players.get(socket_index).unwrap();
                     let players:Vec<&Player> = x.players.iter().filter(|x| x.name.len()>1).collect();
-                    let serde = serde_json::to_string(&players).unwrap();
+                    let serde = serde_json::to_string(&players).expect("Parse error 269");
                     let message = Message::Text("Data!".to_owned()+&serde);
                     //println!("{:?}", message);
-                    peer_map.lock().unwrap().get(&addr).unwrap().unbounded_send(message).unwrap();
+                    peer_map.lock().expect("Peer lock 272").get(&addr).expect("Get error 272").unbounded_send(message).expect("Send error 272");
                     
                 },
-                _=>{},
+                _=>{println!("Room not found 275");},
             }
 
 
 
         },
         ClientCommand::GetObstacles if registered&&current_room!=*""=>{
-            let mut guard = RoomMap.lock().unwrap();
+            let mut guard = RoomMap.lock().expect("Room lock error 282");
             let room = guard.get_mut(&current_room);
             match room{
                 Some(x) =>{
                     
                     //let player = x.players.get(socket_index).unwrap();
                     //let players:Vec<&Player> = x.players.iter().filter(|x| x.name.len()>1).collect();
-                    let serde = serde_json::to_string(&x.obstacles).unwrap();
+                    let serde = serde_json::to_string(&x.obstacles).expect("Parse error 289");
                     let message = Message::Text("Obstacles!".to_owned()+&serde);
                     //println!("{:?}", message);
-                    peer_map.lock().unwrap().get(&addr).unwrap().unbounded_send(message).unwrap();
+                    peer_map.lock().expect("Peer lock error 292").get(&addr).expect("Get error 292").unbounded_send(message).expect("Send error 292");
                     
                 },
-                _=>{},
+                _=>{println!("Room not found 295");},
             }
         },
         ClientCommand::Ready if registered=>{
-            let mut guard = RoomMap.lock().unwrap();
+            let mut guard = RoomMap.lock().expect("Lock error 299");
             let room = guard.get_mut(&current_room);
             match room{
                 Some(x) =>{
                     let player = x.players.get_mut(socket_index);
                     match player{
                         Some(y) => y.isReady = true,
-                        _=>{},
+                        _=>{println!("Player not found 306");},
                     }
                 },
-                _=>{},
+                _=>{println!("Room not found 309");
+                },
             }
         },
         ClientCommand::PostPos(num, pos_x,pos_y) if registered =>{
-            let mut guard = RoomMap.lock().unwrap();
+            let mut guard = RoomMap.lock().expect("Room map lock 313");
             let room = guard.get_mut(&current_room);
             match room{
                 Some(x) if num > curNum =>{
@@ -323,39 +329,39 @@ async fn process_connection(peer_map:PeerMap, RoomMap:Arc<Mutex<HashMap<String, 
                     }
                 },
                 _=>{
-                    //current_room = "".to_string();
+                    println!("Room not found 328");
                 },
             }
 
         },
         ClientCommand::GetRoomList =>{
             
-            let guard = RoomMap.lock().unwrap();
-            let serde = serde_json::to_string(&guard.keys().collect::<Vec<&String>>()).unwrap();
+            let guard = RoomMap.lock().expect("Lock error 334");
+            let serde = serde_json::to_string(&guard.keys().collect::<Vec<&String>>()).expect("Parse Error 335");
             let message = Message::Text("Rooms!".to_owned()+&serde);
-            peer_map.lock().unwrap().get(&addr).unwrap().unbounded_send(message).unwrap();
+            peer_map.lock().expect("Peer lock error 337").get(&addr).expect("Get error 337").unbounded_send(message).expect("Send error 337");
 
         },
         ClientCommand::CreateRoom(x) if registered&&current_room==*""=>{
-            let mut guard = RoomMap.lock().unwrap();
+            let mut guard = RoomMap.lock().expect("Room map Lock error 341");
             let room = guard.get_mut(&x);
             match room{
                 Some(y) =>{
                     //TODO: Create ROOM
                     let message = Message::Text("RoomAlreadyExists".to_string());
-                    peer_map.lock().unwrap().get(&addr).unwrap().unbounded_send(message).unwrap();
+                    peer_map.lock().expect("Peer Map lock error 347").get(&addr).expect("Can't find addr 347").unbounded_send(message).expect("Send error 347");
                 },
                 _=>{
                     let y = Room::new(x.clone(), Vec::new());
                     guard.insert(x.clone(), y);
                     let message = Message::Text("RoomCreated".to_string());
-                    peer_map.lock().unwrap().get(&addr).unwrap().unbounded_send(message).unwrap();
+                    peer_map.lock().expect("Peer Map error 353").get(&addr).expect("Can't find addr 353").unbounded_send(message).expect("Send error 353");
                 },
             }
         
         },
-        ClientCommand::Error => println!("Error"),
-         _ => println!("Error"),   
+        ClientCommand::Error => println!("Error Command"),
+         _ => println!("Error, Default"),   
         }
 
 
@@ -370,10 +376,10 @@ async fn process_connection(peer_map:PeerMap, RoomMap:Arc<Mutex<HashMap<String, 
 
 
     println!("{} disconnected", &addr);
-    peer_map.lock().unwrap().remove(&addr);
+    peer_map.lock().expect("Peermap lock error").remove(&addr);
     println!("Removed from peerMap");
     println!("Looking for room {}", &current_room);
-    if let Some(room) = RoomMap.lock().unwrap().get_mut(&current_room){
+    if let Some(room) = RoomMap.lock().expect("Room Lock error").get_mut(&current_room){
         println!("Room found");
         if room.players.len()-1==socket_index{
             room.players.remove(socket_index);
@@ -388,16 +394,16 @@ async fn process_connection(peer_map:PeerMap, RoomMap:Arc<Mutex<HashMap<String, 
         }else{
         room.players[socket_index].name="".to_string();
         }
-        println!("{}, {}",room.players.len(), peer_map.lock().unwrap().len());
+        println!("{}, {}",room.players.len(), peer_map.lock().expect("Peer map error 392").len());
         let count = room.players.iter().position(|x| x.name!="".to_string());
         match count{
-            Some(_)=>{},
+            Some(_)=>{println!("Room empty 395");},
             None=>room.players.retain(|_|false),
         }
 
-    }
-    println!("Names removing");
-    names.lock().unwrap().retain(|x|x!=&name);
+    }else{println!("Room not found 399");}
+    println!("Names removing 400");
+    names.lock().expect("Can't lock names 401").retain(|x|x!=&name);
 }
 
 async fn gameProccessThread(cur_room:String,peer_map:PeerMap, RoomMap:Arc<Mutex<HashMap<String, Room>>>){
@@ -406,6 +412,7 @@ async fn gameProccessThread(cur_room:String,peer_map:PeerMap, RoomMap:Arc<Mutex<
     sleep(Duration::from_millis(10000)).await;
     let mut waiting = true;
     let mut addrVec= Vec::new();
+    let mut playerCount = 0;
 //blocks are nice i guess
     
     {
@@ -416,8 +423,8 @@ async fn gameProccessThread(cur_room:String,peer_map:PeerMap, RoomMap:Arc<Mutex<
                 //let mut total = 0;
                 y.players.iter().for_each(|x|{addrVec.push(x.addr)});
  
-            }
-        }
+            }else{println!("Room not found 421");}
+        }else{println!("No Map 422");}
 
     }
 
@@ -434,9 +441,11 @@ async fn gameProccessThread(cur_room:String,peer_map:PeerMap, RoomMap:Arc<Mutex<
                     println!("Count: {}, Total: {}, Ratio: {}", count, total, count as f64 / total as f64);
                     if count as f64 / total as f64 > 0.7 {
                         waiting = false;   
+                        playerCount = total;
                     }
-                }
-            }
+                    
+                }else{println!("Room not found 442");}
+            }else{println!("Map not found 443");}
         }
     if waiting{
         println!("WAITING, 349");
@@ -452,6 +461,8 @@ async fn gameProccessThread(cur_room:String,peer_map:PeerMap, RoomMap:Arc<Mutex<
                     y.players.iter().for_each(|x|{addrVec.push(x.addr)});
      
                 }
+            }else{
+                println!("No Room 460");
             }
     
         }
@@ -465,7 +476,7 @@ async fn gameProccessThread(cur_room:String,peer_map:PeerMap, RoomMap:Arc<Mutex<
 
     }
     //better countdown
-    let mut playerCount = 1;
+    
     loop{
         {
             let rooms = RoomMap.lock();
@@ -533,7 +544,7 @@ if true {
         let mut winner:String = "".to_owned();
 
         {
-        let mut guard = RoomMap.lock().unwrap();
+        let mut guard = RoomMap.lock().expect("Hash Map Lock Erro 540");
         let room = guard.get_mut(&cur_room);
         
         match room{
@@ -541,7 +552,7 @@ if true {
                 
                 //let player = x.players.get(socket_index).unwrap();
                 let players:Vec<&Player> = x.players.iter().filter(|x| x.name.len()>1).collect();
-                let serde = serde_json::to_string(&players).unwrap();
+                let serde = serde_json::to_string(&players).expect("Error 548");
                 //println!("Players, 427, {:?}", players);
                 len = players.len() as i32;
                 message = Message::Text("Data!".to_owned()+&serde);
@@ -553,7 +564,9 @@ if true {
                     winner = name.clone();
                 }
             },
-            _=>{},
+            _=>{
+                println!("Room Not Found 561");
+            },
         }
         if len==0{
             //TODO: make all other threads return or something
@@ -583,13 +596,13 @@ if true {
 async fn broadcast(peer_map:PeerMap, msg:Message){
         //println!("Broadcasting {}", &msg);
 
-        let peers = peer_map.lock().unwrap();
+        let peers = peer_map.lock().expect("PeerMap Error 590");
 
         let broadcast_recipients =
             peers.iter().map(|(_, ws_sink)| ws_sink);
 
         for recp in broadcast_recipients {
-            recp.unbounded_send(msg.clone()).unwrap();
+            recp.unbounded_send(msg.clone()).expect("Recp Broadcast Error 596");
         }
 
         
@@ -599,13 +612,13 @@ async fn broadcast(peer_map:PeerMap, msg:Message){
 async fn pres_broadcast(peer_map:PeerMap, msg:Message, addrVec:&Vec<SocketAddr>){
     //println!("Broadcasting {}", &msg);
 
-    let peers = peer_map.lock().unwrap();
+    let peers = peer_map.lock().expect("PeerMap Error 606");
 
     let broadcast_recipients =
         peers.iter().filter(|x|addrVec.contains(x.0)).map(|(_, ws_sink)| ws_sink);
 
     for recp in broadcast_recipients {
-        recp.unbounded_send(msg.clone()).unwrap();
+        recp.unbounded_send(msg.clone()).expect("Recp Broadcast Error 612");
     }
 
     
