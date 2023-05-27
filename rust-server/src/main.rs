@@ -448,6 +448,7 @@ async fn gameProccessThread(cur_room:String,peer_map:PeerMap, RoomMap:Arc<Mutex<
                             playerCount=0;
                             //println!("Deleting room 441");
                             x.remove(&cur_room);
+                            return;
                         }
                     }
                     
