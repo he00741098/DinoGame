@@ -6,7 +6,7 @@ use std::{
     env,
     io::Error as IoError,
     net::SocketAddr,
-    sync::{Arc, Mutex}, thread::current,
+    sync::{Arc, Mutex}, thread::current, f32::consts::E,
 };
 use tokio::time::{sleep, Duration};
 
@@ -329,7 +329,7 @@ async fn process_connection(peer_map:PeerMap, RoomMap:Arc<Mutex<HashMap<String, 
                     }
                 },
                 _=>{
-                    println!("Room not found 328");
+                    println!("Soft Error: Room not found 328");
                 },
             }
 
@@ -433,7 +433,7 @@ async fn gameProccessThread(cur_room:String,peer_map:PeerMap, RoomMap:Arc<Mutex<
         
             if true {
             let rooms = RoomMap.lock();
-            if let Ok(x) = rooms{
+            if let Ok(mut x) = rooms{
                 if let Some(y) = x.get(&cur_room){
                     let mut count = 0;
                     let mut total = 0;
@@ -442,6 +442,13 @@ async fn gameProccessThread(cur_room:String,peer_map:PeerMap, RoomMap:Arc<Mutex<
                     if count as f64 / total as f64 > 0.7 {
                         waiting = false;   
                         playerCount = total;
+                    }else{
+                        if total ==0{
+                            waiting = false;
+                            playerCount=0;
+                            //println!("Deleting room 441");
+                            x.remove(&cur_room);
+                        }
                     }
                     
                 }else{println!("Room not found 442");}
@@ -486,8 +493,8 @@ async fn gameProccessThread(cur_room:String,peer_map:PeerMap, RoomMap:Arc<Mutex<
                     //let mut total = 0;
                     y.players.iter().for_each(|x|{addrVec.push(x.addr)});
      
-                }
-            }
+                }else{println!("No room 495");}
+            }else{println!("Error rooms 495");}
     
         }
 
