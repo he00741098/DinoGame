@@ -323,7 +323,7 @@ async fn process_connection(peer_map:PeerMap, RoomMap:Arc<Mutex<HashMap<String, 
                     curNum = num;
                     //TODO: anticheat thing?
 
-                    if x.players[socket_index].isReady{
+                    if socket_index<x.players.len() && x.players[socket_index].isReady{
                         x.players[socket_index].x=pos_x;
                         x.players[socket_index].y=pos_y;
                     }
