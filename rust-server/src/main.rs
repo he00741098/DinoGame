@@ -428,7 +428,7 @@ async fn gameProccessThread(cur_room:String,peer_map:PeerMap, RoomMap:Arc<Mutex<
 
     }
 
-
+    let mut waitRounds = 0;
     loop{
         
             if true {
@@ -458,6 +458,11 @@ async fn gameProccessThread(cur_room:String,peer_map:PeerMap, RoomMap:Arc<Mutex<
     if waiting{
         println!("WAITING, 349");
         sleep(Duration::from_millis(5000)).await;
+        waitRounds+=1;
+        if waitRounds>10{
+            println!("starting game");
+            waiting = false;
+        }
     }else{
         //reload room map stuff while here
         {
