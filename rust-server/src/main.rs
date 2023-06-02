@@ -6,7 +6,7 @@ use std::{
     env,
     io::Error as IoError,
     net::SocketAddr,
-    sync::{Arc, Mutex}, thread::current, f32::consts::E,
+    sync::{Arc, Mutex}, thread::current, f32::consts::E, fs::read,
 };
 use tokio::time::{sleep, Duration};
 
@@ -95,7 +95,7 @@ async fn process_connection(peer_map:PeerMap, RoomMap:Arc<Mutex<HashMap<String, 
 
     let broadcast_incoming = incoming.try_for_each(|msg| {
         
-        println!("Received a message from {}: {}", addr, msg.to_text().expect("TO Text error 98"));
+        //println!("Received a message from {}: {}", addr, msg.to_text().expect("TO Text error 98"));
 
         let command = serde_json::from_str::<client_command::client_command::ClientCommand>(msg.to_text().unwrap_or("Error")).unwrap_or(client_command::client_command::ClientCommand::Error);
         //println!("{:?}", command);
@@ -172,7 +172,7 @@ async fn process_connection(peer_map:PeerMap, RoomMap:Arc<Mutex<HashMap<String, 
         ClientCommand::LeaveRoom if registered=> {
             let mut guard = RoomMap.lock().expect("Room map lock error 172");
             let room = guard.get_mut(&current_room);
-                
+            //ready = false;
             match room{
                 Some(x) =>{
                     if socket_index==x.players.len()-1{
