@@ -3,7 +3,7 @@ document.getElementById("GamePage").style.display = "none";
 document.getElementById("rooms").style.display = "none";
 
 //wss://rustdinogame.herokuapp.com/
-const host = "wss://rustdinogame.herokuapp.com/";
+const host = "wss://rust-server.shuttleapp.rs/";
 const container = document.getElementById("container");
 const socket = new WebSocket(host);
 const deathSound = new Audio("./sounds/hit.mp3");

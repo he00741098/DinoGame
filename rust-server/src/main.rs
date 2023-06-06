@@ -681,10 +681,10 @@ impl shuttle_runtime::Service for Custom_Service {
 
         //let serve_router = axum::Server::bind(&addr).serve(router.into_make_service());
 
-        tokio::spawn(async move {
+        //tokio::spawn(async move {
             //serve_router.await.expect("Server Error 624");
-            new_run(addr).await.expect("Server Error 624");
-        });
+        new_run(addr).await.expect("Server Error 624");
+        
 
         Ok(())
     }
