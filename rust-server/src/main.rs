@@ -1,6 +1,7 @@
 use client_command::client_command::{Room, countDownTime};
 use tungstenite::client;
 mod client_command;
+//mod shuttle_service;
 use std::{
     collections::HashMap,
     env,
@@ -21,8 +22,8 @@ type Tx = UnboundedSender<Message>;
 type PeerMap = Arc<Mutex<HashMap<SocketAddr, Tx>>>;
 
 
-#[tokio::main]
-async fn main() -> Result<(), Box<dyn std::error::Error>> {
+//#[tokio::main]
+async fn run() -> Result<(), Box<dyn std::error::Error>> {
     println!("{}", std::process::id());
     let addr = "0.0.0.0:".to_owned()+&env::var("PORT").unwrap_or("8125".to_string());
     
@@ -43,6 +44,31 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     
 Ok(())
 }
+
+async fn new_run(addr: std::net::SocketAddr) -> Result<(), Box<dyn std::error::Error>> {
+    println!("{}", std::process::id());
+    //let addr = "0.0.0.0:".to_owned()+&env::var("PORT").unwrap_or("8125".to_string());
+    
+    let state = PeerMap::new(Mutex::new(HashMap::new()));
+    let room_map = Arc::new(Mutex::new(HashMap::<String, Room>::new()));
+    room_map.lock().unwrap().insert("QuickPlay".to_string(), Room::new("QuickPlay".to_string(), Vec::new()));
+    let names = Arc::new(Mutex::new(Vec::<String>::new()));
+
+    let try_socket = TcpListener::bind(&addr).await;
+    let listener = try_socket.expect("Failed to bind");
+    println!("Listening on: {}", addr);
+
+
+    while let Ok((stream, addr)) = listener.accept().await {
+        tokio::spawn(process_connection(state.clone(), room_map.clone(), names.clone(), stream, addr));
+
+    }
+    
+Ok(())
+}
+
+
+
 
 #[test]
 fn serialize_test() {
@@ -635,5 +661,40 @@ async fn pres_broadcast(peer_map:PeerMap, msg:Message, addrVec:&Vec<SocketAddr>)
     }
 
     
+
+}
+
+
+pub struct Custom_Service{
+    
+    
+}
+
+#[shuttle_runtime::async_trait]
+impl shuttle_runtime::Service for Custom_Service {
+    async fn bind(
+        mut self,
+        addr: std::net::SocketAddr,
+    ) -> Result<(), shuttle_runtime::Error> {
+        
+        //let router = self.router.into_inner();
+
+        //let serve_router = axum::Server::bind(&addr).serve(router.into_make_service());
+
+        tokio::spawn(async move {
+            //serve_router.await.expect("Server Error 624");
+            new_run(addr).await.expect("Server Error 624");
+        });
+
+        Ok(())
+    }
+}
+
+#[shuttle_runtime::main]
+async fn init() -> Result<Custom_Service, shuttle_runtime::Error> {
+
+Ok(Custom_Service{
+    
+})
 
 }
