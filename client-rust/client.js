@@ -1,11 +1,39 @@
 document.getElementById("inputer").style.display = "block";
 document.getElementById("GamePage").style.display = "none";
 document.getElementById("rooms").style.display = "none";
-
+let dialog = document.getElementById("connected");
+let dialog2 = document.getElementById("disconnected");
+let dialog3 = document.getElementById("connecting");
+dialog3.show();
 //wss://rustdinogame.herokuapp.com/
 const host = "wss://rust-server.shuttleapp.rs/";
 const container = document.getElementById("container");
-const socket = new WebSocket(host);
+var socket = new WebSocket(host);
+socket.onopen = function() {
+    dialog3.close();
+    showDialog1();
+    setTimeout(hideDialog1, 3000);
+};
+function showDialog1(){
+    dialog.show();
+}
+function hideDialog1(){
+    dialog.close();
+}
+
+socket.onclose = function() {
+    showDialog2();
+    setTimeout(hideDialog2, 6000);
+};
+function showDialog2(){
+    dialog2.show();
+}
+function hideDialog2(){
+    dialog2.close();
+}
+
+
+
 const deathSound = new Audio("./sounds/hit.mp3");
 const jumpSound = new Audio("./sounds/press.mp3");
 const scoreSound = new Audio("./sounds/reached.mp3");
@@ -1143,12 +1171,14 @@ function updateTable(){
 function checkSocket(){
     
     if (socket.readyState == WebSocket.CLOSED || socket.readyState == WebSocket.CLOSING){
-        let disconnectText = new PIXI.Text("Socket Disconnected - Reload page...", {fontFamily: 'Arial', fontSize: 24, fill: "black", align: 'right'});
+        //let disconnectText = new PIXI.Text("Socket Disconnected - Reload page...", {fontFamily: 'Arial', fontSize: 24, fill: "black", align: 'right'});
         // socket = new WebSocket(host);
         // socket.send(JSON.stringify({"RegPlayer":username}));
         // //TODO:DO room thingies
         // socket.send(JSON.stringify("QuickPlay"));
         // socket.send(JSON.stringify("Ready"));
+        alert("Socket Not Connected - Try reloading the page");
+        disconnected.show();
     }
 
 }
@@ -1181,5 +1211,6 @@ function startGame(){
     
     //socket.send(JSON.stringify("Ready"));
 }
-socketRenew_interval = setInterval(checkSocket, 5000);
+//socketRenew_interval = setInterval(checkSocket, 5000);
+checkSocket();
 //startGame();

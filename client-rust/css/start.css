@@ -101,3 +101,27 @@ a:hover {
     width:30%;
     box-shadow: #0b6ace 0px 0px 10px 0px;
 }
+
+
+.alert{
+    color: white;
+    position: relative;
+    font-size: 20px;
+    font-family: minecraft;
+    margin: 0 auto;
+    margin-left: 10px;
+    margin-top: 20px;
+    margin-bottom: 20px;
+    background-color: #6e746d;
+    border-color: #47f529;
+    border-width: 5px;
+    left: 80%;
+    bottom: -82%;
+}
+#connecting{
+    border-color: red;
+}
+#disconnected{
+    border-color: red;
+    left: 75%;
+}
