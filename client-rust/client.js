@@ -6,7 +6,7 @@ let dialog2 = document.getElementById("disconnected");
 let dialog3 = document.getElementById("connecting");
 dialog3.show();
 //wss://rustdinogame.herokuapp.com/
-const host = "wss://rust-server.shuttleapp.rs/";
+const host = "wss://playDino.sweep.rs/dinoSocket";
 const container = document.getElementById("container");
 var socket = new WebSocket(host);
 socket.onopen = function() {
