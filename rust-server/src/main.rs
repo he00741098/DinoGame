@@ -432,6 +432,9 @@ async fn process_connection(peer_map:PeerMap, RoomMap:Arc<Mutex<HashMap<String, 
 }
 
 async fn gameProccessThread(cur_room:String,peer_map:PeerMap, RoomMap:Arc<Mutex<HashMap<String, Room>>>){
+    //TODO: FIX BUG RELATED TO LEAVING - player leaves game but still gets updates about it. Remove
+    //player from addrVec. This proccessing model is flawed. Move to axum perhaps. Building the pogoot
+    //game proccessing lib and importing is also an option.
     println!("Thread Starting");
     let mut totalTime = 20;
     sleep(Duration::from_millis(10000)).await;
