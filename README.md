@@ -1,4 +1,4 @@
-# DinoGame
+# DinoGame - NON-FUNCTIONAL
 Multiplayer version of the chrome dino game, repo has:
 - server side
 - client side
