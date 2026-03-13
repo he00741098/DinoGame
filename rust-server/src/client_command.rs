@@ -1,17 +1,24 @@
 pub mod client_command {
 
-
-    use serde::{Deserialize, Serialize};
     use rand::prelude::*;
-    const obstacleTypes:[obstacle_type; 13] = [obstacle_type::Cactus, obstacle_type::Cactus1,obstacle_type::Cactus2,obstacle_type::Cactus3,obstacle_type::Cactus4,obstacle_type::Cactus5,obstacle_type::Cactus6,obstacle_type::Cactus7,obstacle_type::Cactus8,obstacle_type::Cactus9,obstacle_type::Cactus10,obstacle_type::Cactus11,obstacle_type::Cactus12];
-    use std::{
-        collections::HashMap,
-        env,
-        io::Error as IoError,
-        net::SocketAddr,
-        sync::{Arc, Mutex}, thread::current,
-    };
-    
+    use serde::{Deserialize, Serialize};
+    const obstacleTypes: [obstacle_type; 13] = [
+        obstacle_type::Cactus,
+        obstacle_type::Cactus1,
+        obstacle_type::Cactus2,
+        obstacle_type::Cactus3,
+        obstacle_type::Cactus4,
+        obstacle_type::Cactus5,
+        obstacle_type::Cactus6,
+        obstacle_type::Cactus7,
+        obstacle_type::Cactus8,
+        obstacle_type::Cactus9,
+        obstacle_type::Cactus10,
+        obstacle_type::Cactus11,
+        obstacle_type::Cactus12,
+    ];
+    use std::net::SocketAddr;
+
     #[derive(Debug, Clone, Serialize, Deserialize)]
     pub enum ClientCommand {
         RegPlayer(String),
@@ -42,36 +49,33 @@ pub mod client_command {
         pub isEnded: bool,
         pub isSpectatingAllowed: bool,
         pub playerAdjust: Vec<Vec<Player>>,
-        pub length:u64,
+        pub length: u64,
         pub obstacles: Vec<obstacle>,
-        
-
     }
 
-    impl Room{
-        pub fn new(name:String, players: Vec<Player>) -> Room{
+    impl Room {
+        pub fn new(name: String, players: Vec<Player>) -> Room {
             let mut obstacleList = Vec::new();
-                    //gameSeed = generateTerrain(100000);
+            //gameSeed = generateTerrain(100000);
             let length = 100000;
             let mut obstacle_distance = 1000;
             let mut i = 1106;
             let mut rng = rand::thread_rng();
-            loop{
-                obstacle_distance = rng.gen_range(0..1000)+400;
-                
-                let obstacleVariation = rng.gen_range(0..obstacleTypes.len());
+            loop {
+                obstacle_distance = rng.gen_range(0..1000) + 400;
 
+                let obstacleVariation = rng.gen_range(0..obstacleTypes.len());
 
                 obstacleList.push(obstacle::new(obstacleTypes[obstacleVariation].clone(), i));
 
                 //console.log("added new obstacle at "+i+","+0);
-                i+=obstacle_distance;
-                if i>=length{
+                i += obstacle_distance;
+                if i >= length {
                     break;
                 }
-            }      
+            }
 
-            Room{
+            Room {
                 name,
                 players,
                 maxPlayers: 0,
@@ -88,12 +92,10 @@ pub mod client_command {
                 obstacles: obstacleList,
             }
         }
-
-
     }
 
     #[derive(Debug, Clone, Serialize, Deserialize)]
-    pub enum obstacle_type{
+    pub enum obstacle_type {
         Cactus,
         Cactus1,
         Cactus2,
@@ -110,49 +112,46 @@ pub mod client_command {
     }
 
     #[derive(Debug, Clone, Serialize, Deserialize)]
-    pub struct obstacle{
-        obstacleType:obstacle_type,
-        xPos:u64,
+    pub struct obstacle {
+        obstacleType: obstacle_type,
+        xPos: u64,
     }
 
-    impl obstacle{
-        fn new(obstacleType:obstacle_type, xPos:u64)->obstacle{
-            return obstacle{obstacleType, xPos};
+    impl obstacle {
+        fn new(obstacleType: obstacle_type, xPos: u64) -> obstacle {
+            return obstacle { obstacleType, xPos };
         }
-
     }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+    #[derive(Debug, Clone, Serialize, Deserialize)]
     pub struct Player {
         pub name: String,
         pub isReady: bool,
         pub isFinished: bool,
         pub x: f64,
         pub y: f64,
-        pub speed: f64,   
+        pub speed: f64,
         pub addr: SocketAddr,
-        
     }
 
-    impl Player{
-        pub fn new(name:String, addr: SocketAddr) -> Player{
-            Player{
+    impl Player {
+        pub fn new(name: String, addr: SocketAddr) -> Player {
+            Player {
                 name,
                 isReady: false,
                 isFinished: false,
                 x: 0.0,
                 y: 0.0,
                 speed: 3.0,
-                addr:addr,
+                addr: addr,
             }
         }
     }
 
     #[derive(Serialize, Deserialize, Debug, Clone)]
-    pub enum countDownTime{
+    pub enum countDownTime {
         time(u16),
         stopped,
         start,
     }
-
 }

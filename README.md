@@ -18,3 +18,4 @@ https://dino.sweep.rs/
 - Better styling
 - Patch bugs
 - Potentially move off of Vercel onto CF pages or just Github Pages
+- Improve error handling
