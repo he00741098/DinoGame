@@ -1,0 +1,127 @@
+html {
+    background-image: url("../images/bg.png");
+    background-size: cover;
+}
+
+@font-face {
+    font-family: minecraft;
+    src: url("../fonts/Minecraft.ttf");
+}
+
+.center {
+    margin: 0;
+    position: absolute;
+    top: 40%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+}
+
+a {
+    transition: all 0.2s ease-in-out;
+}
+
+a:hover {
+    filter: invert(100%);
+}
+
+#inputer input {
+    height: 100px;
+    width: 582px;
+    font-size: 48px;
+    background-color: gray;
+    color: white;
+}
+
+
+
+
+
+::placeholder {
+    color: darkgray;
+}
+
+#rooms{
+    margin:auto;
+    position:relative;
+    display:none;
+    text-align: center;
+    top:25%;
+    padding:10px;
+}
+
+#rooms ul{
+    list-style-type: none;
+    margin: 0;
+    padding: 0;
+    overflow: hidden;
+    left:50%;
+    top:50%;
+}
+#rooms ul button{
+    font-family: minecraft;
+    background-color: #0b6ace;
+    border: none;
+    color: white;
+    padding: 15px 32px;
+    text-align: center;
+    margin: 4px 2px;
+    cursor: pointer;
+    font-size: 26px;
+    transition: all 0.2s ease-in-out;
+    width:40%;
+}
+
+#rooms input{
+
+    height: 100px;
+    width: 40%;
+    font-size: 35px;
+    background-color: gray;
+    color: white;
+
+}
+
+#GamePage{
+    display:none;
+
+}
+
+
+#GamePage button{
+    font-family: minecraft;
+    background-color: #0b6ace;
+    border: none;
+    color: white;
+    padding: 15px 32px;
+    text-align: center;
+    margin: 4px 2px;
+    cursor: pointer;
+    font-size: 26px;
+    transition: all 0.2s ease-in-out;
+    width:30%;
+    box-shadow: #0b6ace 0px 0px 10px 0px;
+}
+
+
+.alert{
+    color: white;
+    position: relative;
+    font-size: 20px;
+    font-family: minecraft;
+    margin: 0 auto;
+    margin-left: 10px;
+    margin-top: 20px;
+    margin-bottom: 20px;
+    background-color: #6e746d;
+    border-color: #47f529;
+    border-width: 5px;
+    left: 80%;
+    bottom: -82%;
+}
+#connecting{
+    border-color: red;
+}
+#disconnected{
+    border-color: red;
+    left: 75%;
+}

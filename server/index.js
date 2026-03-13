@@ -14,10 +14,10 @@ const httpServer = require('http').createServer(function (request, response) {
   let filePath = request.url.split("?")[0];
 
   let safeSuffix = path.normalize(filePath).replace(/^(\.\.(\/|\\|$))+/, '');
-  let safePath = path.join("./client/", safeSuffix);
+  let safePath = path.join("./client-rust/", safeSuffix);
 
-  if(safePath === "client/") {
-    safePath = "client/index.html";
+  if(safePath === "client-rust/") {
+    safePath = "client-rust/index.html";
   }
 
   console.log(safePath);
