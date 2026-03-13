@@ -1,0 +1,55 @@
+<html>
+    <head>
+        <title>Multiplayer chrome dino</title>
+        <link rel="stylesheet" href="./css/index.css">
+        <link href="./lib/tabulator.min.css" rel="stylesheet">
+        <link rel="stylesheet" href="./css/start.css">
+        <script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
+    </head>
+
+    <body>
+        <dialog id="connecting" class="alert">
+            <p>Connecting to server</p>
+        </dialog>
+        <dialog id="connected" class="alert">
+            <p>Connected to server</p>
+        </dialog>
+        <dialog id="disconnected" class="alert">
+            <p>Disconnected from server</p>
+        </dialog>
+
+
+        <div id = "GamePage">
+        <div class = "centerer">
+        <div id="container"></div>
+        </div>
+        <br><br><br><br><br><br><br><br><br>
+        <div id="score-table"></div>
+        <a href="javascript:back()"><button id="back">Back</button></a>
+        </div>
+
+        <div class="center" id="inputer">
+            <input id="usernamebox" placeholder="PUT USERNAME HERE" type="text">
+            <a href="javascript:reg()">
+                <img src="./images/start.png" height="300px">
+            </a>
+        </div>
+        <div class="Room_list" id = "rooms">
+            <ul>
+                <li><a href="javascript:quickPlay()"><button>Quick Play</button></a></li>
+                <li><input id="roomname" placeholder="PUT ROOM NAME HERE" type="text"></li>
+                <li><a href="javascript:joinRoom()"><button>JOIN ROOM</button></a></li>
+                <li><a href="javascript:createRoom()"><button>CREATE ROOM</button></a></li>
+            </ul>
+        </div>
+
+
+    </body>
+
+    <script type="text/javascript" src="./lib/tabulator.min.js"></script>
+    <script src="./lib/pixi.min.js"></script>
+    <script src="./obstacles.js"></script>
+    <script src="./client.js"></script>
+    
+    
+</html>

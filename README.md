@@ -11,6 +11,7 @@ https://dino.sweep.rs/
 
 - make floor look good
 - More Background stuff
-- Speed up
+- Speed up - Sort of done
 - No death, just slow down
 - Waiting room
+- Deploy in vercel or something
