@@ -5,7 +5,7 @@ Multiplayer version of the chrome dino game, repo has:
 
 # IP
 
-http://sweep.rs/
+https://dino.sweep.rs/
 
 # TODO
 

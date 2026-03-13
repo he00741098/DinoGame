@@ -3,17 +3,32 @@
     <head>
         <title>Multiplayer dino game</title>
         <link rel="stylesheet" href="./start.css">
+        <link href="./tabulator.min.css" rel="stylesheet">
         <script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
     </head>
 
     <body>
         <div class="center">
             <input id="usernamebox" placeholder="PUT USERNAME HERE" type="text">
+            <input id="roombox" placeholder="RoomID (leave blank for global)" type="text">
             <a href="javascript:play()">
                 <img src="./start.png" height="300px">
             </a>
         </div>
+        <div class="game" style="display:none">
+            <div class = "centerer">
+                <div id="container"></div>
+            </div>
+            <div id="score-table"></div>
+            <a id="HostStartGameButton" style="display:none" href="javascript:hostCommandStartGame()">
+                Start Game
+            </a>
+        </div>
     </body>
+
+    <script type="text/javascript" src="./tabulator.min.js"></script>
     <script src="./socket.io.min.js"></script>
+    <script src="./pixi.min.js"></script>
+    <script src="./obstacles.js"></script>
     <script src="./start.js"></script>
 </html>
