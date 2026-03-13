@@ -2,3 +2,4 @@ node_modules
 .vscode
 Cargo.lock
 debug
+rust-server/target

@@ -5,6 +5,7 @@ var path = require('path');
 var port = process.env.PORT || 8125;
 
 let scores = [];
+let rooms = {};
 let gameStarted = false;
 let gameSeed = 0;
 const httpServer = require('http').createServer(function (request, response) {
