@@ -6,6 +6,7 @@ Multiplayer version of the chrome dino game, repo has:
 # IP
 
 https://dino.sweep.rs/
+(Deployed on Vercel)
 
 # TODO
 
@@ -16,3 +17,4 @@ https://dino.sweep.rs/
 - Waiting room / better start screen
 - Better styling
 - Patch bugs
+- Potentially move off of Vercel onto CF pages or just Github Pages
