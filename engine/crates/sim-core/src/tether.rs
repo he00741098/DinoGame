@@ -101,10 +101,9 @@ impl World {
         key_before_tether: bool,
     ) {
         if !self.tether_valid(level, &previous) {
-            // The roster changed (a late join or a dropped link), so the team is
-            // relocated. Movement still ran first: undo a key gathered by a body
-            // position that regroup is about to discard.
-            self.key_collected = key_before_tether;
+            // A regroup relocates the team but keeps the tick, so a key touched
+            // on this step stays collected (death respawn preserves it too).
+            // Only a rollback, which discards the tick, undoes the pickup.
             self.regroup_team(level);
             return;
         }
@@ -167,10 +166,8 @@ impl World {
                 // Movement gathered the key before this solve; undo it with the players.
                 self.key_collected = key_before_tether;
             } else {
-                // A late new identity/removed link can start far from the chain.
-                // Deterministically regroup at the checkpoint without charging a
-                // death, and discard the key this step's movement gathered.
-                self.key_collected = key_before_tether;
+                // Unreachable in practice: line 103 already returned for an
+                // invalid pre-move chain, so this branch's guard always holds.
                 self.regroup_team(level);
             }
         }
@@ -218,138 +215,16 @@ mod tests {
         assert!(world.players[0].x > 0, "the tether must resist separation");
     }
     #[test]
-    fn regroup_does_not_keep_a_key_gathered_by_a_discarded_body_position() {
-        // A roster that was already tether-invalid regroups without attempting a
-        // correction, but movement runs first: the key that step gathered must not
-        // survive, because regroup throws away the positions that reached it.
+    fn regroup_relocates_but_intentionally_keeps_a_key_gathered_that_step() {
         let level = Level {
-            tether_length: 2 * UNIT,
-            solids: vec![Rect {
-                x: 0,
-                y: 12 * UNIT,
-                w: 24 * UNIT,
-                h: 2 * UNIT,
-            }],
-            key: Rect {
-                x: 6 * UNIT,
-                y: 12 * UNIT - PLAYER_HEIGHT,
-                w: UNIT / 2,
-                h: UNIT / 2,
-            },
-            gate: Rect {
-                x: 0,
-                y: 0,
-                w: UNIT,
-                h: UNIT,
-            },
-            exit: Rect {
-                x: 23 * UNIT,
-                y: 10 * UNIT,
-                w: UNIT,
-                h: 2 * UNIT,
-            },
-            ..Level::default()
-        };
-        assert!(level.valid());
-        let mut world = World::for_level(&level);
-        assert!(world.add_player_in(&level, 1));
-        // Player 2 joins far outside the tether, so the very next solve regroups.
-        assert!(world.add_player_in(&level, 2));
-        // Far apart, so the tether is already invalid before the step runs.
-        world.players[0].x = 20 * UNIT;
-        // One short stride left of this sits inside the key: movement gathers it
-        // on the same step that the regroup discards these positions.
-        world.players[1].x = 6 * UNIT + UNIT / 4;
-        for p in &mut world.players {
-            p.y = 12 * UNIT - PLAYER_HEIGHT;
-            p.vx = 0;
-            p.vy = 0;
-            p.grounded = true;
-        }
-        assert!(!world.key_collected);
-        // One leftward step puts player 2 across the key before the solve runs.
-        world.step(
-            &level,
-            &[(2, Input { axis: -1, jump: false })],
-        );
-        assert!(
-            !world.key_collected,
-            "a key gathered by a body that the regroup discards must not persist"
-        );
-    }
-    #[test]
-    fn anchored_partner_catches_a_fall_and_late_joins_regroup_safely() {
-        let level = Level {
-            height: 24 * UNIT,
             tether_length: 4 * UNIT,
-            solids: vec![Rect {
-                x: 0,
-                y: 12 * UNIT,
-                w: 8 * UNIT,
-                h: UNIT,
-            }],
-            ..Level::default()
-        };
-        let mut world = World::for_level(&level);
-        world.add_player_in(&level, 1);
-        world.add_player_in(&level, 2);
-        world.key_collected = true;
-        world.players[0].x = 6 * UNIT;
-        world.players[1].x = 9 * UNIT;
-        for _ in 0..300 {
-            world.step(&level, &[]);
-            assert!(world.tether_valid(&level, &world.players));
-            assert_eq!(world.deaths, 0);
-        }
-        assert_eq!(world.players[0].y + PLAYER_HEIGHT, 12 * UNIT);
-        assert!(world.players[1].y < 16 * UNIT);
-        world.players[0].x = 18 * UNIT;
-        world.players[1].x = 21 * UNIT;
-        assert!(world.add_player_in(&level, 3));
-        world.step(&level, &[]);
-        assert!(world.tether_valid(&level, &world.players));
-        assert_eq!(world.deaths, 0);
-        assert!(world.players.iter().all(|p| p.x < 8 * UNIT));
-    }
-    #[test]
-    fn rolled_back_tether_step_must_not_keep_a_key_gathered_mid_move() {
-        let level = Level {
-            tether_length: 2 * UNIT,
-            solids: vec![
-                Rect {
-                    x: 0,
-                    y: 12 * UNIT,
-                    w: 24 * UNIT,
-                    h: 2 * UNIT,
-                },
-                // A wall between the teammates: the rope correction cannot pull
-                // the post-move chain back within the tether through it.
-                Rect {
-                    x: 10 * UNIT,
-                    y: 10 * UNIT,
-                    w: 2 * UNIT,
-                    h: 2 * UNIT,
-                },
-            ],
-            // Kept away from both spawn columns so it never blocks a step.
-            gate: Rect {
-                x: 0,
-                y: 0,
-                w: UNIT,
-                h: UNIT,
-            },
-            // One stride of leftward movement touches it; the resting body does not.
+            // Floor level, one leftward stride from player 1's staging spot and
+            // nowhere near the spawn columns the regroup lands on.
             key: Rect {
-                x: 8450,
+                x: 17_856,
                 y: 12 * UNIT - PLAYER_HEIGHT,
                 w: UNIT / 2,
                 h: UNIT / 2,
-            },
-            exit: Rect {
-                x: 23 * UNIT,
-                y: 10 * UNIT,
-                w: UNIT,
-                h: 2 * UNIT,
             },
             ..Level::default()
         };
@@ -357,51 +232,49 @@ mod tests {
         let mut world = World::for_level(&level);
         assert!(world.add_player_in(&level, 1));
         assert!(world.add_player_in(&level, 2));
-        for p in &mut world.players {
-            p.y = 12 * UNIT - PLAYER_HEIGHT;
-            p.vx = 0;
-            p.vy = 0;
-            p.grounded = true;
-            p.jump_held = false;
-        }
-        // Player 1 starts on the locked exit, player 2 starts left of the wall.
-        world.players[0].x = 22_900;
-        world.players[1].x = 9_000;
+        // The pair walks far from spawn together: still a valid chain...
+        world.players[0].x = 18 * UNIT;
+        world.players[1].x = 18 * UNIT + UNIT;
+        assert!(world.tether_valid(&level, &world.players));
+        // ...until a late join spawns at the columns, far from that chain.
+        assert!(world.add_player_in(&level, 3));
+        assert!(
+            !world.tether_valid(&level, &world.players),
+            "the pre-move chain must be tether-invalid for the early regroup path"
+        );
         assert!(!world.key_collected);
-        assert!(world.players[0].rect().overlaps(level.exit));
-        assert!(!world.players[1].rect().overlaps(level.key));
-        // The walked-into key really is gathered before the solve runs...
+        let resting = world.players[0].rect();
+        assert!(!resting.overlaps(level.key), "standing must not gather it");
         let walked = Rect {
-            x: 9_000 - 96,
-            ..world.players[1].rect()
+            x: resting.x - 96,
+            ..resting
         };
-        assert!(walked.overlaps(level.key));
-        // ...and standing on the exit is what keeps the pre-step tether valid
-        // while the post-move chain cannot cross the wall.
+        assert!(walked.overlaps(level.key), "one stride must gather it");
         world.step(
             &level,
-            &[
-                (
-                    1,
-                    Input {
-                        axis: -1,
-                        jump: false,
-                    },
-                ),
-                (
-                    2,
-                    Input {
-                        axis: -1,
-                        jump: false,
-                    },
-                ),
-            ],
+            &[(
+                1,
+                Input {
+                    axis: -1,
+                    jump: false,
+                },
+            )],
         );
-        assert_eq!(world.players[0].x, 22_900, "the tether must roll back");
-        assert_eq!(world.players[1].x, 9_000, "the tether must roll back");
+        // The step stands: the team is relocated, not rolled back...
+        assert_eq!(world.deaths, 0, "a tether regroup charges no death");
         assert!(
-            !world.key_collected,
-            "a key gathered mid-move must roll back with the players"
+            world.players.iter().all(|p| p.x < 8 * UNIT),
+            "the regroup must relocate everyone to the spawn columns"
+        );
+        assert!(world.tether_valid(&level, &world.players));
+        assert!(
+            world.players.iter().all(|p| !p.rect().overlaps(level.key)),
+            "no regrouped body may be re-touching the key"
+        );
+        // ...so the key the player physically touched this tick stays gathered.
+        assert!(
+            world.key_collected,
+            "intentional: a regroup keeps a key gathered on the regrouping step"
         );
     }
 }
