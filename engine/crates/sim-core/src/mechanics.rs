@@ -382,6 +382,14 @@ impl World {
             if !gate_closed {
                 return false;
             }
+            // Only a door that spans the full traversable height is a real
+            // barrier: a short gate can be jumped, and a player mid-air above it
+            // would be miscounted as stranded. Requiring the top to sit at least
+            // four tiles above the spawn floor keeps a jumpable gate from ever
+            // triggering a rescue.
+            if gate.rect.y > level.spawn_y - 4 * UNIT {
+                return false;
+            }
             // Count bodies on each side of the shut door. The run is only lost
             // when the team is genuinely SPLIT: someone is stranded past the
             // door and too few bodies remain behind to press the pad again.

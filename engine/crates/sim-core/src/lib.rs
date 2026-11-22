@@ -718,6 +718,53 @@ mod tests {
     }
 
     #[test]
+    fn a_jumpable_gate_never_triggers_a_rescue() {
+        // A short gate can be jumped, so a body above it is not stranded. The
+        // rescue must not charge a death for a barrier that height alone clears.
+        let mut level = crate::campaign::level(29).expect("stage 29");
+        for m in level.mechanics.iter_mut() {
+            if m.kind == crate::MechanicKind::PressureGate {
+                // Top well below the jump ceiling: feet can clear it.
+                m.rect.y = level.spawn_y - 2 * UNIT;
+                m.rect.h = 2 * UNIT;
+            }
+        }
+        let mut world = World::for_level(&level);
+        assert!(world.add_player_in(&level, 1));
+        assert!(world.add_player_in(&level, 2));
+        let gate = level
+            .mechanics
+            .iter()
+            .filter(|m| m.kind == crate::MechanicKind::PressureGate)
+            .min_by_key(|m| m.rect.x)
+            .expect("gate");
+        for (index, p) in world.players.iter_mut().enumerate() {
+            p.x = if index == 0 {
+                2 * UNIT
+            } else {
+                gate.rect.x + UNIT
+            };
+            p.y = level.spawn_y - PLAYER_HEIGHT;
+            p.vx = 0;
+            p.vy = 0;
+            p.grounded = true;
+        }
+        for (o, m) in world.objects.iter_mut().zip(&level.mechanics) {
+            if m.kind == crate::MechanicKind::PressureGate {
+                o.timer = 0;
+                o.active = true;
+            }
+        }
+        let deaths = world.deaths;
+        world.step(&level, &[]);
+        assert!(
+            world.rescued_at.is_none(),
+            "a jumpable gate is not a permanent split"
+        );
+        assert_eq!(world.deaths, deaths);
+    }
+
+    #[test]
     fn a_team_that_all_crossed_is_not_rescued() {
         // If every player is past the gate, they can walk to the key; charging a
         // death and dragging them back would punish a successful crossing.

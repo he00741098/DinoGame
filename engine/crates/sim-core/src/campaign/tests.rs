@@ -933,6 +933,163 @@ fn input_only_completion_of_team_pad_rooms() {
 }
 
 #[test]
+fn team_pad_rooms_recover_from_a_split_team() {
+    // 29 and 31 are the pad rooms; a split team must never lose the room.
+    for number in [29, 31] {
+        let l = level(number).unwrap();
+        let mut w = World::for_level(&l);
+        let count = u32::from(l.required_players);
+        for id in 1..=count {
+            assert!(w.add_player_in(&l, id));
+        }
+        let pad = l
+            .mechanics
+            .iter()
+            .find(|m| m.kind == MechanicKind::TeamPad)
+            .expect("team pad")
+            .rect;
+        let pad_x = pad.x + pad.w / 2 - PLAYER_WIDTH / 2;
+        let door = l
+            .mechanics
+            .iter()
+            .find(|m| m.kind == MechanicKind::PressureGate)
+            .expect("pressure gate");
+        let flag = l
+            .mechanics
+            .iter()
+            .find(|m| m.kind == MechanicKind::Checkpoint)
+            .expect("checkpoint")
+            .rect;
+        let ledge = l
+            .mechanics
+            .iter()
+            .find(|m| m.kind == MechanicKind::OneWay)
+            .expect("ledge")
+            .rect;
+        let strip = l
+            .mechanics
+            .iter()
+            .find(|m| m.kind == MechanicKind::Hazard)
+            .expect("hazard")
+            .rect;
+        // Recovery geometry: the flag is reachable on the pad side, and the
+        // strip sits off the floor line the completion witness walks.
+        assert!(
+            flag.x + flag.w <= door.rect.x,
+            "level {number}: the flag must be pad-side of the door"
+        );
+        assert!(
+            strip.x >= door.rect.x + door.rect.w,
+            "level {number}: the strip must be far-side of the door"
+        );
+        assert!(
+            strip.y + strip.h <= l.spawn_y - PLAYER_HEIGHT,
+            "level {number}: the strip must be off the walking line"
+        );
+        // Ordinary input only: no world flag or coordinate is poked.
+        let walk = |w: &mut World, id: PlayerId, target: i32| {
+            for _ in 0..1400 {
+                let p = w.players.iter().find(|p| p.id == id).unwrap().clone();
+                if (target - p.x).abs() <= 96 && p.vx.abs() <= 96 {
+                    return;
+                }
+                w.step(&l, &[(id, steering(&l, &p, target))]);
+            }
+            panic!("level {number}: walking {id} to {target}: {:?}", w.players);
+        };
+        let door_open = |w: &World| !w.objects.iter().find(|o| o.id == door.id).unwrap().active;
+        // The whole team presses the pad, which opens the door.
+        for id in 1..=count {
+            walk(&mut w, id, pad_x + (id as i32 - 1) * (PLAYER_WIDTH + 32));
+        }
+        for _ in 0..40 {
+            w.step(&l, &[]);
+        }
+        assert!(door_open(&w), "level {number}: the pad must open the door");
+        // The right-most player walks through while the others hold the pad;
+        // they start at the right end of the pad queue, so nobody blocks the
+        // path. They grab the key on the way and stop under the free ledge
+        // tiles.
+        walk(&mut w, count, ledge.x + UNIT / 2);
+        // The holders leave the pad but stay on its side of the door.
+        for id in (1..count).rev() {
+            walk(&mut w, id, door.rect.x - (count - id + 1) as i32 * UNIT);
+        }
+        // Nobody presses the pad: the release grace expires and the door shuts.
+        for _ in 0..1000 {
+            w.step(&l, &[]);
+        }
+        assert!(!door_open(&w), "level {number}: the door must shut on a split");
+        let crosser = w.players.iter().find(|p| p.id == count).unwrap();
+        assert!(
+            crosser.x >= door.rect.x + door.rect.w,
+            "level {number}: the crosser is locked out: {crosser:?}"
+        );
+        assert!(
+            w.players
+                .iter()
+                .filter(|p| p.id != count)
+                .all(|p| p.x + PLAYER_WIDTH <= door.rect.x),
+            "level {number}: the holders stay pad-side: {:?}",
+            w.players
+        );
+        // Climb onto the ledge (the strip sits above the walking line), then
+        // walk into it: the touch resets the whole team to the pad-side flag.
+        for _ in 0..90 {
+            w.step(&l, &[(count, Input {
+                axis: 0,
+                jump: true,
+            })]);
+        }
+        let crosser = w.players.iter().find(|p| p.id == count).unwrap();
+        assert_eq!(
+            crosser.y + PLAYER_HEIGHT,
+            ledge.y,
+            "level {number}: the crosser must land on the ledge: {crosser:?}"
+        );
+        let before = w.deaths;
+        assert_eq!(before, 0, "level {number}: the split itself must not kill");
+        for _ in 0..400 {
+            if w.deaths > before {
+                break;
+            }
+            let p = w.players.iter().find(|p| p.id == count).unwrap().clone();
+            w.step(&l, &[(count, steering(&l, &p, strip.x + strip.w))]);
+        }
+        assert!(
+            w.deaths > before,
+            "level {number}: the strip must reset the team: {:?}",
+            w.players
+        );
+        assert!(
+            w.players
+                .iter()
+                .all(|p| p.x + PLAYER_WIDTH <= door.rect.x),
+            "level {number}: the team respawns pad-side: {:?}",
+            w.players
+        );
+        assert_eq!(
+            w.checkpoint,
+            Some(flag),
+            "level {number}: the pad-side flag is the respawn"
+        );
+        assert!(w.key_collected, "level {number}: the reset keeps the key");
+        // The room is not merely un-stuck: the team can press the pad again.
+        for id in 1..=count {
+            walk(&mut w, id, pad_x + (id as i32 - 1) * (PLAYER_WIDTH + 32));
+        }
+        for _ in 0..40 {
+            w.step(&l, &[]);
+        }
+        assert!(
+            door_open(&w),
+            "level {number}: the team can press the pad again: {:?}",
+            w.players
+        );
+    }
+}
+
+#[test]
 fn input_only_completion_of_large_team_expeditions() {
     for number in 21..=24 {
         let l = level(number).unwrap();
