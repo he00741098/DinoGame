@@ -143,3 +143,26 @@ get a knob to disable extrapolation and smoothing.
 the platform chapter. Stages 16–20 form a five-stage combination streak with no
 rest, and the expedition template added falling rocks to stage 21 before the rope
 lesson had landed. Stage 21 now teaches rope alone; rocks arrive in 22.
+
+### Same day — team pad landed end to end
+
+The mechanic chosen by the cost/benefit audit is in. `MechanicKind::TeamPad`
+(commit `bc626e3`) activates only when `travel.clamp(2, 4)` distinct bodies
+overlap it, counted once each, and drives the same pressure gates a plate does —
+so a two-player pad on a four-player stage cannot be held open by one player.
+No new `World` field, no hash change, no patch-encoder work, as predicted.
+
+Three tests pin the semantics, and one of them exists specifically to catch the
+divergence the audit found: `team_pad_threshold_survives_a_larger_team` places
+two bodies on a two-player pad inside a three-player stage. It fails if the
+threshold is read from `required_players` instead of the mechanic.
+
+Both clients render it: the browser reads `travel` (`09d2391`), the native client
+had used the level team size and is being corrected to match. Rendering is a
+distinct pink pad with a `×N` count hint; iOS uses teal with "N TO PRESS".
+
+**Accessibility follow-through.** `#status` was a polite live region rewritten
+twenty times a second. It is now a silent visual element (`aria-live="off"`) and
+a separate visually-hidden region announces only joined, disconnected, revision
+change, level change, completion, stall and recovery (`c7d0691`). No visible text
+changed and no existing assertion had to be modified.
