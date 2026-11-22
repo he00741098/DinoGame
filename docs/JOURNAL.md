@@ -292,3 +292,29 @@ committed version is the one that was reviewed against the code.
 players are solid to each other and resolve front-to-back, so a one-body corridor
 is a trap, and a pad-controlled door's release grace must cover the walk. Two
 team-pad levels failed before that was written down.
+
+### Same day — two bugs the test suite could not have caught
+
+**A key could survive a discarded step (`c6310f6`).** Key collection runs inside
+the per-player movement loop, before the tether solve. So a player could gather
+the key on a step whose rope correction was then rejected, and the rollback would
+restore both bodies while keeping the key — leaving a level effectively completed
+with the team back at its pre-move positions. The lane that fixed it proved
+reachability with a failing test before touching production code, and correctly
+rejected the capture point my ticket suggested: snapshotting inside
+`solve_tether` would have read the already-mutated value and been a no-op. The
+pre-move value is now captured beside `before_tether` in the step.
+
+**A template literal that never interpolated (`98e94c7`).** Replacing hard-coded
+stage counts, I wrapped a string containing `${stageCount}` in single quotes, so
+the campaign-completion line would have printed the literal text. A lane caught
+it while adding its own assertion. The file is now swept: no line contains `${`
+inside single quotes.
+
+Both are the kind of defect a green suite hides — one needed a purpose-built
+failing test, the other needed someone reading the diff instead of the exit code.
+
+**Follow-up filed, not assumed:** `solve_tether` has two `regroup_team` paths that
+also do not restore `key_collected`. That may be correct — a regroup relocates
+the team but does not discard the step, unlike a rollback — so a lane is
+determining reachability before any fix is written.
