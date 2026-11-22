@@ -3,7 +3,7 @@
 //! Units are 1/1024 tile.
 use crate::*;
 
-pub const LEVEL_COUNT: u8 = 28;
+pub const LEVEL_COUNT: u8 = 30;
 
 fn r(x: i32, y: i32, w: i32, h: i32) -> Rect {
     Rect {
@@ -69,6 +69,9 @@ pub fn level(number: u8) -> Option<Level> {
     use MechanicKind::*;
     if !(1..=LEVEL_COUNT).contains(&number) {
         return None;
+    }
+    if number > 28 {
+        return Some(team_pad_room(number));
     }
     if number > 24 {
         return Some(platform_course(number));
@@ -447,6 +450,74 @@ fn expedition(number: u8) -> Level {
             add(&mut l, FallingRock, r(x, floor - 9, 1, 1), 8 * UNIT, 240);
         }
     }
+    l
+}
+
+
+/// The team-pad lesson. The pad holds a gate open only while several players
+/// stand on it, so the key sits behind that gate: someone must hold the pad
+/// while a teammate goes through. One player alone can never finish.
+fn team_pad_room(number: u8) -> Level {
+    let wide = number == 30;
+    let width = if wide { 34 } else { 30 };
+    let mut l = Level {
+        number,
+        width: width * UNIT,
+        height: 14 * UNIT,
+        spawn_y: 12 * UNIT,
+        required_players: if wide { 3 } else { 2 },
+        tether_length: 0,
+        title: if wide { "Two to hold" } else { "Both on the brass" }.into(),
+        hint: if wide {
+            "Two on the brass pad hold the door while the third brings the key home."
+        } else {
+            "The brass pad opens only while all of you stand on it. One climbs, one holds."
+        }
+        .into(),
+        solids: vec![r(0, 12, width, 2)],
+        key: Rect {
+            x: (width - 9) * UNIT,
+            y: 11 * UNIT,
+            w: UNIT / 2,
+            h: UNIT / 2,
+        },
+        gate: r(width - 8, 9, 1, 3),
+        exit: r(width - 4, 10, 2, 2),
+        ..Level::default()
+    };
+    // The pad sits left of the spawn columns, so the holder walks away from the
+    // team instead of blocking the corridor: bodies block each other at one
+    // height, and a pad in the middle would make the room unplayable.
+    add(
+        &mut l,
+        MechanicKind::TeamPad,
+        Rect {
+            y: 12 * UNIT - UNIT / 8,
+            h: UNIT / 8,
+            ..r(0, 0, 2, 1)
+        },
+        2,
+        0,
+    );
+    // This door spans the corridor between the pad and the key. It opens only
+    // under the pad, so a solo player can never reach the key. The release
+    // grace is long (15 s) because the team has to walk the corridor after
+    // stepping off together; the exit still needs every player, so lingering
+    // outside is never a way to win.
+    add(&mut l, MechanicKind::PressureGate, r(13, 8, 1, 4), 0, 900);
+    // A flag past the door, and a ledge over the key for a second beat.
+    add(&mut l, MechanicKind::Checkpoint, r(18, 10, 4, 2), 0, 0);
+    add(
+        &mut l,
+        MechanicKind::OneWay,
+        Rect {
+            y: 10 * UNIT,
+            h: UNIT / 4,
+            ..r(width - 8, 0, 3, 1)
+        },
+        0,
+        0,
+    );
     l
 }
 

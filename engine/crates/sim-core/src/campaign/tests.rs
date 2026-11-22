@@ -657,7 +657,8 @@ fn expeditions_require_real_rope_partners_and_declared_team_sizes() {
 
 #[test]
 fn input_only_completion_of_long_platform_courses() {
-    for number in 25..=LEVEL_COUNT {
+    // Platform courses are 25..=28; 29-30 are team-pad rooms with their own witness.
+    for number in 25..=28 {
         let l = level(number).unwrap();
         let mut w = ReviewWorld::new(&l);
         let count = u32::from(l.required_players);
@@ -769,6 +770,49 @@ fn input_only_completion_of_long_platform_courses() {
         }
         assert!(w.completed, "finish course {number}: {:?}", w.players);
         assert_eq!(w.deaths, 0);
+    }
+}
+
+#[test]
+fn input_only_completion_of_team_pad_rooms() {
+    for number in 29..=LEVEL_COUNT {
+        let l = level(number).unwrap();
+        let mut w = ReviewWorld::new(&l);
+        let count = u32::from(l.required_players);
+        let pad = l
+            .mechanics
+            .iter()
+            .find(|m| m.kind == MechanicKind::TeamPad)
+            .expect("team pad")
+            .rect;
+        let pad_x = pad.x + pad.w / 2 - PLAYER_WIDTH / 2;
+        // Everyone presses the pad together: the key lies behind a door that
+        // only stays open under it, so a solo player can never reach the key.
+        for id in 1..=count {
+            walk_to(&l, &mut w, id, pad_x + (id as i32 - 1) * (PLAYER_WIDTH + 32));
+        }
+        for _ in 0..40 {
+            w.step(&l, &[]);
+        }
+        assert!(
+            w.objects
+                .iter()
+                .zip(&l.mechanics)
+                .any(|(o, m)| m.kind == MechanicKind::TeamPad && o.active),
+            "level {number}: the team must press the pad"
+        );
+        // Bodies block each other at one height, so the front-most player moves
+        // first; an arrived player stops blocking, which lets the rest follow.
+        for id in (1..=count).rev() {
+            walk_to(&l, &mut w, id, l.key.x + UNIT / 4);
+            walk_to(&l, &mut w, id, l.exit.x);
+        }
+        assert!(
+            w.completed,
+            "level {number}: key {}, players {:?}, deaths {}",
+            w.key_collected, w.players, w.deaths
+        );
+        assert_eq!(w.deaths, 0, "level {number}");
     }
 }
 
