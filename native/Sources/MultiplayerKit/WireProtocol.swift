@@ -5,7 +5,7 @@ public enum Wire {
     public static let version = 3
     public static let game = "coop-sandbox"
     public static let ruleset = "coop-campaign-3"
-    public static let levelCount = 28
+    public static let levelCount = 30
     /// Mirrors `net_proto::CHAT_PRESETS`; a mismatch fails decode rather than
     /// showing wording the server did not choose.
     public static let chatPresets = ["Follow me", "Wait here", "Jump!", "Ready?", "Help!", "Nice!"]
