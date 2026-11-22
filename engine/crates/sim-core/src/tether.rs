@@ -101,6 +101,10 @@ impl World {
         key_before_tether: bool,
     ) {
         if !self.tether_valid(level, &previous) {
+            // The roster changed (a late join or a dropped link), so the team is
+            // relocated. Movement still ran first: undo a key gathered by a body
+            // position that regroup is about to discard.
+            self.key_collected = key_before_tether;
             self.regroup_team(level);
             return;
         }
@@ -164,7 +168,9 @@ impl World {
                 self.key_collected = key_before_tether;
             } else {
                 // A late new identity/removed link can start far from the chain.
-                // Deterministically regroup at the checkpoint without charging a death.
+                // Deterministically regroup at the checkpoint without charging a
+                // death, and discard the key this step's movement gathered.
+                self.key_collected = key_before_tether;
                 self.regroup_team(level);
             }
         }
@@ -210,6 +216,66 @@ mod tests {
             assert!(!world.players[0].rect().overlaps(world.players[1].rect()));
         }
         assert!(world.players[0].x > 0, "the tether must resist separation");
+    }
+    #[test]
+    fn regroup_does_not_keep_a_key_gathered_by_a_discarded_body_position() {
+        // A roster that was already tether-invalid regroups without attempting a
+        // correction, but movement runs first: the key that step gathered must not
+        // survive, because regroup throws away the positions that reached it.
+        let level = Level {
+            tether_length: 2 * UNIT,
+            solids: vec![Rect {
+                x: 0,
+                y: 12 * UNIT,
+                w: 24 * UNIT,
+                h: 2 * UNIT,
+            }],
+            key: Rect {
+                x: 6 * UNIT,
+                y: 12 * UNIT - PLAYER_HEIGHT,
+                w: UNIT / 2,
+                h: UNIT / 2,
+            },
+            gate: Rect {
+                x: 0,
+                y: 0,
+                w: UNIT,
+                h: UNIT,
+            },
+            exit: Rect {
+                x: 23 * UNIT,
+                y: 10 * UNIT,
+                w: UNIT,
+                h: 2 * UNIT,
+            },
+            ..Level::default()
+        };
+        assert!(level.valid());
+        let mut world = World::for_level(&level);
+        assert!(world.add_player_in(&level, 1));
+        // Player 2 joins far outside the tether, so the very next solve regroups.
+        assert!(world.add_player_in(&level, 2));
+        // Far apart, so the tether is already invalid before the step runs.
+        world.players[0].x = 20 * UNIT;
+        // One short stride left of this sits inside the key: movement gathers it
+        // on the same step that the regroup discards these positions.
+        world.players[1].x = 6 * UNIT + UNIT / 4;
+        for p in &mut world.players {
+            p.y = 12 * UNIT - PLAYER_HEIGHT;
+            p.vx = 0;
+            p.vy = 0;
+            p.grounded = true;
+        }
+        assert!(!world.key_collected);
+        // One leftward step puts player 2 across the key before the solve runs.
+        world.step(
+            &level,
+            &[(2, Input { axis: -1, jump: false })],
+        );
+        assert!(
+            !world.key_collected,
+            "a key gathered by a body that the regroup discards must not persist"
+        );
     }
     #[test]
     fn anchored_partner_catches_a_fall_and_late_joins_regroup_safely() {
