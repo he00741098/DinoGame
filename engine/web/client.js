@@ -344,6 +344,7 @@ const mechanicStyles = {
   ice: ['#b4edff', 'I'], spring: ['#9dec77', '↑↑'], hazard: ['#ff667f', '!'],
   checkpoint: ['#70e0a5', 'C'], crumble: ['#bfa58c', '…'], low_gravity: ['#c794f5', 'G↓'], wind: ['#81cdda', '~'],
   rope: ['#e7c28c', 'ROPE: hold Jump together'], falling_rock: ['#b7bcc9', 'ROCK'],
+  team_pad: ['#e87fb5', '👥'],
 };
 function draw() {
   if (reviewing && reviewFrames.length) {
@@ -396,6 +397,14 @@ function draw() {
       ctx.fillStyle = color; ctx.font = '12px system-ui';
       ctx.fillText(`${kind === 'falling_rock' && object.timer < 60 ? '⚠ ' : ''}${glyph} #${object.id} ${object.active ? 'ON' : 'off'} t:${object.timer}`,
         object.rect.x / unit * 50, object.rect.y / unit * 50 - 3);
+      // A pad waiting for a crowd advertises how many players it still needs.
+      if (kind === 'team_pad' && !object.active) {
+        const definition = level.mechanics.find(item => item.id === object.id);
+        const required = Number(definition?.travel);
+        const needed = Number.isFinite(required) && required > 1 ? Math.trunc(required) : 2;
+        ctx.fillStyle = color; ctx.font = 'bold 12px system-ui';
+        ctx.fillText(`×${needed}`, object.rect.x / unit * 50, object.rect.y / unit * 50 - 16);
+      }
     }
     // Objectives are drawn LAST over zones/objects: the purple low-G zone used
     // to paint an opaque rectangle over its elevated key.
