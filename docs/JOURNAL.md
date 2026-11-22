@@ -109,3 +109,37 @@ cannot drift again.
 **Open bug.** Chat frames share the gameplay frame budget, so chat spam could
 consume `INPUTS_PER_SECOND` and drop a player's input or the connection. Fix in
 flight: chat gets its own budget and is dropped rather than fatal.
+
+### Same day — four review verdicts, three fixes queued
+
+Read-only lanes audited code nobody had looked at since it was written. Three
+findings were real enough to fix; none changed a design decision.
+
+**Patch grammar is add-free and delete-free — but the encoder did not know that.**
+`snapshot_patch::difference` walked only the new snapshot's keys, so an added
+field was emitted (and then rejected by both decoders as unknown), and a removed
+field was silently left stale on the client. The browser also sized merged
+patches in UTF-16 code units while Swift and the server use bytes. Fix in flight:
+encoder falls back to a full snapshot whenever the key set changes, and the
+browser measures bytes.
+
+**Tether rollback may leak a collected key.** `solve_tether` restores player
+bodies and deliberately preserves `jump_held`, but `key_collected` is a world
+field that movement can set before the solve runs. A lane is proving
+reachability first; if it cannot construct a failing case, it will add an
+ordering test instead of a speculative fix.
+
+**Chat could lock out input.** Chat frames shared the gameplay frame budget, so
+spamming chat could consume `INPUTS_PER_SECOND` and drop input or the socket.
+Chat now gets its own budget and is dropped, not fatal.
+
+**Accessibility.** The highest-value finding was that `#status` is a polite live
+region rewritten on every snapshot — roughly twenty screen-reader announcements
+per second. Diagnostics are being split from an event-only announcement region.
+Reduced motion is also not honoured by either presentation timeline; both now
+get a knob to disable extrapolation and smoothing.
+
+**Campaign curve.** Classified all 28 stages: 15 teach, 6 combine, 2 rest, plus
+the platform chapter. Stages 16–20 form a five-stage combination streak with no
+rest, and the expedition template added falling rocks to stage 21 before the rope
+lesson had landed. Stage 21 now teaches rope alone; rocks arrive in 22.
