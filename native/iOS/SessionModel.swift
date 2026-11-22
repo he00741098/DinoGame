@@ -188,6 +188,7 @@ final class SessionModel: ObservableObject {
         awaitingBaseline = true; baselineSequence = nil
         acknowledgmentDeadline.clear()
         latestChat = nil
+        chatLog = []
         chatCooldown?.cancel(); chatCooldown = nil
         chatCoolingDown = false
     }
@@ -390,6 +391,7 @@ final class SessionModel: ObservableObject {
                     acknowledgmentDeadline.clear()
                     previousVerticalVelocity = 0
                     upwardTransitions = 0
+                    chatLog = []
                 }
                 revision = snapshot.revision
                 level = snapshot.level
