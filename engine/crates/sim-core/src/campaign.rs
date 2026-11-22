@@ -412,7 +412,11 @@ fn expedition(number: u8) -> Level {
         number, required_players: required, spawn_y: floor * UNIT,
         width: width * UNIT, height: height * UNIT,
         title: match number { 21 => "The shared rope", 22 => "Quarry crossing", 23 => "Three on the line", _ => "Four to the summit" }.into(),
-        hint: format!("{required} players needed. Line up on the pads to tension the rope; hold Jump together to climb to the key. Regroup below, watch the falling-rock warnings, then cross the long valley."),
+        hint: if number >= 22 {
+            format!("{required} players needed. Line up on the pads to tension the rope; hold Jump together to climb to the key. Regroup below, watch the falling-rock warnings, then cross the long valley.")
+        } else {
+            format!("{required} players needed. Line up on the pads to tension the rope; hold Jump together to climb to the key.")
+        },
         solids: vec![r(0, floor, width, 2)],
         // The key wall shares the pressure-gate shaft: nobody can activate the
         // far-side checkpoint before fetching the high key, avoiding a softlock.
@@ -437,8 +441,11 @@ fn expedition(number: u8) -> Level {
     }
     add(&mut l, PressureGate, r(20, 2, 1, floor - 2), 0, 3600);
     add(&mut l, Checkpoint, r(23, floor - 2, 4, 2), 0, 0);
-    for x in [32, width - 19] {
-        add(&mut l, FallingRock, r(x, floor - 9, 1, 1), 8 * UNIT, 240);
+    // Falling rocks are the stage 22 twist; stage 21 teaches only rope and pads.
+    if number >= 22 {
+        for x in [32, width - 19] {
+            add(&mut l, FallingRock, r(x, floor - 9, 1, 1), 8 * UNIT, 240);
+        }
     }
     l
 }
