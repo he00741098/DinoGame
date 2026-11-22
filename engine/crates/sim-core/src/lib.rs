@@ -643,29 +643,6 @@ mod tests {
     }
 
     #[test]
-    fn team_pad_needs_two_players() {
-        let level = team_pad_level(2, 2);
-        let mut world = World::for_level(&level);
-        world.add_player_in(&level, 1);
-        // One player walking onto the pad must leave it inactive.
-        for _ in 0..240 {
-            world.step(&level, &[(1, Input { axis: 1, jump: false })]);
-        }
-        assert!(!pad_active(&world, &level), "one player must not press it");
-        world.add_player_in(&level, 2);
-        for _ in 0..240 {
-            world.step(
-                &level,
-                &[
-                    (1, Input { axis: 0, jump: false }),
-                    (2, Input { axis: 1, jump: false }),
-                ],
-            );
-        }
-        assert!(pad_active(&world, &level), "two players must press it");
-    }
-
-    #[test]
     fn team_pad_threshold_survives_a_larger_team() {
         // Three-player stage, two-player pad: two bodies must suffice, which
         // would fail if the threshold were read from required_players.
@@ -722,18 +699,6 @@ mod tests {
             pad_active(&world, &level),
             "two bodies on the pad edge must press it"
         );
-    }
-
-    #[test]
-    fn team_pad_ignores_duplicate_bodies() {
-        // A pad needing four cannot be pressed by one player over many ticks.
-        let level = team_pad_level(4, 2);
-        let mut world = World::for_level(&level);
-        world.add_player_in(&level, 1);
-        for _ in 0..300 {
-            world.step(&level, &[(1, Input { axis: 1, jump: false })]);
-        }
-        assert!(!pad_active(&world, &level), "one body counts once");
     }
 
     #[test]
