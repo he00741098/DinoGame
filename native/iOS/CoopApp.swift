@@ -111,7 +111,7 @@ struct LobbyView: View {
     private var campaignHeader: some View {
         VStack(alignment: .leading, spacing: 4) {
             HStack {
-                Text(session.campaignComplete ? "Campaign complete!" : "\(session.level?.number ?? 1)/24 · \(session.level?.title ?? "Co-op campaign")")
+                Text(session.campaignComplete ? "Campaign complete!" : "\(session.level?.number ?? 1)/\(Wire.levelCount) · \(session.level?.title ?? "Co-op campaign")")
                     .font(.headline).accessibilityIdentifier("levelTitle")
                     .accessibilityValue("Round \(session.revision)")
                 Spacer(minLength: 4)
@@ -120,7 +120,7 @@ struct LobbyView: View {
                         .disabled(!session.active).accessibilityIdentifier("restart")
                 }
             }.font(.caption)
-            Text(session.campaignComplete ? "All 24 levels cleared together. Thanks for playing!" : (session.level?.hint ?? ""))
+            Text(session.campaignComplete ? "All \(Wire.levelCount) levels cleared together. Thanks for playing!" : (session.level?.hint ?? ""))
                 .font(.caption).foregroundStyle(.secondary).lineLimit(2).accessibilityIdentifier("levelHint")
             HStack {
                 Text("Team deaths: \(session.world?.deaths ?? 0)")

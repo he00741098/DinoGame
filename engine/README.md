@@ -9,7 +9,7 @@ cd engine
 cargo run --locked -p multiplayer-server
 ```
 
-Open <http://127.0.0.1:3000> in browser tabs, or join from the [native iOS client](../native/README.md), using the same room code. Move with A/D or arrows; jump with space/W/up. The campaign has **24 original stages**, including a new [larger expedition chapter](../docs/CAMPAIGN_LEVELS.md#expedition-chapter) with cooperative rope climbing, falling rocks and explicit 2/3/4-player requirements. All stages have correctly staffed, input-only completion witnesses. Stand on teammates, collect the shared key, and bring everyone to the exit. The room controller can Restart; progression is automatic after team completion. Content is an MVP candidate: human difficulty and touch-feel review are not replaced by completion tests.
+Open <http://127.0.0.1:3000> in browser tabs, or join from the [native iOS client](../native/README.md), using the same room code. Move with A/D or arrows; jump with space/W/up. The campaign has **28 original stages**: twenty lessons, a [larger expedition chapter](../docs/CAMPAIGN_LEVELS.md#expedition-chapter) with cooperative rope climbing, falling rocks and explicit 2/3/4-player requirements, and a [platform chapter](../docs/CAMPAIGN_LEVELS.md#platform-chapter) of long vertical courses tied together by a player-to-player tether. All stages have correctly staffed, input-only completion witnesses. Stand on teammates, collect the shared key, and bring everyone to the exit. The room controller can Restart; progression is automatic after team completion. Content is an MVP candidate: human difficulty and touch-feel review are not replaced by completion tests.
 
 ### Exit, review and network diagnostics
 
@@ -17,14 +17,14 @@ Entering the unlocked exit commits a player to waiting for the team. Arrived pla
 
 Hazards are upright triangular spike teeth in both renderers and the authoritative integer collision test, not invisible bounding rectangles. Empty upper corners/valleys are safe; positive-area tooth/body intersection respawns the team. Teeth count is `clamp(width / 350, 1, 24)` using integer division. Translucent low-gravity/wind/checkpoint zones cannot occlude objectives; the elevated key is rendered above mechanic objects. Native offscreen key indicators point toward objectives above/beyond the camera view.
 
-The browser's **Solution review** panel plays all 24 stages with pause, speed and timeline scrubbing. `/?solution=21` opens a particular stage. Review leaves the live room and sends no gameplay traffic. These are death-free **input-only simulation witnesses**, not mathematically optimal solutions or evidence of real-network performance. Live browser play uses a following camera and offscreen teammate/key indicators; review retains a full-room overview. The renderer consumes recorded authority, not invented animation or injected player coordinates. Regenerate recordings after rule/catalog changes:
+The browser's **Solution review** panel plays all 28 stages with pause, speed and timeline scrubbing. `/?solution=25` opens a particular stage. Review leaves the live room and sends no gameplay traffic. These are death-free **input-only simulation witnesses**, not mathematically optimal solutions or evidence of real-network performance. Live browser play uses a following camera and offscreen teammate/key indicators; review retains a full-room overview. The renderer consumes recorded authority, not invented animation or injected player coordinates. Mechanic state that never changes during a run is stored once as `constant_objects` instead of in every frame; the viewer fills it in on load. Regenerate recordings after rule/catalog changes:
 
 ```sh
 COOP_EXPORT_SOLUTIONS="$PWD/web/solutions" cargo test --locked -p sim-core input_only_completion
 node --test web/*.test.mjs
 ```
 
-The test recorder advances an independent replay with the same ordinary inputs and checks every state hash; only completed zero-death runs are exported. Generated recordings are embedded into the server, bounded to the 24 bundled levels and covered by browser contract tests.
+The test recorder advances an independent replay with the same ordinary inputs and checks every state hash; only completed zero-death runs are exported. Generated recordings are embedded into the server, bounded to the 28 bundled levels and covered by browser contract tests.
 
 Both clients expose **Network statistics**: cumulative sent/received application bytes, session-average KiB/s, applied-input acknowledgment latency and snapshot-gap jitter. Counters never retain content, credentials or addresses. Byte counts **exclude** WebSocket/TLS/TCP/IP framing and retransmissions; applied ack includes scheduling and is **not pure RTT/ping**. These are local diagnostics, not uploaded analytics. Statistics reset their pending ack/gap state on reconnect while keeping session totals.
 
@@ -36,7 +36,13 @@ Hello may opt in with `"patches":true` (browser/native do). The default remains 
 
 At the final campaign results screen, clients disable movement and send a neutral keepalive only every **10 seconds**. The server suppresses publications whose only change is the simulation tick; roster/controller/ack/restart changes still publish promptly. The final-screen silence bound is 15 seconds, while the independent **3-second applied-ack deadline** remains enforced for every offered command, including Restart. Restart wakes regular traffic immediately. Active play remains 20 updates/s; inputs, content, level transitions and backpressure safeguards are unchanged. Long browser background suspension may still require rejoining.
 
-The game ruleset is now `coop-campaign-2` to fence clients without the new mechanics/content. Refresh browser clients and rebuild native clients after this update. This is still JSON, not a final binary/interest-managed protocol; moving object arrays can remain a substantial cost. Measure actual wire overhead/cellular energy separately from application-payload savings.
+The game ruleset is now `coop-campaign-3` to fence clients without tethers and the platform chapter. Refresh browser clients and rebuild native clients after this update. This is still JSON, not a final binary/interest-managed protocol; moving object arrays can remain a substantial cost. Measure actual wire overhead/cellular energy separately from application-payload savings.
+
+### Tethers and presentation smoothing
+
+Stages 25, 27 and 28 set `tether_length` (2–12 tiles). The authority treats the team as a straight slack chain in ascending player-ID order: it iteratively pulls over-stretched pairs back to the limit, biases the correction toward an anchored partner (feet on a solid or one-way ledge), and moves bodies with swept axis clipping so a correction cannot pass through walls. Velocity along the taut axis is removed. If a correction cannot be made valid, the step rolls back to the previous state while preserving consumed jump-held input; if the previous state was also invalid — a late join far from the chain — the team regroups at the checkpoint without charging a death. Tether state is server-side only; clients never send positions.
+
+Remote characters are rendered from a presentation timeline (`engine/web/motion.js`, `native/Sources/MultiplayerKit/MotionTimeline.swift`), never from a guessed authority. It keeps the last 8 authority frames, renders about 100 ms behind the newest arrival (the local player is not delayed), interpolates between frames, and on a late packet extrapolates for at most 100 ms with a 1536-unit distance cap. Output is exponentially smoothed over 35 ms. Any tick rewind, jump over 4096 units, revision change, respawn or roster removal resets the history. This is display-only: collision, goals and acknowledgment still come from snapshots, and the client still sends inputs only.
 
 ### Reusable engine boundaries and social/connectivity direction
 
