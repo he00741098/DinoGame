@@ -8,6 +8,11 @@ Hosted: <https://mobile.userorientedsystems.com/> (`wss://…/ws`). Refresh brow
 tabs and rebuild native clients after every deploy. The playtest access code lives
 outside the repository; see `deploy/lightsail/README.md`.
 
+At the end of the session, press **Download playtest log** (under "Network
+statistics" on the playtest page) and keep the resulting `coop-playtest-*.json`
+file alongside these notes — `docs/PLAYTEST_LOG.md` explains what it records and
+how to read it.
+
 ## Block 1 — tether and motion smoothing under load (≈15 min)
 
 - **Do.** Two players, stage 25 (*Tied at the ridge*, 6-tile tether). Mid-climb,
