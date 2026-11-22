@@ -154,7 +154,13 @@ final class CoopClientUITests: XCTestCase {
         XCTAssertEqual(app.state, .runningForeground)
         expectation(for: connected, evaluatedWith: status)
         waitForExpectations(timeout: 5)
-        XCTAssertTrue(chat2.isEnabled)
+        // Sending starts the two-second cooldown that matches the server's own
+        // rate limit, so the button is deliberately disabled right now; it must
+        // come back on its own rather than staying stuck.
+        let reenabled = NSPredicate(format: "isEnabled == true")
+        expectation(for: reenabled, evaluatedWith: chat2)
+        waitForExpectations(timeout: 6)
+        XCTAssertTrue(chat2.isEnabled, "the chat cooldown must release on its own")
         app.buttons["leave"].tap()
     }
 
