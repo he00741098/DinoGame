@@ -1,0 +1,51 @@
+// !$*UTF8*$!
+{
+    archiveVersion = 1;
+    classes = {};
+    objectVersion = 77;
+    objects = {
+        A00000000000000000000001 = {
+            isa = PBXProject;
+            attributes = { BuildIndependentTargetsInParallel = YES; LastUpgradeCheck = 2700; TargetAttributes = { A00000000000000000000010 = { CreatedOnToolsVersion = 27.1; }; A00000000000000000000020 = { CreatedOnToolsVersion = 27.1; TestTargetID = A00000000000000000000010; }; }; };
+            buildConfigurationList = A00000000000000000000030;
+            compatibilityVersion = "Xcode 16.0";
+            developmentRegion = en;
+            hasScannedForEncodings = 0;
+            knownRegions = (en, Base);
+            mainGroup = A00000000000000000000002;
+            minimizedProjectReferenceProxies = 1;
+            preferredProjectObjectVersion = 77;
+            productRefGroup = A00000000000000000000003;
+            projectDirPath = "";
+            projectRoot = "";
+            targets = (A00000000000000000000010, A00000000000000000000020);
+        };
+        A00000000000000000000002 = { isa = PBXGroup; children = (A00000000000000000000004, A00000000000000000000005, A00000000000000000000006, A00000000000000000000003); sourceTree = "<group>"; };
+        A00000000000000000000003 = { isa = PBXGroup; children = (A00000000000000000000011, A00000000000000000000021); name = Products; sourceTree = "<group>"; };
+        A00000000000000000000004 = { isa = PBXFileSystemSynchronizedRootGroup; path = iOS; sourceTree = "<group>"; };
+        A00000000000000000000005 = { isa = PBXFileSystemSynchronizedRootGroup; path = Sources/MultiplayerKit; sourceTree = "<group>"; };
+        A00000000000000000000006 = { isa = PBXFileSystemSynchronizedRootGroup; path = UITests; sourceTree = "<group>"; };
+        A00000000000000000000010 = { isa = PBXNativeTarget; buildConfigurationList = A00000000000000000000031; buildPhases = (A00000000000000000000012, A00000000000000000000013, A00000000000000000000014); buildRules = (); dependencies = (); fileSystemSynchronizedGroups = (A00000000000000000000004, A00000000000000000000005); name = CoopClient; productName = CoopClient; productReference = A00000000000000000000011; productType = "com.apple.product-type.application"; };
+        A00000000000000000000011 = { isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = CoopClient.app; sourceTree = BUILT_PRODUCTS_DIR; };
+        A00000000000000000000012 = { isa = PBXSourcesBuildPhase; buildActionMask = 2147483647; files = (); runOnlyForDeploymentPostprocessing = 0; };
+        A00000000000000000000013 = { isa = PBXFrameworksBuildPhase; buildActionMask = 2147483647; files = (); runOnlyForDeploymentPostprocessing = 0; };
+        A00000000000000000000014 = { isa = PBXResourcesBuildPhase; buildActionMask = 2147483647; files = (); runOnlyForDeploymentPostprocessing = 0; };
+        A00000000000000000000020 = { isa = PBXNativeTarget; buildConfigurationList = A00000000000000000000032; buildPhases = (A00000000000000000000022, A00000000000000000000023, A00000000000000000000024); buildRules = (); dependencies = (A00000000000000000000025); fileSystemSynchronizedGroups = (A00000000000000000000006); name = CoopClientUITests; productName = CoopClientUITests; productReference = A00000000000000000000021; productType = "com.apple.product-type.bundle.ui-testing"; };
+        A00000000000000000000021 = { isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = CoopClientUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+        A00000000000000000000022 = { isa = PBXSourcesBuildPhase; buildActionMask = 2147483647; files = (); runOnlyForDeploymentPostprocessing = 0; };
+        A00000000000000000000023 = { isa = PBXFrameworksBuildPhase; buildActionMask = 2147483647; files = (); runOnlyForDeploymentPostprocessing = 0; };
+        A00000000000000000000024 = { isa = PBXResourcesBuildPhase; buildActionMask = 2147483647; files = (); runOnlyForDeploymentPostprocessing = 0; };
+        A00000000000000000000025 = { isa = PBXTargetDependency; target = A00000000000000000000010; targetProxy = A00000000000000000000026; };
+        A00000000000000000000026 = { isa = PBXContainerItemProxy; containerPortal = A00000000000000000000001; proxyType = 1; remoteGlobalIDString = A00000000000000000000010; remoteInfo = CoopClient; };
+        A00000000000000000000030 = { isa = XCConfigurationList; buildConfigurations = (A00000000000000000000040, A00000000000000000000041); defaultConfigurationIsVisible = 0; defaultConfigurationName = Release; };
+        A00000000000000000000031 = { isa = XCConfigurationList; buildConfigurations = (A00000000000000000000042, A00000000000000000000043); defaultConfigurationIsVisible = 0; defaultConfigurationName = Release; };
+        A00000000000000000000032 = { isa = XCConfigurationList; buildConfigurations = (A00000000000000000000044, A00000000000000000000045); defaultConfigurationIsVisible = 0; defaultConfigurationName = Release; };
+        A00000000000000000000040 = { isa = XCBuildConfiguration; name = Debug; buildSettings = { CLANG_ENABLE_MODULES = YES; SDKROOT = iphoneos; IPHONEOS_DEPLOYMENT_TARGET = 17.0; SWIFT_VERSION = 6.0; SWIFT_STRICT_CONCURRENCY = complete; SWIFT_TREAT_WARNINGS_AS_ERRORS = YES; SWIFT_OPTIMIZATION_LEVEL = "-Onone"; DEBUG_INFORMATION_FORMAT = dwarf; ENABLE_TESTABILITY = YES; SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG; }; };
+        A00000000000000000000041 = { isa = XCBuildConfiguration; name = Release; buildSettings = { CLANG_ENABLE_MODULES = YES; SDKROOT = iphoneos; IPHONEOS_DEPLOYMENT_TARGET = 17.0; SWIFT_VERSION = 6.0; SWIFT_STRICT_CONCURRENCY = complete; SWIFT_TREAT_WARNINGS_AS_ERRORS = YES; SWIFT_COMPILATION_MODE = wholemodule; SWIFT_OPTIMIZATION_LEVEL = "-O"; DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym"; }; };
+        A00000000000000000000042 = { isa = XCBuildConfiguration; name = Debug; buildSettings = { PRODUCT_BUNDLE_IDENTIFIER = org.dinogame.CoopClient; PRODUCT_NAME = "$(TARGET_NAME)"; INFOPLIST_FILE = Info.plist; GENERATE_INFOPLIST_FILE = NO; CODE_SIGN_STYLE = Automatic; CURRENT_PROJECT_VERSION = 1; MARKETING_VERSION = 0.1.0; TARGETED_DEVICE_FAMILY = "1,2"; SUPPORTED_PLATFORMS = "iphoneos iphonesimulator"; SUPPORTS_MACCATALYST = NO; }; };
+        A00000000000000000000043 = { isa = XCBuildConfiguration; name = Release; buildSettings = { PRODUCT_BUNDLE_IDENTIFIER = org.dinogame.CoopClient; PRODUCT_NAME = "$(TARGET_NAME)"; INFOPLIST_FILE = Info.plist; GENERATE_INFOPLIST_FILE = NO; CODE_SIGN_STYLE = Automatic; CURRENT_PROJECT_VERSION = 1; MARKETING_VERSION = 0.1.0; TARGETED_DEVICE_FAMILY = "1,2"; SUPPORTED_PLATFORMS = "iphoneos iphonesimulator"; SUPPORTS_MACCATALYST = NO; }; };
+        A00000000000000000000044 = { isa = XCBuildConfiguration; name = Debug; buildSettings = { PRODUCT_BUNDLE_IDENTIFIER = org.dinogame.CoopClientUITests; PRODUCT_NAME = "$(TARGET_NAME)"; GENERATE_INFOPLIST_FILE = YES; CODE_SIGN_STYLE = Automatic; TEST_TARGET_NAME = CoopClient; TARGETED_DEVICE_FAMILY = "1,2"; }; };
+        A00000000000000000000045 = { isa = XCBuildConfiguration; name = Release; buildSettings = { PRODUCT_BUNDLE_IDENTIFIER = org.dinogame.CoopClientUITests; PRODUCT_NAME = "$(TARGET_NAME)"; GENERATE_INFOPLIST_FILE = YES; CODE_SIGN_STYLE = Automatic; TEST_TARGET_NAME = CoopClient; TARGETED_DEVICE_FAMILY = "1,2"; }; };
+    };
+    rootObject = A00000000000000000000001;
+}

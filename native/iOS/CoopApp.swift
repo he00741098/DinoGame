@@ -19,9 +19,11 @@ struct LobbyView: View {
     @State private var endpoint = ProcessInfo.processInfo.environment["COOP_ENDPOINT"] ?? "ws://127.0.0.1:3000"
     @State private var fallback = ProcessInfo.processInfo.environment["COOP_FALLBACK"] ?? ""
     @State private var room = ProcessInfo.processInfo.environment["COOP_ROOM"] ?? "playtest"
+    @State private var accessCode = ""
     @FocusState private var editing: Bool
     @State private var connectionExpanded = false
     @State private var legendExpanded = false
+    @State private var statisticsExpanded = false
 
     var body: some View {
         VStack(alignment: .leading, spacing: 6) {
@@ -29,7 +31,7 @@ struct LobbyView: View {
                 ScrollView {
                     VStack(alignment: .leading, spacing: 12) {
                         Text("CO-OP LAB").font(.title2.bold()).foregroundStyle(.mint)
-                        Text("20 challenges. One team.").font(.headline)
+                        Text("24 challenges. One team.").font(.headline)
                         connectionForm
                         Text("2–4 players. Stack on teammates, collect the shared key, then bring everyone to the exit.")
                             .font(.footnote).foregroundStyle(.secondary)
@@ -51,6 +53,12 @@ struct LobbyView: View {
             }
             Text("\(session.world?.players.count ?? 0)/4 players · tick \(session.world?.tick ?? 0) · ack \(session.appliedSequence) · rises \(session.upwardTransitions)")
                 .font(.caption2.monospacedDigit()).accessibilityIdentifier("diagnostics")
+            DisclosureGroup("Network statistics", isExpanded: $statisticsExpanded) {
+                Text(session.networkSummary).font(.caption2.monospacedDigit())
+                    .accessibilityIdentifier("networkStatistics")
+                Text("Session-average application payload only; excludes transport overhead. Applied ack includes server scheduling, not pure ping.")
+                    .font(.caption2).foregroundStyle(.secondary)
+            }.font(.caption2)
             if !session.active {
                 Text(session.detail).font(.caption2).foregroundStyle(.secondary).lineLimit(2)
             }
@@ -75,6 +83,8 @@ struct LobbyView: View {
         .padding(.horizontal, 12).padding(.top, 6)
         .safeAreaInset(edge: .bottom, spacing: 6) { controls.padding(.horizontal, 12).padding(.bottom, 6) }
         .background(Color(red: 0.04, green: 0.07, blue: 0.12))
+        .onChange(of: editing) { _, value in if value { session.releaseControls() } }
+        .onChange(of: connectionExpanded) { _, value in if value { session.releaseControls() } }
     }
 
     private var connectionForm: some View {
@@ -83,12 +93,14 @@ struct LobbyView: View {
                 .accessibilityIdentifier("endpoint").textContentType(.URL).keyboardType(.URL)
             TextField("Fallback endpoint (optional)", text: $fallback)
                 .accessibilityIdentifier("fallback").keyboardType(.URL)
+            SecureField("Playtest access code (hosted server)", text: $accessCode)
+                .accessibilityIdentifier("accessCode")
             HStack {
                 TextField("Room code", text: $room).accessibilityIdentifier("room")
                 Button("Join") {
                     editing = false
                     connectionExpanded = false
-                    session.connect(primary: endpoint, fallback: fallback, room: room)
+                    session.connect(primary: endpoint, fallback: fallback, room: room, accessCode: accessCode)
                 }.buttonStyle(.borderedProminent).tint(.mint).accessibilityIdentifier("join")
             }
         }
@@ -99,26 +111,31 @@ struct LobbyView: View {
     private var campaignHeader: some View {
         VStack(alignment: .leading, spacing: 4) {
             HStack {
-                Text(session.campaignComplete ? "Campaign complete!" : "\(session.level?.number ?? 1)/20 · \(session.level?.title ?? "Co-op campaign")")
+                Text(session.campaignComplete ? "Campaign complete!" : "\(session.level?.number ?? 1)/24 · \(session.level?.title ?? "Co-op campaign")")
                     .font(.headline).accessibilityIdentifier("levelTitle")
+                    .accessibilityValue("Round \(session.revision)")
                 Spacer(minLength: 4)
                 if session.controllerID != nil && session.controllerID == session.playerID {
                     Button("Restart") { session.restartLevel() }
                         .disabled(!session.active).accessibilityIdentifier("restart")
-                    if session.world?.completed == true && !session.campaignComplete {
-                        Button("Next") { session.nextLevel() }
-                            .disabled(!session.active).accessibilityIdentifier("next")
-                    }
                 }
             }.font(.caption)
-            Text(session.campaignComplete ? "All 20 levels cleared together. Thanks for playing!" : (session.level?.hint ?? ""))
+            Text(session.campaignComplete ? "All 24 levels cleared together. Thanks for playing!" : (session.level?.hint ?? ""))
                 .font(.caption).foregroundStyle(.secondary).lineLimit(2).accessibilityIdentifier("levelHint")
             HStack {
                 Text("Team deaths: \(session.world?.deaths ?? 0)")
+                Text("Needs \(session.level?.minimumPlayers ?? 2) players")
                 Text(session.world?.key_collected == true ? "Key collected ✓" : "Find the key")
                     .foregroundStyle(session.world?.key_collected == true ? .mint : .yellow)
+                if let level = session.level, let world = session.world, world.key_collected {
+                    let arrived = world.players.filter { p in
+                        p.x < level.exit.x + level.exit.w && p.x + 720 > level.exit.x &&
+                        p.y < level.exit.y + level.exit.h && p.y + 896 > level.exit.y
+                    }.count
+                    Text("Exit: \(arrived)/\(world.players.count) · enter to wait")
+                }
                 if session.world?.completed == true && !session.campaignComplete {
-                    Text(session.controllerID == session.playerID ? "Level cleared!" : "Cleared — waiting for host")
+                    Text("Cleared — next stage shortly…")
                 }
             }.font(.caption2).accessibilityIdentifier("teamProgress")
             if let mechanics = session.level?.mechanics, !mechanics.isEmpty {
@@ -137,7 +154,7 @@ struct LobbyView: View {
             Spacer(minLength: 16)
             HoldButton(title: "Jump", symbol: "arrow.up", id: "jump") { session.set(.jump, source: "jump-button", pressed: $0) }
         }
-        .frame(height: 60).disabled(!session.active)
+        .frame(height: 60).disabled(!session.active || session.campaignComplete || editing || connectionExpanded)
     }
 }
 
