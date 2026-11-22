@@ -215,6 +215,149 @@ mod tests {
         assert!(world.players[0].x > 0, "the tether must resist separation");
     }
     #[test]
+    fn anchored_partner_catches_a_fall_and_late_joins_regroup_safely() {
+        let level = Level {
+            height: 24 * UNIT,
+            tether_length: 4 * UNIT,
+            solids: vec![Rect {
+                x: 0,
+                y: 12 * UNIT,
+                w: 8 * UNIT,
+                h: UNIT,
+            }],
+            ..Level::default()
+        };
+        let mut world = World::for_level(&level);
+        world.add_player_in(&level, 1);
+        world.add_player_in(&level, 2);
+        world.key_collected = true;
+        world.players[0].x = 6 * UNIT;
+        world.players[1].x = 9 * UNIT;
+        for _ in 0..300 {
+            world.step(&level, &[]);
+            assert!(world.tether_valid(&level, &world.players));
+            assert_eq!(world.deaths, 0);
+        }
+        assert_eq!(world.players[0].y + PLAYER_HEIGHT, 12 * UNIT);
+        assert!(world.players[1].y < 16 * UNIT);
+        world.players[0].x = 18 * UNIT;
+        world.players[1].x = 21 * UNIT;
+        assert!(world.add_player_in(&level, 3));
+        world.step(&level, &[]);
+        assert!(world.tether_valid(&level, &world.players));
+        assert_eq!(world.deaths, 0);
+        assert!(world.players.iter().all(|p| p.x < 8 * UNIT));
+    }
+    #[test]
+    fn rolled_back_tether_step_must_not_keep_a_key_gathered_mid_move() {
+        let level = Level {
+            tether_length: 2 * UNIT,
+            solids: vec![
+                Rect {
+                    x: 0,
+                    y: 12 * UNIT,
+                    w: 24 * UNIT,
+                    h: 2 * UNIT,
+                },
+                // A wall between the teammates: the rope correction cannot pull
+                // the post-move chain back within the tether through it.
+                Rect {
+                    x: 10 * UNIT,
+                    y: 10 * UNIT,
+                    w: 2 * UNIT,
+                    h: 2 * UNIT,
+                },
+            ],
+            // Kept away from both spawn columns so it never blocks a step.
+            gate: Rect {
+                x: 0,
+                y: 0,
+                w: UNIT,
+                h: UNIT,
+            },
+            // One stride of leftward movement touches it; the resting body does not.
+            key: Rect {
+                x: 8450,
+                y: 12 * UNIT - PLAYER_HEIGHT,
+                w: UNIT / 2,
+                h: UNIT / 2,
+            },
+            exit: Rect {
+                x: 23 * UNIT,
+                y: 10 * UNIT,
+                w: UNIT,
+                h: 2 * UNIT,
+            },
+            ..Level::default()
+        };
+        assert!(level.valid());
+        let mut world = World::for_level(&level);
+        assert!(world.add_player_in(&level, 1));
+        assert!(world.add_player_in(&level, 2));
+        for p in &mut world.players {
+            p.y = 12 * UNIT - PLAYER_HEIGHT;
+            p.vx = 0;
+            p.vy = 0;
+            p.grounded = true;
+            p.jump_held = false;
+        }
+        // Player 1 starts on the locked exit, player 2 starts left of the wall.
+        world.players[0].x = 22_900;
+        world.players[1].x = 9_000;
+        assert!(!world.key_collected);
+        assert!(world.players[0].rect().overlaps(level.exit));
+        assert!(!world.players[1].rect().overlaps(level.key));
+        // The walked-into key really is gathered before the solve runs...
+        let walked = Rect {
+            x: 9_000 - 96,
+            ..world.players[1].rect()
+        };
+        assert!(walked.overlaps(level.key));
+        // ...and standing on the exit is what keeps the pre-step tether valid
+        // while the post-move chain cannot cross the wall.
+        world.step(
+            &level,
+            &[
+                (
+                    1,
+                    Input {
+                        axis: -1,
+                        jump: false,
+                    },
+                ),
+                (
+                    2,
+                    Input {
+                        axis: -1,
+                        jump: false,
+                    },
+                ),
+            ],
+        );
+        assert_eq!(world.players[0].x, 22_900, "the tether must roll back");
+        assert_eq!(world.players[1].x, 9_000, "the tether must roll back");
+        assert!(
+            !world.key_collected,
+            "a key gathered mid-move must roll back with the players"
+        );
+    }
+    /// Intentional: a regroup relocates the team after a real tick, so a key
+    /// gathered on that same step stays gathered (see the rollback test above:
+    /// a rollback restores the pre-move bodies, discarding the tick, so the key
+    /// touch never happened and must undo with the players). A regroup keeps the
+    /// step: the player physically touched the key, and afterwards the team may
+    /// stand nowhere near it, so reverting the flag would lose a pickup they
+    /// already made. A same-tick death keeps the key for the same reason
+    /// (`respawn_team` documents "preserve the shared key"), so undoing it here
+    /// would give the two relocations different key rules for one tick.
+    ///
+    /// The pre-move chain can only be tether-invalid when a player joined since
+    /// the last solve (`add_player_in` does not regroup, and every solved step
+    /// ends valid), which reaches the early regroup guard at the top of
+    /// `solve_tether`. The late regroup's `else` branch is unreachable: that
+    /// same guard already returned for an invalid pre-move chain, so its
+    /// `tether_valid(previous)` check always holds there.
+    #[test]
     fn regroup_relocates_but_intentionally_keeps_a_key_gathered_that_step() {
         let level = Level {
             tether_length: 4 * UNIT,
