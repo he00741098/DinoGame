@@ -219,7 +219,7 @@ function connectRoom(room, automatic = false) {
       setStatus(`Room ${room} · P${player} · Level ${level.number}/${stageCount}: ${level.title} · ${level.required_players ?? 2} players needed · ${level.hint} · ` +
         `${world.players.length}/4 players · tick ${world.tick} · revision ${revision} · ack ${ack ?? 'pending'} · deaths ${world.deaths}` +
         `${inputReady ? '' : ' · Waiting for neutral input acknowledgment'}` +
-        `${world.key_collected ? ` · key collected · exit ${world.players.filter(p => atExit(p)).length}/${world.players.length} (enter to wait)` : ''}${campaignComplete ? ' · Campaign complete! All ${stageCount} levels cleared.' : world.completed ? ' · Level complete! Next stage shortly…' : ''}`);
+        `${world.key_collected ? ` · key collected · exit ${world.players.filter(p => atExit(p)).length}/${world.players.length} (enter to wait)` : ''}${campaignComplete ? ` · Campaign complete! All ${stageCount} levels cleared.` : world.completed ? ' · Level complete! Next stage shortly…' : ''}`);
       if (changed) announce(`Revision ${revision}`);
       if (previousLevelNumber !== level.number) announce(`Level ${level.number} of ${stageCount}: ${level.title}`);
       if (campaignComplete && !wasCampaignComplete) announce(`Campaign complete. All ${stageCount} levels cleared.`);

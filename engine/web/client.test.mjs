@@ -339,7 +339,7 @@ test('controller commands share input sequence and revision; nonowners cannot se
   assert.equal(restart.disabled, true);
   socket.receive({ ...complete, level: level(30), campaign_complete: true });
   assert.equal(next.disabled, true); assert.equal(restart.disabled, false);
-  assert.match(h.fields.get('#status').textContent, /Level 30\/30.*Campaign complete/);
+  assert.match(h.fields.get('#status').textContent, /Level 30\/30.*Campaign complete! All 30 levels cleared/);
   socket.close(); assert.equal(restart.disabled, true);
 });
 
@@ -447,8 +447,8 @@ test('unchanged inputs use 10 Hz heartbeats while changed inputs are immediate',
   assert.equal(socket.sent.at(-1).input.axis, 0);
 });
 
-test('all twenty-eight solution recordings show a death-free correctly staffed finish', () => {
-  for (let number = 1; number <= 28; number++) {
+test('all thirty solution recordings show a death-free correctly staffed finish', () => {
+  for (let number = 1; number <= 30; number++) {
     const recording = JSON.parse(readFileSync(new URL(`./solutions/${number}.json`, import.meta.url), 'utf8'));
     assert.equal(recording.level.number, number);
     assert.equal(recording.frames[0].tick, 0);
