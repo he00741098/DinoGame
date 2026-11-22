@@ -44,11 +44,30 @@ At the final campaign results screen, clients disable movement and send a neutra
 
 The game ruleset is now `coop-campaign-3` to fence clients without tethers and the platform chapter. Refresh browser clients and rebuild native clients after this update. This is still JSON, not a final binary/interest-managed protocol; moving object arrays can remain a substantial cost. Measure actual wire overhead/cellular energy separately from application-payload savings.
 
+### Team pads
+
+A team pad activates only while at least *N* players stand on it at once, where
+*N* is that mechanic's own `travel` value clamped to 2–4 — per pad, not per
+stage, so a four-player level can carry a two-player pad. It drives the same
+pressure gates a plate does and is never solid. Bodies resting exactly on the
+pad's top edge count, each player counts once, and players are ID-ordered so the
+count is deterministic. It costs one ordinary mechanic and one ordinary object
+entry: no new `World` field, no hash change, no patch-encoder change. Stages 29
+and 30 teach it. Detail: [docs/TEAM_PAD.md](../docs/TEAM_PAD.md).
+
 ### Tethers and presentation smoothing
 
 Stages 25, 27 and 28 set `tether_length` (2–12 tiles). The authority treats the team as a straight slack chain in ascending player-ID order: it iteratively pulls over-stretched pairs back to the limit, biases the correction toward an anchored partner (feet on a solid or one-way ledge), and moves bodies with swept axis clipping so a correction cannot pass through walls. Velocity along the taut axis is removed. If a correction cannot be made valid, the step rolls back to the previous state while preserving consumed jump-held input; if the previous state was also invalid — a late join far from the chain — the team regroups at the checkpoint without charging a death. Tether state is server-side only; clients never send positions.
 
 Remote characters are rendered from a presentation timeline (`engine/web/motion.js`, `native/Sources/MultiplayerKit/MotionTimeline.swift`), never from a guessed authority. It keeps the last 8 authority frames, renders about 100 ms behind the newest arrival (the local player is not delayed), interpolates between frames, and on a late packet extrapolates for at most 100 ms with a 1536-unit distance cap. Output is exponentially smoothed over 35 ms. Any tick rewind, jump over 4096 units, revision change, respawn or roster removal resets the history. This is display-only: collision, goals and acknowledgment still come from snapshots, and the client still sends inputs only.
+
+### Team pads
+
+Stages 29–30 teach `MechanicKind::TeamPad`: a pad is pressable only while at least `travel.clamp(2, 4)` distinct bodies stand on it at once, so the threshold is per-pad, not the stage's `required_players` — a two-player pad inside a four-player stage cannot be held open by one player, and each body counts once whether it overlaps the pad or rests on its top edge.
+It drives the same AND'd pressure-gate linkage an ordinary plate does, refreshing a `PressureGate`'s release grace while pressed, and is never solid.
+Snapshot cost was the reason this mechanic was chosen: an ordinary `Mechanic` plus one ordinary `MechanicState`, hence no new `World` field, no `state_hash` bump and no patch-encoder change.
+The browser draws it pink `#e87fb5` with a `👥` glyph and a bold `×N` need hint above an inactive pad; iOS draws it teal, squashes it to `yScale 0.55` when engaged and captions it `N TO PRESS` / `ENGAGED`.
+Threshold, counting rules, limits and authoring: [`../docs/TEAM_PAD.md`](../docs/TEAM_PAD.md).
 
 ### Reusable engine boundaries and social/connectivity direction
 
