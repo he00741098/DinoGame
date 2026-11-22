@@ -25,6 +25,7 @@ final class GameScene: SKScene {
         return label
     }()
     private var localPlayer: UInt32?
+    private var lastChatAt: Double?
     private var markers: [UInt32: SKLabelNode] = [:]
     private let palette: [UIColor] = [.systemMint, .systemCyan, .systemOrange, .systemPurple]
 
@@ -37,13 +38,13 @@ final class GameScene: SKScene {
     }
     required init?(coder: NSCoder) { fatalError("Programmatic scene only") }
 
-    func present(level: GameLevel?, world: GameWorld?, localID: UInt32?) {
+    func present(level: GameLevel?, world: GameWorld?, localID: UInt32?, chat: ChatEntry? = nil) {
         guard let level, let world else {
             removeAllChildren(); players.removeAll(); objects.removeAll(); rockWarnings.removeAll(); markers.removeAll(); currentLevel = nil
             followCamera.removeAllChildren(); addChild(followCamera)
             gate = nil; key = nil; exit = nil
             entered.removeAll(); levelStartTick = nil
-            motion.reset(); lastDeaths = nil; roster = []
+            motion.reset(); lastDeaths = nil; roster = []; lastChatAt = nil
             return
         }
         if currentLevel != level || levelStartTick != world.level_start_tick {
@@ -51,7 +52,7 @@ final class GameScene: SKScene {
             followCamera.removeAllChildren(); addChild(followCamera)
             currentLevel = level
             levelStartTick = world.level_start_tick; entered.removeAll()
-            motion.reset()
+            motion.reset(); lastChatAt = nil
             for rect in level.solids { addChild(node(rect, color: UIColor(red: 0.24, green: 0.34, blue: 0.44, alpha: 1))) }
             gate = node(level.gate, color: .systemIndigo)
             key = node(level.key, color: .systemYellow)
@@ -149,7 +150,34 @@ final class GameScene: SKScene {
         if let caption = exit?.childNode(withName: "caption") as? SKLabelNode {
             caption.text = entered.isEmpty ? "EXIT" : "\(entered.count)/\(world.players.count) ✓"
         }
+        showChat(chat)
         updateCamera()
+    }
+
+    /// Attach a short-lived quick-chat bubble above the speaker. Each entry is
+    /// shown once, keyed by its `at` timestamp, so repeated snapshots do not
+    /// re-add it. A missing sprite (player already gone) is skipped silently.
+    private func showChat(_ chat: ChatEntry?) {
+        guard let chat, chat.at != lastChatAt else { return }
+        lastChatAt = chat.at
+        guard let sprite = players[chat.player] else { return }
+        sprite.childNode(withName: "chat-bubble")?.removeFromParent()
+        let bubble = SKLabelNode(fontNamed: "AvenirNext-Bold")
+        bubble.name = "chat-bubble"
+        bubble.text = chat.text
+        bubble.fontSize = 240
+        bubble.fontColor = .white
+        bubble.verticalAlignmentMode = .center
+        bubble.zPosition = 12
+        bubble.position = CGPoint(x: 0, y: 1100)
+        sprite.addChild(bubble)
+        if UIAccessibility.isReduceMotionEnabled {
+            bubble.run(.sequence([.wait(forDuration: 3), .removeFromParent()]))
+        } else {
+            bubble.alpha = 0
+            bubble.run(.fadeIn(withDuration: 0.2), withKey: "chat-fade")
+            bubble.run(.sequence([.wait(forDuration: 3), .removeFromParent()]))
+        }
     }
 
     override func update(_ currentTime: TimeInterval) {
@@ -347,6 +375,7 @@ struct GameSurface: UIViewRepresentable {
     let level: GameLevel?
     let world: GameWorld?
     let localID: UInt32?
+    var chat: ChatEntry?
     func makeUIView(context: Context) -> SKView {
         let view = SKView()
         view.preferredFramesPerSecond = 60
@@ -356,7 +385,7 @@ struct GameSurface: UIViewRepresentable {
         return view
     }
     func updateUIView(_ view: SKView, context: Context) {
-        (view.scene as? GameScene)?.present(level: level, world: world, localID: localID)
+        (view.scene as? GameScene)?.present(level: level, world: world, localID: localID, chat: chat)
     }
     static func dismantleUIView(_ view: SKView, coordinator: ()) { view.presentScene(nil) }
 }

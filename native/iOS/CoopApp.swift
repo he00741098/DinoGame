@@ -63,7 +63,7 @@ struct LobbyView: View {
                 Text(session.detail).font(.caption2).foregroundStyle(.secondary).lineLimit(2)
             }
             if session.world != nil {
-                GameSurface(level: session.level, world: session.world, localID: session.playerID)
+                GameSurface(level: session.level, world: session.world, localID: session.playerID, chat: session.latestChat)
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
                     .clipShape(RoundedRectangle(cornerRadius: 12))
                     .accessibilityLabel("Cooperative game world")
@@ -81,7 +81,12 @@ struct LobbyView: View {
             }
         }
         .padding(.horizontal, 12).padding(.top, 6)
-        .safeAreaInset(edge: .bottom, spacing: 6) { controls.padding(.horizontal, 12).padding(.bottom, 6) }
+        .safeAreaInset(edge: .bottom, spacing: 6) {
+            VStack(spacing: 4) {
+                quickChat.padding(.horizontal, 12)
+                controls.padding(.horizontal, 12).padding(.bottom, 6)
+            }
+        }
         .background(Color(red: 0.04, green: 0.07, blue: 0.12))
         .onChange(of: editing) { _, value in if value { session.releaseControls() } }
         .onChange(of: connectionExpanded) { _, value in if value { session.releaseControls() } }
@@ -147,6 +152,31 @@ struct LobbyView: View {
         }
     }
 
+    private var controlsDisabled: Bool { !session.active || session.campaignComplete || editing || connectionExpanded }
+
+    /// Compact quick-chat row above the movement controls; horizontal scrolling
+    /// keeps the game view from being squeezed on narrow screens.
+    private var quickChat: some View {
+        VStack(alignment: .leading, spacing: 2) {
+            ScrollView(.horizontal, showsIndicators: false) {
+                HStack(spacing: 6) {
+                    ForEach(Wire.chatPresets.indices, id: \.self) { index in
+                        Button(Wire.chatPresets[index]) { session.sendChat(preset: UInt8(index)) }
+                            .buttonStyle(.bordered)
+                            .font(.caption2)
+                            .accessibilityIdentifier("chat\(index)")
+                            .disabled(controlsDisabled)
+                    }
+                }
+            }
+            if !session.chatLog.isEmpty {
+                Text(session.chatLog.joined(separator: " · "))
+                    .font(.caption2).foregroundStyle(.secondary).lineLimit(1)
+                    .accessibilityIdentifier("chatLog")
+            }
+        }
+    }
+
     private var controls: some View {
         HStack(spacing: 12) {
             HoldButton(title: "Left", symbol: "arrow.left", id: "moveLeft") { session.set(.left, source: "left-button", pressed: $0) }
@@ -154,7 +184,7 @@ struct LobbyView: View {
             Spacer(minLength: 16)
             HoldButton(title: "Jump", symbol: "arrow.up", id: "jump") { session.set(.jump, source: "jump-button", pressed: $0) }
         }
-        .frame(height: 60).disabled(!session.active || session.campaignComplete || editing || connectionExpanded)
+        .frame(height: 60).disabled(controlsDisabled)
     }
 }
 
