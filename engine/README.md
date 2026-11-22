@@ -96,12 +96,12 @@ These do **not** build an iOS app, expose Swift/WASM bindings, or prove on-devic
 1. Connect to `/ws` and send a text `hello` within five seconds:
 
    ```json
-   {"type":"hello","protocol":3,"game":"coop-sandbox","ruleset":"coop-campaign-2","room":"playtest","patches":true}
+   {"type":"hello","protocol":3,"game":"coop-sandbox","ruleset":"coop-campaign-3","room":"playtest","patches":true}
    ```
 
    To resume, add optional `"resume_token":"<opaque token from welcome>"`. The room must match. An unknown, expired, or wrong-room token is rejected as `invalid_resume_token`; it never silently creates a player.
 
-2. Receive `welcome` with `type`, `protocol` (3), `ruleset` (`coop-campaign-2`), `player` (u32), `tick_hz` (60), `snapshot_hz` (20), `level`, `revision` (u32), `controller` (player ID or null), `resume_token` (string), `resumed` (boolean). A snapshot follows. Resume returns the original player and **current** campaign stage, even when the room is full or the old socket is still active.
+2. Receive `welcome` with `type`, `protocol` (3), `ruleset` (`coop-campaign-3`), `player` (u32), `tick_hz` (60), `snapshot_hz` (20), `level`, `revision` (u32), `controller` (player ID or null), `resume_token` (string), `resumed` (boolean). A snapshot follows. Resume returns the original player and **current** campaign stage, even when the room is full or the old socket is still active.
 3. Send strictly increasing, nonzero u32 sequence numbers with full held input state and cumulative u32 `jump_id`:
 
    ```json
@@ -112,7 +112,9 @@ These do **not** build an iOS app, expose Swift/WASM bindings, or prove on-devic
 
 4. Full `snapshot` is `{type:"snapshot",world,acks,level,revision,controller,campaign_complete}`. Level adds `number`, `title`, `hint`, `mechanics`, `required_players` (2–4), and `spawn_y` (spawn feet coordinate); world adds `objects`, `deaths`, `checkpoint`, `level_start_tick`. See the compact extension above for opt-in patches. Acks include only players with an **applied** input/control in their current connection generation; a resumed player's old ack is omitted until a new input is applied. `error` remains `{type:"error",code,message}`. No command can set a position, player identity, tick, key, or completion flag. Unknown client fields and older protocol versions are rejected.
 
-5. Controller-only requests are `{type:"restart",seq,revision}` and `{type:"next",seq,revision}`, sharing the input sequence counter. Next requires authoritative completion and stops at level 24. Restart/Next preserve player IDs and world ticks while increasing the revision. Old-revision inputs cannot renew leases or affect the new round. Each player's first accepted input after a transition is a neutral jump-ID baseline; clients pause controls until that sequence is acknowledged. Sequence/jump counters do not reset between stages.
+5. Controller-only requests are `{type:"restart",seq,revision}` and `{type:"next",seq,revision}`, sharing the input sequence counter. Next requires authoritative completion and stops at level 28. Restart/Next preserve player IDs and world ticks while increasing the revision. Old-revision inputs cannot renew leases or affect the new round. Each player's first accepted input after a transition is a neutral jump-ID baseline; clients pause controls until that sequence is acknowledged. Sequence/jump counters do not reset between stages.
+
+Clients send `{"type":"chat","preset":<0-5>}`; the wording is owned by the server as `net_proto::CHAT_PRESETS`. The server broadcasts `{"type":"chat","player","preset","text"}` on the room channel, never inside a snapshot or patch.
 
 The lowest connected player ID is controller; a disconnected controller hands control to the next connected player. The catalog is available for development inspection at `/campaign`. All geometry, timers, counts, and snapshot size are bounded. Mechanic state is authoritative; renderers do not run a second copy of the rules.
 
