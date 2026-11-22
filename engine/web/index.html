@@ -17,7 +17,7 @@
 </style>
 <main>
   <h1>Co-op engine / network harness</h1>
-  <p>Join the same room with 2–4 players. Cooperate through 28 campaign levels; expeditions include three- and four-player challenges.</p>
+  <p>Join the same room with 2–4 players. Cooperate through 30 campaign levels; expeditions include three- and four-player challenges.</p>
   <form id="join"><label>Room <input id="room" value="playtest" pattern="[A-Za-z0-9-]{3,16}" minlength="3" maxlength="16" required></label><button id="connect">Join room</button></form>
   <p id="status" aria-live="off">Disconnected</p>
   <div id="announce" role="status" class="sr-only"></div>
@@ -49,9 +49,9 @@
   <p id="networkStatistics" aria-live="off">No network samples</p>
   <p>Session-average application payload only; excludes TLS/TCP/WebSocket overhead. Applied ack includes server scheduling, not pure ping.</p>
 </details>
-<details><summary>Solution review — all 28 levels</summary>
+<details><summary>Solution review — all 30 levels</summary>
   <p>Death-free input-only simulation recordings, not proven optimal routes. Review does not join or control a live room.</p>
-  <label>Level <input id="reviewStage" type="number" min="1" max="28" value="1"></label>
+  <label>Level <input id="reviewStage" type="number" min="1" max="30" value="1"></label>
   <button id="review" type="button">Watch solution</button>
   <button id="reviewPause" type="button">Pause / play</button>
   <label>Speed <select id="reviewSpeed"><option value="0.5">½×</option><option value="1" selected>1×</option><option value="2">2×</option><option value="4">4×</option></select></label>
