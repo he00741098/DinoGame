@@ -582,3 +582,18 @@ test('quick chat sends nothing while disconnected', () => {
   h.chats[0].emit('click');
   assert.equal(h.sockets.length, 0);
 });
+
+test('expired chat bubbles are pruned from the bubble map', () => {
+  const h = harness(); const socket = h.join();
+  const state = snapshot();
+  state.world.players = [{ id: 1, x: 1024, y: 2048 }];
+  socket.receive(state);
+  socket.receive({ type: 'chat', player: 1, preset: 0, text: 'On my way' });
+  const live = h.draw().filter(call => call[0] === 'text').map(call => call[1]);
+  assert.ok(live.includes('On my way'));
+  h.advance(3501);
+  const expired = h.draw().filter(call => call[0] === 'text').map(call => call[1]);
+  assert.ok(!expired.includes('On my way'));
+  const again = h.draw().filter(call => call[0] === 'text').map(call => call[1]);
+  assert.ok(!again.includes('On my way'));
+});

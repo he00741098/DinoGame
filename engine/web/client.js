@@ -409,6 +409,11 @@ function draw() {
       ctx.fillText('✓ checkpoint', world.checkpoint.x / unit * 50, world.checkpoint.y / unit * 50 - 16);
     }
     for (const id of arrivals.keys()) if (!world.players.some(p => p.id === id && world.key_collected && atExit(p))) arrivals.delete(id);
+    // Drop bubbles whose lifetime elapsed or whose player left the room; otherwise they persist for the page lifetime.
+    const now = performance.now();
+    for (const [id, bubble] of chatBubbles) {
+      if (bubble.until <= now || !world.players.some(p => p.id === id)) chatBubbles.delete(id);
+    }
     if ((level.tether_length ?? 0) > 0) {
       ctx.strokeStyle = '#ffe175'; ctx.lineWidth = 2; ctx.beginPath();
       const ordered = [...displayPlayers].sort((a, b) => a.id - b.id);
