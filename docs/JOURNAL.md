@@ -37,3 +37,25 @@ deploy, then continue gameplay work.
 
 **Next.** Design notes from the co-op research, then new cooperative mechanics
 and levels; quick chat is the other open feature.
+
+### Same day — delivery fleet changed shape
+
+Subagent throughput was the bottleneck, not the code. The OpenCode free pool
+(`free-code`, `free-scribe`, `free-vision`, `free-fallback`) hit its daily cap
+mid-session, so two new agents were added on the separate, still-working
+CommandCode tier:
+
+- `cc-flint` — `commandcode/stealth/glyph-cluster:free#high`, 40 steps, read-only,
+  unlimited. Absorbs audits, extractions, research and drafted diffs.
+- `cc-builder` — `commandcode/xiaomi/mimo-v2.6-flash`, 60 steps, the only subagent
+  with edit rights. Given one ticket, a named file list, a verification command
+  and its own commit.
+
+Probes: `glyph-cluster:free` answered a spawn test; `reflection/beam:free` is dead
+("tier has ended"), as is `cat-jam:free` and `laguna-s-2.1-free`. Working agents
+were run seven-wide on disjoint files — audit, docs, tests, stage analysis,
+mechanic research, chat review, playtest planning — with no conflict, because no
+two tickets named the same path and every lane staged by explicit path.
+
+First delegated implementation: `e250c72` (native quick-chat buttons and bubbles)
+built, verified and committed by `cc-builder` without orchestrator edits.
