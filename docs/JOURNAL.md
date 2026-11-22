@@ -406,3 +406,23 @@ exactly the bug that had just been fixed on iOS.
 
 **Totals:** 72 commits this session; 9 Rust suites, 52 sim-core, 52 Node, 46
 Swift, Clippy clean, iOS build green.
+
+### Same day — pushed, deduplicated, and the harness grew up
+
+**All 88 commits are now on the remote**, on branch `engine/multiplayer-core`.
+Everything built today had been living only on this machine; that is a single
+disk failure away from losing a day of work, so pushing was overdue.
+
+**Duplicate coverage removed.** Two lanes independently wrote rescue tests for the
+browser, leaving six tests for one feature. The kept set asserts the exact banner
+text and checks the screen-reader announcement; the dropped set only counted
+draw calls. Verified the survivors still fail when `showRescue` is unwired.
+
+**The browser test harness now has an announce region**, so a test can assert what
+a screen reader would actually hear rather than only what is drawn. That closed a
+real blind spot: the accessibility split was previously exercised only through
+its no-op path.
+
+**Totals:** 73 commits this session; 9 Rust suites, 52 sim-core, 52 Node, 46
+Swift, Clippy clean, iOS build green; release `20261122-6eb0d8f89517` live and
+verified with 32 stages.
