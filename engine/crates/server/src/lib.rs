@@ -35,6 +35,9 @@ const MAX_CONNECTIONS: usize = MAX_ROOMS * MAX_PLAYERS + 64;
 const SNAPSHOT_HZ: u32 = 20;
 const AUTO_ADVANCE_DELAY: Duration = Duration::from_millis(900);
 const INPUTS_PER_SECOND: usize = 120;
+// Chat is best-effort, so it gets its own tight budget: spam can never spend
+// the gameplay budget, and blowing it drops frames instead of the player.
+const CHAT_FRAMES_PER_SECOND: usize = 8;
 const IO_TIMEOUT: Duration = Duration::from_secs(5);
 const INPUT_LEASE: Duration = Duration::from_millis(250);
 const RESUME_GRACE: Duration = Duration::from_secs(15);
@@ -796,11 +799,13 @@ async fn session(mut socket: WebSocket, host: Host) {
     .run(
         &mut sink,
         &mut stream,
-        rx,
-        stopped,
-        joined.chat,
-        initial,
-        patches,
+        Writer {
+            rx,
+            stopped,
+            chat: joined.chat,
+            initial,
+            patches,
+        },
     )
     .await;
 }
@@ -812,21 +817,30 @@ struct Connection<'a> {
     generation: u64,
 }
 
+// The writer half of a connection: everything `write_snapshots` and the stop
+// branch need, grouped so `run` stays within clippy's argument limit.
+struct Writer {
+    rx: watch::Receiver<String>,
+    stopped: watch::Receiver<bool>,
+    chat: broadcast::Receiver<ServerMessage>,
+    initial: [String; 2],
+    patches: bool,
+}
+
 impl Connection<'_> {
     // Shared by real sockets and bounded blocked-I/O session regression tests.
-    async fn run<S, R>(
-        &self,
-        sink: &mut S,
-        stream: &mut R,
-        rx: watch::Receiver<String>,
-        mut stopped: watch::Receiver<bool>,
-        chat: broadcast::Receiver<ServerMessage>,
-        initial: [String; 2],
-        patches: bool,
-    ) where
+    async fn run<S, R>(&self, sink: &mut S, stream: &mut R, writer: Writer)
+    where
         S: futures_util::Sink<Message> + Unpin,
         R: futures_util::Stream<Item = Result<Message, axum::Error>> + Unpin,
     {
+        let Writer {
+            mut stopped,
+            rx,
+            chat,
+            initial,
+            patches,
+        } = writer;
         let outcome = tokio::select! {
             biased;
             _ = stopped.changed() => Outcome::disconnected(),
@@ -959,6 +973,7 @@ async fn read_inputs<S: futures_util::Stream<Item = Result<Message, axum::Error>
 ) -> Outcome {
     let mut rate_start = Instant::now();
     let mut received = 0;
+    let mut chat_received = 0;
     let mut last_input = Instant::now();
     let mut watchdog = tokio::time::interval(Duration::from_secs(1));
     loop {
@@ -972,21 +987,33 @@ async fn read_inputs<S: futures_util::Stream<Item = Result<Message, axum::Error>
                 if rate_start.elapsed() >= Duration::from_secs(1) {
                     rate_start = Instant::now();
                     received = 0;
+                    chat_received = 0;
                 }
-                received += 1;
-                if received > INPUTS_PER_SECOND {
-                    return Outcome::invalid("rate_limited");
+                let decoded = match &incoming {
+                    Some(Ok(Message::Text(text))) => net_proto::decode(text).ok(),
+                    _ => None,
+                };
+                if matches!(decoded, Some(ClientMessage::Chat { .. })) {
+                    chat_received += 1;
+                    if chat_received > CHAT_FRAMES_PER_SECOND {
+                        continue;
+                    }
+                } else {
+                    received += 1;
+                    if received > INPUTS_PER_SECOND {
+                        return Outcome::invalid("rate_limited");
+                    }
                 }
                 match incoming {
-                    Some(Ok(Message::Text(text))) => match net_proto::decode(&text) {
-                        Ok(command @ (ClientMessage::Input { .. } | ClientMessage::Restart { .. } | ClientMessage::Next { .. })) => {
+                    Some(Ok(Message::Text(_))) => match decoded {
+                        Some(command @ (ClientMessage::Input { .. } | ClientMessage::Restart { .. } | ClientMessage::Next { .. })) => {
                             if let Some(state) = host.rooms.lock().await.get_mut(room) {
                                 if state.command(player, generation, command, Instant::now()) {
                                     last_input = Instant::now();
                                 }
                             }
                         }
-                        Ok(ClientMessage::Chat { preset }) => {
+                        Some(ClientMessage::Chat { preset }) => {
                             if let Some(state) = host.rooms.lock().await.get_mut(room) {
                                 if let Some(message) = state.chat(player, preset, Instant::now()) {
                                     let _ = state.chat.send(message);
@@ -1502,11 +1529,13 @@ mod tests {
             .run(
                 &mut sink,
                 &mut stream,
-                rx,
-                stopped,
-                broadcast::channel(4).1,
-                ["welcome".into(), "snapshot".into()],
-                false,
+                Writer {
+                    rx,
+                    stopped,
+                    chat: broadcast::channel(4).1,
+                    initial: ["welcome".into(), "snapshot".into()],
+                    patches: false,
+                },
             )
             .await;
         });
@@ -1615,5 +1644,75 @@ mod tests {
         assert_eq!(host.connections.available_permits(), 64);
         let _headroom = host.connections.clone().try_acquire_many_owned(64).unwrap();
         assert!(host.connections.clone().try_acquire_owned().is_err());
+    }
+
+    #[tokio::test(start_paused = true)]
+    async fn chat_flood_does_not_exhaust_input_budget() {
+        let host = Host::default();
+        let a = host
+            .join(
+                "test",
+                watch::channel(String::new()).0,
+                watch::channel(false).0,
+                None,
+            )
+            .await
+            .unwrap();
+        // More chat in one second than the whole gameplay budget would tolerate.
+        let mut messages: Vec<Result<Message, axum::Error>> = (0..INPUTS_PER_SECOND + 1)
+            .map(|_| Ok(Message::Text(r#"{"type":"chat","preset":0}"#.into())))
+            .collect();
+        messages.push(Ok(Message::Text(
+            r#"{"type":"input","seq":1,"revision":1,"input":{"axis":1,"jump":false},"jump_id":0}"#
+                .into(),
+        )));
+        messages.push(Ok(Message::Close(Some(axum::extract::ws::CloseFrame {
+            code: 1000,
+            reason: "".into(),
+        }))));
+        let stream = futures_util::stream::iter(messages);
+        tokio::pin!(stream);
+        let outcome = read_inputs(&mut stream, &host, "test", a.player, a.generation).await;
+        assert_eq!(outcome.error, None);
+        assert!(outcome.permanent);
+        assert_eq!(
+            host.rooms.lock().await["test"].slots[&a.player].latest_seq,
+            1
+        );
+    }
+
+    #[tokio::test(start_paused = true)]
+    async fn chat_flood_is_dropped_not_fatal() {
+        let host = Host::default();
+        let a = host
+            .join(
+                "test",
+                watch::channel(String::new()).0,
+                watch::channel(false).0,
+                None,
+            )
+            .await
+            .unwrap();
+        let mut messages: Vec<Result<Message, axum::Error>> = (0..CHAT_FRAMES_PER_SECOND + 1)
+            .map(|_| Ok(Message::Text(r#"{"type":"chat","preset":0}"#.into())))
+            .collect();
+        messages.push(Ok(Message::Text(
+            r#"{"type":"input","seq":1,"revision":1,"input":{"axis":1,"jump":false},"jump_id":0}"#
+                .into(),
+        )));
+        messages.push(Ok(Message::Close(Some(axum::extract::ws::CloseFrame {
+            code: 1000,
+            reason: "".into(),
+        }))));
+        let stream = futures_util::stream::iter(messages);
+        tokio::pin!(stream);
+        // Chat over budget is dropped frame by frame, never answered with rate_limited.
+        let outcome = read_inputs(&mut stream, &host, "test", a.player, a.generation).await;
+        assert_eq!(outcome.error, None);
+        assert!(outcome.permanent);
+        assert_eq!(
+            host.rooms.lock().await["test"].slots[&a.player].latest_seq,
+            1
+        );
     }
 }
