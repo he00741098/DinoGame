@@ -7,6 +7,11 @@ const roomField = document.querySelector('#room');
 const restartButton = document.querySelector('#restart');
 const nextButton = document.querySelector('#next');
 const networkStatistics = new NetworkStatistics();
+// Module scripts defer, so telemetry.js has already published this global by the
+// time this runs. Fail loudly rather than silently recording nothing.
+if (typeof SessionTelemetry !== 'function') {
+  throw new Error('telemetry.js must load before client.js');
+}
 const telemetry = new SessionTelemetry(performance.now());
 let hasJoined = false;
 const motion = window.matchMedia?.('(prefers-reduced-motion: reduce)')?.matches
