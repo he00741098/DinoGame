@@ -5,6 +5,10 @@ use crate::*;
 #[serde(rename_all = "snake_case")]
 pub enum MechanicKind {
     Plate,
+    /// Cooperative pad: active only when at least `travel` players (min 2)
+    /// stand on it at once. Never solid; drives the same pressure gates a
+    /// plate does, so one player cannot open a two-player door.
+    TeamPad,
     PressureGate,
     TimedGate,
     OneWay,
@@ -26,7 +30,8 @@ pub struct Mechanic {
     pub id: u32,
     pub kind: MechanicKind,
     pub rect: Rect,
-    /// Signed horizontal shuttle distance, belt speed, or wind speed.
+    /// Signed horizontal shuttle distance, belt speed or wind speed; for a
+    /// team pad, the number of players required (clamped to 2..=4).
     pub travel: i32,
     /// Full shuttle/gate cycle; crumble lifetime; pressure release grace. 0 uses defaults.
     pub period: u32,
@@ -152,13 +157,24 @@ impl World {
                 .iter()
                 .any(|p| p.x < r.x + r.w && p.x + PLAYER_WIDTH > r.x && p.y + PLAYER_HEIGHT == r.y)
         };
+        // Distinct bodies, never the same player twice; players are ID-sorted.
+        let count_in = |r: Rect| self.players.iter().filter(|p| p.rect().overlaps(r)).count();
+        // A team pad needs its own head count, so a two-player pad cannot be
+        // held open by one player even on a four-player stage.
+        let pad_active = |m: &Mechanic| match m.kind {
+            MechanicKind::TeamPad => {
+                let need = m.travel.clamp(2, 4) as usize;
+                let bodies = count_in(m.rect).max(usize::from(standing(m.rect)));
+                bodies >= need
+            }
+            _ => occupied(m.rect) || standing(m.rect),
+        };
         let plates: Vec<_> = level
             .mechanics
             .iter()
-            .filter(|m| m.kind == MechanicKind::Plate)
+            .filter(|m| matches!(m.kind, MechanicKind::Plate | MechanicKind::TeamPad))
             .collect();
-        let pressed =
-            !plates.is_empty() && plates.iter().all(|m| occupied(m.rect) || standing(m.rect));
+        let pressed = !plates.is_empty() && plates.iter().all(|m| pad_active(m));
         let phase = self.tick.saturating_sub(self.level_start_tick);
         for (m, o) in level.mechanics.iter().zip(&mut self.objects) {
             match m.kind {
@@ -181,6 +197,7 @@ impl World {
                             / i64::from(falling).pow(2)) as i32;
                 }
                 MechanicKind::Plate => o.active = occupied(m.rect) || standing(m.rect),
+                MechanicKind::TeamPad => o.active = pad_active(m),
                 MechanicKind::PressureGate => {
                     if pressed {
                         o.timer = m.period.max(180);

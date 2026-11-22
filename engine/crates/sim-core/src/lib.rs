@@ -579,6 +579,130 @@ mod tests {
         }
     }
 
+
+    /// Team pad threshold is per-mechanic, not the level's team size, so a
+    /// three-player stage can still contain a two-player pad.
+    fn team_pad_level(need: i32, required_players: u8) -> Level {
+        // Any in-range stage number: `valid()` rejects numbers outside the
+        // catalogue, which would stop `step` from initialising objects.
+        let mut l = Level {
+            number: 28,
+            width: 30 * UNIT,
+            height: 14 * UNIT,
+            spawn_y: 12 * UNIT,
+            required_players,
+            tether_length: 0,
+            title: "team pad test".into(),
+            hint: "stand together".into(),
+            solids: vec![crate::Rect {
+                x: 0,
+                y: 12 * UNIT,
+                w: 30 * UNIT,
+                h: 2 * UNIT,
+            }],
+            ..Level::default()
+        };
+        l.mechanics.push(crate::Mechanic {
+            id: 1,
+            kind: crate::MechanicKind::TeamPad,
+            rect: crate::Rect {
+                x: 8 * UNIT,
+                y: 12 * UNIT - UNIT / 8,
+                w: 2 * UNIT,
+                h: UNIT / 8,
+            },
+            travel: need,
+            period: 0,
+        });
+        l.mechanics.push(crate::Mechanic {
+            id: 2,
+            kind: crate::MechanicKind::PressureGate,
+            rect: crate::Rect {
+                x: 12 * UNIT,
+                y: 8 * UNIT,
+                w: UNIT,
+                h: 4 * UNIT,
+            },
+            travel: 0,
+            period: 240,
+        });
+        l
+    }
+
+    fn pad_active(world: &World, level: &Level) -> bool {
+        world
+            .objects
+            .iter()
+            .zip(&level.mechanics)
+            .find(|(_, m)| m.kind == crate::MechanicKind::TeamPad)
+            .map(|(o, _)| o.active)
+            .expect("team pad object")
+    }
+
+    #[test]
+    fn team_pad_needs_two_players() {
+        let level = team_pad_level(2, 2);
+        let mut world = World::for_level(&level);
+        world.add_player_in(&level, 1);
+        // One player walking onto the pad must leave it inactive.
+        for _ in 0..240 {
+            world.step(&level, &[(1, Input { axis: 1, jump: false })]);
+        }
+        assert!(!pad_active(&world, &level), "one player must not press it");
+        world.add_player_in(&level, 2);
+        for _ in 0..240 {
+            world.step(
+                &level,
+                &[
+                    (1, Input { axis: 0, jump: false }),
+                    (2, Input { axis: 1, jump: false }),
+                ],
+            );
+        }
+        assert!(pad_active(&world, &level), "two players must press it");
+    }
+
+    #[test]
+    fn team_pad_threshold_survives_a_larger_team() {
+        // Three-player stage, two-player pad: two bodies must suffice, which
+        // would fail if the threshold were read from required_players.
+        let level = team_pad_level(2, 3);
+        let mut world = World::for_level(&level);
+        for id in 1..=3 {
+            world.add_player_in(&level, id);
+        }
+        // Place two bodies on the pad and one well clear of it, so the test
+        // measures the threshold rather than how bodies queue up when walking.
+        for (index, player) in world.players.iter_mut().enumerate() {
+            player.x = if index < 2 {
+                8 * UNIT + index as i32 * PLAYER_WIDTH
+            } else {
+                2 * UNIT
+            };
+            player.y = 12 * UNIT - PLAYER_HEIGHT;
+            player.vx = 0;
+            player.vy = 0;
+            player.grounded = true;
+        }
+        world.step(&level, &[]);
+        assert!(
+            pad_active(&world, &level),
+            "two of three must press a two-player pad"
+        );
+    }
+
+    #[test]
+    fn team_pad_ignores_duplicate_bodies() {
+        // A pad needing four cannot be pressed by one player over many ticks.
+        let level = team_pad_level(4, 2);
+        let mut world = World::for_level(&level);
+        world.add_player_in(&level, 1);
+        for _ in 0..300 {
+            world.step(&level, &[(1, Input { axis: 1, jump: false })]);
+        }
+        assert!(!pad_active(&world, &level), "one body counts once");
+    }
+
     #[test]
     fn ground_and_world_bounds_hold() {
         let mut world = World::new();
