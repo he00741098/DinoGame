@@ -797,8 +797,43 @@ fn platform_courses_place_a_checkpoint_every_five_ledges() {
 }
 
 #[test]
+fn input_only_completion_of_the_rest_room() {
+    let l = level(31).unwrap();
+    let mut w = ReviewWorld::new(&l);
+    let count = u32::from(l.required_players);
+    // Springs launch on contact; the spring line sits under the key, so walking
+    // over it is enough. No jump input is needed anywhere in this room.
+    for _ in 0..3000 {
+        if w.completed {
+            break;
+        }
+        let commands: Vec<_> = w
+            .players
+            .iter()
+            .map(|p| {
+                let target = if w.key_collected {
+                    l.exit.x + p.id as i32 * PLAYER_WIDTH / 2
+                } else {
+                    l.key.x
+                };
+                (p.id, steering(&l, p, target))
+            })
+            .collect();
+        w.step(&l, &commands);
+    }
+    assert!(
+        w.completed,
+        "rest room: key {}, players {:?}, deaths {}",
+        w.key_collected, w.players, w.deaths
+    );
+    assert_eq!(w.deaths, 0);
+    assert_eq!(w.players.len() as u32, count);
+}
+
+#[test]
 fn input_only_completion_of_team_pad_rooms() {
-    for number in 29..=LEVEL_COUNT {
+    // 29-30 are the team-pad rooms; 31 is its own rest-room witness.
+    for number in 29..=30 {
         let l = level(number).unwrap();
         let mut w = ReviewWorld::new(&l);
         let count = u32::from(l.required_players);

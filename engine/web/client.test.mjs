@@ -280,7 +280,7 @@ test('revision changes clear held input and unsent edges without resetting commi
   assert.deepEqual(socket.sent.at(-1).input, { axis: 0, jump: false });
   h.key('keydown', 'Space');
   assert.equal(socket.sent.at(-1).jump_id, 2);
-  assert.match(h.fields.get('#status').textContent, /Level 2\/30: Stage 2.*Work together/);
+  assert.match(h.fields.get('#status').textContent, /Level 2\/31: Stage 2.*Work together/);
 });
 
 test('old revisions and ticks are diagnosed without overwriting level, world, or controller', () => {
@@ -298,7 +298,7 @@ test('old revisions and ticks are diagnosed without overwriting level, world, or
   assert.equal(h.fields.get('#restart').disabled, false);
   h.tick(); assert.equal(socket.sent.at(-1).revision, 3);
   socket.receive(snapshot({ revision: 3, level: level(3), world: { ...current.world, tick: 11 } }));
-  assert.match(h.fields.get('#status').textContent, /Level 3\/30.*ack pending/);
+  assert.match(h.fields.get('#status').textContent, /Level 3\/31.*ack pending/);
 });
 
 test('higher revision at the same tick starts a baseline; even higher revision with an older tick is rejected', () => {
@@ -306,7 +306,7 @@ test('higher revision at the same tick starts a baseline; even higher revision w
   socket.receive(snapshot());
   socket.receive(snapshot({ revision: 2, level: level(2) }));
   assert.equal(socket.sent.at(-1).revision, 2);
-  assert.match(h.fields.get('#status').textContent, /Level 2\/30/);
+  assert.match(h.fields.get('#status').textContent, /Level 2\/31/);
   const stale = snapshot({ revision: 3, level: level(3) });
   stale.world.tick = 9;
   socket.receive(stale);
@@ -337,9 +337,9 @@ test('controller commands share input sequence and revision; nonowners cannot se
   restart.emit('click'); next.emit('click'); assert.equal(socket.sent.length, count);
   socket.receive({ ...complete, controller: null });
   assert.equal(restart.disabled, true);
-  socket.receive({ ...complete, level: level(30), campaign_complete: true });
+  socket.receive({ ...complete, level: level(31), campaign_complete: true });
   assert.equal(next.disabled, true); assert.equal(restart.disabled, false);
-  assert.match(h.fields.get('#status').textContent, /Level 30\/30.*Campaign complete! All 30 levels cleared/);
+  assert.match(h.fields.get('#status').textContent, /Level 31\/31.*Campaign complete! All 31 levels cleared/);
   socket.close(); assert.equal(restart.disabled, true);
 });
 
@@ -447,8 +447,8 @@ test('unchanged inputs use 10 Hz heartbeats while changed inputs are immediate',
   assert.equal(socket.sent.at(-1).input.axis, 0);
 });
 
-test('all thirty solution recordings show a death-free correctly staffed finish', () => {
-  for (let number = 1; number <= 30; number++) {
+test('all thirty-one solution recordings show a death-free correctly staffed finish', () => {
+  for (let number = 1; number <= 31; number++) {
     const recording = JSON.parse(readFileSync(new URL(`./solutions/${number}.json`, import.meta.url), 'utf8'));
     assert.equal(recording.level.number, number);
     assert.equal(recording.frames[0].tick, 0);
@@ -491,18 +491,18 @@ test('solution review opens the newest stages', async () => {
   const h = harness(); const socket = h.join();
   await h.review(29);
   assert.equal(socket.closeCode, 1000);
-  assert.match(h.fields.get('#status').textContent, /SOLUTION REVIEW · 29\/30/);
+  assert.match(h.fields.get('#status').textContent, /SOLUTION REVIEW · 29\/31/);
   assert.ok(h.controls.every(button => button.disabled));
   const recording29 = JSON.parse(readFileSync(new URL('./solutions/29.json', import.meta.url), 'utf8'));
   assert.equal(h.fields.get('#reviewSeek').max, String(recording29.frames.length - 1));
   await h.review(30);
-  assert.match(h.fields.get('#status').textContent, /SOLUTION REVIEW · 30\/30/);
+  assert.match(h.fields.get('#status').textContent, /SOLUTION REVIEW · 30\/31/);
   assert.ok(h.controls.every(button => button.disabled));
   const recording30 = JSON.parse(readFileSync(new URL('./solutions/30.json', import.meta.url), 'utf8'));
   assert.equal(h.fields.get('#reviewSeek').max, String(recording30.frames.length - 1));
   const settled = h.fields.get('#status').textContent;
   const settledMax = h.fields.get('#reviewSeek').max;
-  await h.review(31);
+  await h.review(32);
   assert.equal(h.fields.get('#status').textContent, settled);
   assert.equal(h.fields.get('#reviewSeek').max, settledMax);
 });

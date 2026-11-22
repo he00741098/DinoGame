@@ -3,7 +3,7 @@
 //! Units are 1/1024 tile.
 use crate::*;
 
-pub const LEVEL_COUNT: u8 = 30;
+pub const LEVEL_COUNT: u8 = 31;
 
 fn r(x: i32, y: i32, w: i32, h: i32) -> Rect {
     Rect {
@@ -69,6 +69,9 @@ pub fn level(number: u8) -> Option<Level> {
     use MechanicKind::*;
     if !(1..=LEVEL_COUNT).contains(&number) {
         return None;
+    }
+    if number == 31 {
+        return Some(rest_room());
     }
     if number > 28 {
         return Some(team_pad_room(number));
@@ -457,6 +460,61 @@ fn expedition(number: u8) -> Level {
 /// The team-pad lesson. The pad holds a gate open only while several players
 /// stand on it, so the key sits behind that gate: someone must hold the pad
 /// while a teammate goes through. One player alone can never finish.
+/// A deliberate rest beat after the team-pad rooms: one familiar mechanic, no
+/// timing demand, no hazards. The exit still needs both players, so it stays a
+/// co-op stage rather than a solo victory lap.
+fn rest_room() -> Level {
+    let mut l = Level {
+        number: 31,
+        width: 30 * UNIT,
+        height: 14 * UNIT,
+        spawn_y: 12 * UNIT,
+        required_players: 2,
+        tether_length: 0,
+        title: "A moment to breathe".into(),
+        hint: "Take the spring for the high key. The exit still waits for both of you.".into(),
+        solids: vec![r(0, 12, 30, 2)],
+        key: Rect {
+            w: UNIT / 2,
+            h: UNIT / 2,
+            ..r(11, 7, 1, 1)
+        },
+        gate: r(24, 9, 1, 3),
+        exit: r(27, 10, 2, 2),
+        ..Level::default()
+    };
+    // Two springs, not one: the first is a free practice bounce with nothing to
+    // reach, so the second never has to be learned under pressure.
+    for x in [6, 10] {
+        add(
+            &mut l,
+            MechanicKind::Spring,
+            Rect {
+                y: 12 * UNIT - UNIT / 8,
+                h: UNIT / 8,
+                ..r(x, 0, 2, 1)
+            },
+            0,
+            0,
+        );
+    }
+    // A shelf above the key makes the bounce forgiving, and the flag past the
+    // spring means a missed bounce costs one hop rather than the room.
+    add(
+        &mut l,
+        MechanicKind::OneWay,
+        Rect {
+            y: 8 * UNIT,
+            h: UNIT / 4,
+            ..r(10, 0, 4, 1)
+        },
+        0,
+        0,
+    );
+    add(&mut l, MechanicKind::Checkpoint, r(16, 10, 4, 2), 0, 0);
+    l
+}
+
 fn team_pad_room(number: u8) -> Level {
     let wide = number == 30;
     let width = if wide { 34 } else { 30 };

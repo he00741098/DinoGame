@@ -31,7 +31,7 @@ const unit = 1024;
 const arrivals = new Map();
 let reviewing = false, reviewGeneration = 0, reviewFrames = [], reviewPosition = 0, reviewLastTime = 0, reviewPlaying = false;
 // Must match `campaign::LEVEL_COUNT`; every stage count below derives from it.
-const stageCount = 30;
+const stageCount = 31;
 let reviewFrameMilliseconds = 50;
 const chatBubbles = new Map();
 const chatHistory = [];
