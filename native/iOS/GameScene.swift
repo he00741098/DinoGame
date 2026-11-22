@@ -104,7 +104,7 @@ final class GameScene: SKScene {
                 case .timedGate: label.text = "\(object.active ? "WAIT" : "GO") \(object.timer / 60)s"
                 case .crumble: label.text = object.active ? (object.timer > 0 ? "CRACK!" : "CRUMBLE") : "REFORMING"
                 case .plate: label.text = object.active ? "PRESSED" : "STAND"
-                case .teamPad: label.text = object.active ? "ENGAGED" : "\(level.minimumPlayers) TO PRESS"
+                case .teamPad: label.text = object.active ? "ENGAGED" : "\(padThreshold(mechanic, fallback: level.minimumPlayers)) TO PRESS"
                 case .rope: label.text = object.active ? "↑ HOLD JUMP" : "\(level.minimumPlayers) ON ROPE"
                 case .fallingRock: label.text = object.active ? "↓ ROCK" : object.timer < 60 ? "⚠ ROCK" : "RESET"
                 default: break
@@ -260,6 +260,14 @@ final class GameScene: SKScene {
 
     private func zone(_ kind: MechanicKind) -> Bool { [.wind, .lowGravity, .checkpoint, .rope].contains(kind) }
 
+    /// A team pad's head count comes from its own `travel` threshold, clamped
+    /// to 2...4 exactly like the simulation, falling back to the level's team
+    /// size when `travel` carries no usable count.
+    private func padThreshold(_ mechanic: GameMechanic, fallback: Int) -> Int {
+        let needed = mechanic.travel > 1 ? mechanic.travel : fallback
+        return max(2, min(4, needed))
+    }
+
     private func mechanicColor(_ kind: MechanicKind) -> UIColor {
         switch kind {
         case .hazard: .systemRed
@@ -330,7 +338,7 @@ final class GameScene: SKScene {
         let caption: String
         switch mechanic.kind {
         case .plate: caption = "STAND"
-        case .teamPad: caption = "\(currentLevel?.minimumPlayers ?? 2) TO PRESS"
+        case .teamPad: caption = "\(padThreshold(mechanic, fallback: currentLevel?.minimumPlayers ?? 2)) TO PRESS"
         case .pressureGate: caption = "PLATE LOCK"
         case .timedGate: caption = "WAIT"
         case .oneWay: caption = "↑ THROUGH"
