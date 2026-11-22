@@ -1065,6 +1065,126 @@ mod tests {
             .is_none());
     }
 
+    #[tokio::test]
+    async fn chat_broadcast_reaches_subscriber_without_snapshot_dependency() {
+        let now = Instant::now();
+        let mut room = Room::new();
+        // Keep the snapshot receiver so the test can prove chat never touches it.
+        let (tx, snapshots) = watch::channel(String::new());
+        let joined = room.join(tx, watch::channel(false).0, None, now).unwrap();
+        let mut chat = joined.chat;
+        let writer_chat = room.chat.subscribe();
+        room.chat
+            .send(ServerMessage::Chat {
+                player: joined.player,
+                preset: 0,
+                text: "Follow me".into(),
+            })
+            .unwrap();
+
+        match chat.recv().await {
+            Ok(ServerMessage::Chat {
+                player,
+                preset,
+                text,
+            }) => {
+                assert_eq!(player, joined.player);
+                assert_eq!(preset, 0);
+                assert_eq!(text, "Follow me");
+            }
+            other => panic!("expected the sent chat message, got {other:?}"),
+        }
+        // Exactly one message: chat is not bundled with a snapshot or anything else.
+        assert!(matches!(
+            chat.try_recv(),
+            Err(broadcast::error::TryRecvError::Empty)
+        ));
+        // No tick ran, so there is no snapshot publication to depend on.
+        assert_eq!(*snapshots.borrow(), "");
+
+        // The socket writer forwards chat from its own subscription without snapshots.
+        let (out, mut captured) = tokio::sync::mpsc::unbounded_channel();
+        let sink = futures_util::sink::unfold((), move |(), message: Message| {
+            let out = out.clone();
+            async move {
+                let _ = out.send(message);
+                Ok::<(), std::io::Error>(())
+            }
+        });
+        tokio::pin!(sink);
+        let mut forwarded = false;
+        tokio::select! {
+            () = write_snapshots(
+                &mut sink,
+                snapshots.clone(),
+                writer_chat,
+                ["welcome".into(), "snapshot".into()],
+                false,
+            ) => panic!("writer finished without a closed snapshot sender"),
+            _ = async {
+                while !forwarded {
+                    let Some(message) = captured.recv().await else { break; };
+                    if let Message::Text(text) = message {
+                        if let Ok(ServerMessage::Chat {
+                            player,
+                            preset,
+                            text: wording,
+                        }) = serde_json::from_str(&text)
+                        {
+                            assert_eq!(player, joined.player);
+                            assert_eq!(preset, 0);
+                            assert_eq!(wording, "Follow me");
+                            forwarded = true;
+                        }
+                    }
+                }
+            } => {}
+        }
+        assert!(
+            forwarded,
+            "chat must reach the socket without a snapshot publication"
+        );
+        assert!(
+            !snapshots.has_changed().expect("snapshot sender stays alive"),
+            "chat delivery must not publish a snapshot"
+        );
+    }
+
+    #[test]
+    fn chat_stays_rate_limited_per_player_not_per_room() {
+        let now = Instant::now();
+        let mut room = Room::new();
+        let a = join(&mut room, None, now);
+        let b = join(&mut room, None, now);
+        let soon = now + Duration::from_millis(500);
+
+        let first = room.chat(a.player, 0, now);
+        assert!(matches!(
+            first,
+            Some(ServerMessage::Chat { player, preset: 0, text })
+                if player == a.player && text == "Follow me"
+        ));
+        assert_eq!(room.slots[&a.player].last_chat, Some(now));
+
+        // The same player speaking again inside CHAT_INTERVAL is rejected.
+        assert!(room.chat(a.player, 1, soon).is_none());
+        assert_eq!(
+            room.slots[&a.player].last_chat,
+            Some(now),
+            "a rejected chat must not advance last_chat"
+        );
+
+        // The interval is per player, so player 2 is unaffected in the same room.
+        let second = room.chat(b.player, 1, soon);
+        assert!(matches!(
+            second,
+            Some(ServerMessage::Chat { player, preset: 1, text })
+                if player == b.player && text == "Wait here"
+        ));
+        assert_eq!(room.slots[&b.player].last_chat, Some(soon));
+        assert_eq!(room.slots[&a.player].last_chat, Some(now));
+    }
+
     #[test]
     fn input_is_acknowledged_only_when_applied_and_stale_is_ignored() {
         let mut room = Room::new();
