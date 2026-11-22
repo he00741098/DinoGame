@@ -124,6 +124,40 @@ final class CoopClientUITests: XCTestCase {
         app.buttons["leave"].tap()
     }
 
+    /// Requires the development server on host loopback:3000, like the other
+    /// live-session tests. The harness never echoes chat back, so the chatLog
+    /// caption is allowed to stay empty after sending.
+    @MainActor
+    func testQuickChatButtonsExistAndAreGatedOnActiveSession() {
+        let app = XCUIApplication()
+        app.launchEnvironment["COOP_ENDPOINT"] = ProcessInfo.processInfo.environment["COOP_TEST_ENDPOINT"] ?? "ws://127.0.0.1:3000"
+        app.launchEnvironment["COOP_ROOM"] = "ios-quickchat"
+        app.launch()
+        for index in 0..<6 {
+            let button = app.buttons["chat\(index)"]
+            XCTAssertTrue(button.waitForExistence(timeout: 3), "chat\(index) missing before join")
+            XCTAssertFalse(button.isEnabled, "chat\(index) must be disabled without an active session")
+        }
+        app.buttons["join"].tap()
+        let status = app.staticTexts["connectionStatus"]
+        let connected = NSPredicate(format: "label BEGINSWITH %@", "Connected · P")
+        expectation(for: connected, evaluatedWith: status)
+        waitForExpectations(timeout: 15)
+        let chat2 = app.buttons["chat2"]
+        let enabled = NSPredicate(format: "isEnabled == true")
+        expectation(for: enabled, evaluatedWith: chat2)
+        waitForExpectations(timeout: 5)
+        XCTAssertTrue(chat2.isHittable)
+        chat2.tap()
+        // No crash and no disconnect after sending; the caption itself is not
+        // asserted because the harness does not echo chat.
+        XCTAssertEqual(app.state, .runningForeground)
+        expectation(for: connected, evaluatedWith: status)
+        waitForExpectations(timeout: 5)
+        XCTAssertTrue(chat2.isEnabled)
+        app.buttons["leave"].tap()
+    }
+
     @MainActor
     func testFreshSnapshotsWithoutInputAcksFailOverInsteadOfFreezing() throws {
         let proxy = try XCTUnwrap(ProcessInfo.processInfo.environment["COOP_ACK_DROP_ENDPOINT"],
