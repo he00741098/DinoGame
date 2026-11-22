@@ -206,6 +206,17 @@ private func mechanicSnapshot(kind: MechanicKind, travel: Int = 0) throws -> Dat
     #expect(try stream.accept(snapshot(moved), lastSentSequence: 0))
 }
 
+@Test func worldDecodesRescueMarker() throws {
+    let rescued = try editingJSON(snapshotData()) { value in
+        var world = value["world"] as! [String: Any]
+        world["rescued_at"] = 1234
+        value["world"] = world
+    }
+    #expect(try snapshot(rescued).world.rescued_at == 1234)
+    // An older server omits the field entirely and must still decode.
+    #expect(try snapshot(snapshotData()).world.rescued_at == nil)
+}
+
 @Test func campaignCompletionAndCheckpointMustMatchLevel() throws {
     for data in [
         try editingJSON(snapshotData()) { $0["campaign_complete"] = true },

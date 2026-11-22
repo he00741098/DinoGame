@@ -14,6 +14,7 @@ final class GameScene: SKScene {
     private var entered: Set<UInt32> = []
     private var levelStartTick: UInt64?
     private var lastDeaths: UInt32?
+    private var lastRescuedAt: UInt64?
     private var motion = UIAccessibility.isReduceMotionEnabled
         ? MotionTimeline(extrapolationCap: 0, smoothingDuration: 0)
         : MotionTimeline()
@@ -46,7 +47,7 @@ final class GameScene: SKScene {
             followCamera.removeAllChildren(); addChild(followCamera)
             gate = nil; key = nil; exit = nil
             entered.removeAll(); levelStartTick = nil
-            motion.reset(); lastDeaths = nil; roster = []; lastChatAt = nil
+            motion.reset(); lastDeaths = nil; roster = []; lastChatAt = nil; lastRescuedAt = nil
             return
         }
         if currentLevel != level || levelStartTick != world.level_start_tick {
@@ -54,7 +55,7 @@ final class GameScene: SKScene {
             followCamera.removeAllChildren(); addChild(followCamera)
             currentLevel = level
             levelStartTick = world.level_start_tick; entered.removeAll()
-            motion.reset(); lastChatAt = nil
+            motion.reset(); lastChatAt = nil; lastRescuedAt = nil
             for rect in level.solids { addChild(node(rect, color: UIColor(red: 0.24, green: 0.34, blue: 0.44, alpha: 1))) }
             gate = node(level.gate, color: .systemIndigo)
             key = node(level.key, color: .systemYellow)
@@ -81,6 +82,9 @@ final class GameScene: SKScene {
         localPlayer = localID
         if lastDeaths != world.deaths { motion.reset() }
         lastDeaths = world.deaths; roster = world.players.map(\.id).sorted()
+        // A fresh marker means the authority charged a death to regroup a split team.
+        if let rescuedAt = world.rescued_at, rescuedAt != lastRescuedAt { showRescueNotice() }
+        lastRescuedAt = world.rescued_at
         motion.append(time: Double(world.tick) / 60, received: ProcessInfo.processInfo.systemUptime,
                       bodies: world.players.map { MotionBody(id: $0.id, position: MotionPoint(x: Double($0.x), y: Double($0.y)),
                                                             velocity: MotionPoint(x: Double($0.vx) * 60, y: Double($0.vy) * 60)) })
@@ -180,6 +184,31 @@ final class GameScene: SKScene {
             bubble.alpha = 0
             bubble.run(.fadeIn(withDuration: 0.2), withKey: "chat-fade")
             bubble.run(.sequence([.wait(forDuration: 3), .removeFromParent()]))
+        }
+    }
+
+    /// Screen-centred, one-shot notice that the run was lost: the authority
+    /// charged a death and respawned a team split across a pad-driven gate.
+    /// Camera children are screen-space, so this stays centred while the world
+    /// scrolls. It never pauses the scene, blocks input or touches the motion
+    /// timeline. Reduced motion shows the text and removes it, with no fade.
+    private func showRescueNotice() {
+        followCamera.childNode(withName: "rescue-notice")?.removeFromParent()
+        let notice = SKLabelNode(fontNamed: "AvenirNext-Bold")
+        notice.name = "rescue-notice"
+        notice.text = "Run lost — team was split"
+        notice.fontSize = 44
+        notice.fontColor = .white
+        notice.horizontalAlignmentMode = .center
+        notice.verticalAlignmentMode = .center
+        notice.zPosition = 20_000
+        followCamera.addChild(notice)
+        if UIAccessibility.isReduceMotionEnabled {
+            notice.run(.sequence([.wait(forDuration: 2.5), .removeFromParent()]), withKey: "rescue-notice")
+        } else {
+            notice.alpha = 0
+            notice.run(.sequence([.fadeIn(withDuration: 0.25), .wait(forDuration: 2.25),
+                                  .fadeOut(withDuration: 0.4), .removeFromParent()]), withKey: "rescue-notice")
         }
     }
 
