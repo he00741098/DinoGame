@@ -32,7 +32,7 @@ pub struct Mechanic {
     pub rect: Rect,
     /// Signed horizontal shuttle distance, belt speed or wind speed; for a
     /// team pad, the players required on it at once: `travel <= 1` means 2
-    /// (a threshold of one would just be a plate), clamped to the room's 4.
+    /// (a threshold of one would just be a plate), clamped to `MAX_PLAYERS`.
     pub travel: i32,
     /// Full shuttle/gate cycle; crumble lifetime; pressure release grace. 0 uses defaults.
     pub period: u32,
@@ -174,7 +174,7 @@ impl World {
         // held open by one player even on a four-player stage.
         let pad_active = |m: &Mechanic| match m.kind {
             MechanicKind::TeamPad => {
-                let need = m.travel.clamp(2, 4) as usize;
+                let need = m.travel.clamp(2, MAX_PLAYERS as i32) as usize;
                 let bodies = count_in(m.rect).max(usize::from(standing(m.rect)));
                 bodies >= need
             }
@@ -341,6 +341,95 @@ impl World {
                 }
                 return;
             }
+        }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    /// One team pad on the starting floor; `travel` is the crowd it demands.
+    fn team_pad_level(travel: i32) -> Level {
+        let mut level = Level {
+            number: 28,
+            ..Level::default()
+        };
+        level.mechanics.push(Mechanic {
+            id: 1,
+            kind: MechanicKind::TeamPad,
+            rect: Rect {
+                x: 4 * UNIT,
+                y: 12 * UNIT - UNIT / 8,
+                w: 4 * UNIT,
+                h: UNIT / 8,
+            },
+            travel,
+            period: 0,
+        });
+        level
+    }
+
+    fn pad_active(world: &World) -> bool {
+        world.objects[0].active
+    }
+
+    /// Park a spawned body on the pad without walking-simulation noise.
+    fn stand_on_pad(world: &mut World, index: usize, x: i32) {
+        let player = &mut world.players[index];
+        player.x = x;
+        player.y = 12 * UNIT - PLAYER_HEIGHT;
+        player.vx = 0;
+        player.vy = 0;
+        player.grounded = true;
+    }
+
+    #[test]
+    fn team_pad_needs_two_players() {
+        let level = team_pad_level(2);
+        let mut world = World::for_level(&level);
+        assert!(world.add_player_in(&level, 1));
+        stand_on_pad(&mut world, 0, 4 * UNIT);
+        world.step(&level, &[]);
+        assert!(!pad_active(&world), "one player must not press it");
+
+        assert!(world.add_player_in(&level, 2));
+        stand_on_pad(&mut world, 1, 4 * UNIT + PLAYER_WIDTH);
+        world.step(&level, &[]);
+        assert!(pad_active(&world), "two players must press it");
+    }
+
+    #[test]
+    fn team_pad_threshold_uses_travel() {
+        // travel = 3, so two bodies fall short even though the stage's team
+        // size is two; only the third body tips the pad over.
+        let level = team_pad_level(3);
+        let mut world = World::for_level(&level);
+        for id in 1..=3 {
+            assert!(world.add_player_in(&level, id));
+        }
+        stand_on_pad(&mut world, 0, 4 * UNIT);
+        stand_on_pad(&mut world, 1, 4 * UNIT + PLAYER_WIDTH);
+        stand_on_pad(&mut world, 2, 20 * UNIT);
+        world.step(&level, &[]);
+        assert!(!pad_active(&world), "two of three must not press it");
+
+        stand_on_pad(&mut world, 2, 4 * UNIT + 2 * PLAYER_WIDTH);
+        world.step(&level, &[]);
+        assert!(pad_active(&world), "three bodies must press it");
+    }
+
+    #[test]
+    fn team_pad_ignores_duplicate_bodies() {
+        // One player over many ticks: a body counted twice would reach the
+        // two-player threshold on its own.
+        let level = team_pad_level(2);
+        let mut world = World::for_level(&level);
+        assert!(world.add_player_in(&level, 1));
+        stand_on_pad(&mut world, 0, 4 * UNIT);
+        for tick in 0..60 {
+            world.step(&level, &[]);
+            assert!(!pad_active(&world), "one body counts once (tick {tick})");
         }
     }
 }
