@@ -93,7 +93,7 @@ final class GameScene: SKScene {
             let ghost = !object.active && [.pressureGate, .timedGate, .crumble].contains(mechanic.kind)
             shape.fillColor = ghost ? .clear : mechanicColor(mechanic.kind).withAlphaComponent(zone(mechanic.kind) ? 0.18 : 1)
             shape.alpha = ghost ? 0.3 : 1
-            if mechanic.kind == .plate { shape.yScale = object.active ? 0.55 : 1 }
+            if mechanic.kind == .plate || mechanic.kind == .teamPad { shape.yScale = object.active ? 0.55 : 1 }
             if mechanic.kind == .checkpoint {
                 shape.strokeColor = world.checkpoint == object.rect ? .white : .systemGreen
                 shape.lineWidth = world.checkpoint == object.rect ? 60 : 25
@@ -104,6 +104,7 @@ final class GameScene: SKScene {
                 case .timedGate: label.text = "\(object.active ? "WAIT" : "GO") \(object.timer / 60)s"
                 case .crumble: label.text = object.active ? (object.timer > 0 ? "CRACK!" : "CRUMBLE") : "REFORMING"
                 case .plate: label.text = object.active ? "PRESSED" : "STAND"
+                case .teamPad: label.text = object.active ? "ENGAGED" : "\(level.minimumPlayers) TO PRESS"
                 case .rope: label.text = object.active ? "↑ HOLD JUMP" : "\(level.minimumPlayers) ON ROPE"
                 case .fallingRock: label.text = object.active ? "↓ ROCK" : object.timer < 60 ? "⚠ ROCK" : "RESET"
                 default: break
@@ -263,6 +264,7 @@ final class GameScene: SKScene {
         switch kind {
         case .hazard: .systemRed
         case .plate, .pressureGate: .systemOrange
+        case .teamPad: .systemTeal
         case .timedGate: .systemPink
         case .oneWay, .movingPlatform: .systemTeal
         case .conveyor: .systemYellow
@@ -328,6 +330,7 @@ final class GameScene: SKScene {
         let caption: String
         switch mechanic.kind {
         case .plate: caption = "STAND"
+        case .teamPad: caption = "\(currentLevel?.minimumPlayers ?? 2) TO PRESS"
         case .pressureGate: caption = "PLATE LOCK"
         case .timedGate: caption = "WAIT"
         case .oneWay: caption = "↑ THROUGH"
@@ -353,6 +356,7 @@ extension MechanicKind {
     var legend: String {
         switch self {
         case .plate: "▁ Stand on plates"
+        case .teamPad: "◎ Team pad: stand together to press"
         case .pressureGate: "▥ Plates open gates"
         case .timedGate: "◷ Wait for gates"
         case .oneWay: "↑ Jump through ledges"

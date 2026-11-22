@@ -75,6 +75,7 @@ public enum MechanicKind: String, Codable, CaseIterable, Sendable {
     case movingPlatform = "moving_platform", conveyor, ice, spring, hazard, checkpoint, crumble
     case lowGravity = "low_gravity", wind
     case rope, fallingRock = "falling_rock"
+    case teamPad = "team_pad"
 }
 
 public struct GameMechanic: Codable, Equatable, Sendable {
