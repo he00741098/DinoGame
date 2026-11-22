@@ -718,6 +718,43 @@ mod tests {
     }
 
     #[test]
+    fn a_team_that_all_crossed_is_not_rescued() {
+        // If every player is past the gate, they can walk to the key; charging a
+        // death and dragging them back would punish a successful crossing.
+        let level = crate::campaign::level(29).expect("stage 29");
+        let mut world = World::for_level(&level);
+        assert!(world.add_player_in(&level, 1));
+        assert!(world.add_player_in(&level, 2));
+        let gate = level
+            .mechanics
+            .iter()
+            .filter(|m| m.kind == crate::MechanicKind::PressureGate)
+            .min_by_key(|m| m.rect.x)
+            .expect("gate");
+        // Both bodies beyond the door, with the door shut behind them.
+        for (index, p) in world.players.iter_mut().enumerate() {
+            p.x = gate.rect.x + UNIT + index as i32 * PLAYER_WIDTH;
+            p.y = level.spawn_y - PLAYER_HEIGHT;
+            p.vx = 0;
+            p.vy = 0;
+            p.grounded = true;
+        }
+        for (o, m) in world.objects.iter_mut().zip(&level.mechanics) {
+            if m.kind == crate::MechanicKind::PressureGate {
+                o.timer = 0;
+                o.active = true;
+            }
+        }
+        let deaths = world.deaths;
+        world.step(&level, &[]);
+        assert!(
+            world.rescued_at.is_none(),
+            "a team that is entirely past the door has not lost the run"
+        );
+        assert_eq!(world.deaths, deaths, "no death should be charged");
+    }
+
+    #[test]
     fn a_split_team_is_rescued_instead_of_left_unwinnable() {
         // Stage 29: a two-player team pad holds a gate open. Once one player is
         // through and the gate's grace expires, the pad side has one body — one

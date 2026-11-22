@@ -382,13 +382,24 @@ impl World {
             if !gate_closed {
                 return false;
             }
-            // Count bodies that can still reach the pad: those left of the gate.
-            let pad_side = self
+            // Count bodies on each side of the shut door. The run is only lost
+            // when the team is genuinely SPLIT: someone is stranded past the
+            // door and too few bodies remain behind to press the pad again.
+            // A team that all crossed can still reach the key, and a team that
+            // all stayed has simply not opened the door yet.
+            let behind = self
                 .players
                 .iter()
                 .filter(|p| p.x + PLAYER_WIDTH <= gate.rect.x)
                 .count();
-            pad_side < need
+            let ahead = self.players.len() - behind;
+            // A split needs bodies on BOTH sides. Everyone behind means the door
+            // simply has not opened yet; everyone ahead means the team crossed
+            // together and can still reach the key.
+            if ahead == 0 || behind == 0 {
+                return false;
+            }
+            behind < need
         })
     }
 }
