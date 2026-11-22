@@ -24,6 +24,8 @@ struct LobbyView: View {
     @State private var connectionExpanded = false
     @State private var legendExpanded = false
     @State private var statisticsExpanded = false
+    /// First-launch explainer; the dismissal is remembered across launches.
+    @State private var showIntro = !UserDefaults.standard.bool(forKey: "hasSeenIntro")
 
     var body: some View {
         VStack(alignment: .leading, spacing: 6) {
@@ -88,6 +90,15 @@ struct LobbyView: View {
             }
         }
         .background(Color(red: 0.04, green: 0.07, blue: 0.12))
+        .overlay {
+            if showIntro {
+                ZStack(alignment: .bottom) {
+                    // Pass-through dim: the explainer never blocks Join or the controls.
+                    Color.black.opacity(0.5).ignoresSafeArea().allowsHitTesting(false)
+                    introCard.padding(.horizontal, 16).padding(.bottom, 112)
+                }
+            }
+        }
         .onChange(of: editing) { _, value in if value { session.releaseControls() } }
         .onChange(of: connectionExpanded) { _, value in if value { session.releaseControls() } }
     }
@@ -105,12 +116,43 @@ struct LobbyView: View {
                 Button("Join") {
                     editing = false
                     connectionExpanded = false
+                    dismissIntro()
                     session.connect(primary: endpoint, fallback: fallback, room: room, accessCode: accessCode)
                 }.buttonStyle(.borderedProminent).tint(.mint).accessibilityIdentifier("join")
             }
+            Button("Show this again") { showIntro = true }
+                .font(.caption2).foregroundStyle(.secondary)
+                .accessibilityIdentifier("introReplay")
+                .accessibilityLabel("Show the how-to-play overlay again")
         }
         .textFieldStyle(.roundedBorder).textInputAutocapitalization(.never)
         .autocorrectionDisabled().focused($editing)
+    }
+
+    /// Static first-run explainer: no animation, dismissible by VoiceOver or tap.
+    private var introCard: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Text("How to play").font(.headline)
+                .accessibilityIdentifier("introTitle").accessibilityAddTraits(.isHeader)
+            Text("One key and one exit for the whole team — nobody finishes alone.")
+            Text("Stand on a teammate to reach the key; pressure pads need two or more bodies at once.")
+            Text("Some stages only finish with 2, 3 or 4 players — add more to the room.")
+            Text("Use quick-chat (Follow me, Ready?, Help!) when you need to coordinate.")
+            Button("Got it") { dismissIntro() }
+                .buttonStyle(.borderedProminent).tint(.mint)
+                .accessibilityIdentifier("introDismiss")
+        }
+        .font(.footnote)
+        .padding(14)
+        .frame(maxWidth: 380, alignment: .leading)
+        .background(.black.opacity(0.85), in: RoundedRectangle(cornerRadius: 12))
+        .accessibilityElement(children: .contain)
+        .accessibilityIdentifier("introOverlay")
+    }
+
+    private func dismissIntro() {
+        UserDefaults.standard.set(true, forKey: "hasSeenIntro")
+        showIntro = false
     }
 
     private var campaignHeader: some View {

@@ -14,10 +14,21 @@
   #status { min-height:24px; color:#b9f479; } p { line-height:1.5; } .muted { color:#a6b7ce; }
   .sr-only { position:absolute; width:1px; height:1px; overflow:hidden; clip-path:inset(50%); white-space:nowrap; }
   .controls button { min-width:70px; min-height:60px; user-select:none; -webkit-user-select:none; }
+  #intro { margin:0 0 16px; } #intro summary { cursor:pointer; font-weight:600; }
+  #intro ul { margin:8px 0 0; padding-left:20px; } #intro li { line-height:1.5; } #intro li + li { margin-top:4px; }
 </style>
 <main>
   <h1>Co-op engine / network harness</h1>
   <p>Join the same room with 2–4 players. Cooperate through 32 campaign levels; expeditions include three- and four-player challenges.</p>
+  <details id="intro">
+    <summary>How to play</summary>
+    <ul>
+      <li>One key and one exit for the whole team — nobody finishes alone.</li>
+      <li>Stand on a teammate to reach the key; pressure pads need two or more bodies at once.</li>
+      <li>Some stages only finish with 2, 3 or 4 players — add more to the room.</li>
+      <li>Use quick-chat (Follow me, Ready?, Help!) when you need to coordinate.</li>
+    </ul>
+  </details>
   <form id="join"><label>Room <input id="room" value="playtest" pattern="[A-Za-z0-9-]{3,16}" minlength="3" maxlength="16" required></label><button id="connect">Join room</button></form>
   <p id="status" aria-live="off">Disconnected</p>
   <div id="announce" role="status" class="sr-only"></div>

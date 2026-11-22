@@ -44,6 +44,19 @@ function clearChat() {
 }
 const queryRoom = new URL(location.href).searchParams.get('room');
 if (queryRoom && /^[A-Za-z0-9-]{3,16}$/.test(queryRoom)) roomField.value = queryRoom;
+// First-run rules panel above the join form: open until the player collapses
+// it, then remembered per browser. Blocked storage degrades to showing it on
+// every load; the summary line is the "show again" affordance.
+const intro = document.querySelector('#intro');
+if (intro) {
+  let seen;
+  try { seen = window.localStorage?.getItem('coopIntroSeen') != null; } catch { seen = false; }
+  if (!seen) intro.open = true;
+  intro.addEventListener('toggle', () => {
+    if (intro.open) return;
+    try { window.localStorage?.setItem('coopIntroSeen', '1'); } catch {}
+  });
+}
 
 function clearInput() {
   keys.clear(); touches.clear();
