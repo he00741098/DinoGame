@@ -2,6 +2,12 @@ import Combine
 import Foundation
 import Network
 
+struct ChatEntry: Equatable, Sendable {
+    let player: UInt32
+    let text: String
+    let at: Double
+}
+
 /// One session lifecycle for LAN and hosted routes. The socket is disposable;
 /// input and view state cannot leak from an old connection into its replacement.
 @MainActor
@@ -19,6 +25,9 @@ final class SessionModel: ObservableObject {
     @Published private(set) var controllerID: UInt32?
     @Published private(set) var campaignComplete = false
     @Published private(set) var networkSummary = "No network samples"
+    /// Last three quick-chat lines, newest last. Wording is server-owned.
+    @Published private(set) var chatLog: [String] = []
+    @Published private(set) var latestChat: ChatEntry?
     private var networkStatistics = NetworkStatistics()
     private var lastStatisticsUpdate = 0.0
 
@@ -133,6 +142,14 @@ final class SessionModel: ObservableObject {
 
     func releaseControls() { input.clear() }
 
+    func sendChat(preset: UInt8) {
+        guard let socket, active || hasSnapshot else { return }
+        Task { [weak socket] in
+            guard let data = try? ClientCommand.chat(preset: preset) else { return }
+            try? await socket?.send(.string(String(decoding: data, as: UTF8.self)))
+        }
+    }
+
     func restartLevel() { request(.restart) }
     func nextLevel() { request(.next) }
 
@@ -158,6 +175,7 @@ final class SessionModel: ObservableObject {
         pendingControl = nil; controlSequence = nil
         awaitingBaseline = true; baselineSequence = nil
         acknowledgmentDeadline.clear()
+        latestChat = nil
     }
 
     private func begin() {
@@ -383,6 +401,10 @@ final class SessionModel: ObservableObject {
                 }
                 status = campaignComplete ? "Campaign complete!" : snapshot.world.completed ? "Team complete!" :
                     active ? "Connected · P\(playerID ?? 0)" : "Synchronizing controls…"
+            case .chat(let message):
+                latestChat = ChatEntry(player: message.player, text: message.text, at: ProcessInfo.processInfo.systemUptime)
+                chatLog.append("P\(message.player): \(message.text)")
+                if chatLog.count > 3 { chatLog.removeFirst(chatLog.count - 3) }
             case .rejection(let code, _): throw Rejected(code: code)
             }
         }

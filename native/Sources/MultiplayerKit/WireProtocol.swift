@@ -6,6 +6,9 @@ public enum Wire {
     public static let game = "coop-sandbox"
     public static let ruleset = "coop-campaign-3"
     public static let levelCount = 28
+    /// Mirrors `net_proto::CHAT_PRESETS`; a mismatch fails decode rather than
+    /// showing wording the server did not choose.
+    public static let chatPresets = ["Follow me", "Wait here", "Jump!", "Ready?", "Help!", "Nice!"]
     public static let playerWidth = 720
     public static let playerHeight = 896
 }
@@ -128,6 +131,14 @@ public struct Welcome: Decodable, Sendable {
     public let controller: UInt32?
 }
 
+/// Server-owned quick-chat wording, mirrored from `net_proto::CHAT_PRESETS`.
+/// Clients send only the index; the server decides which text is broadcast.
+public struct ChatMessage: Decodable, Sendable, Equatable {
+    public let player: UInt32
+    public let preset: UInt8
+    public let text: String
+}
+
 public struct Snapshot: Decodable, Sendable {
     public let level: GameLevel
     public let revision: UInt32
@@ -144,6 +155,7 @@ public enum ProtocolError: Error, Equatable, Sendable {
 public enum ServerEvent: Sendable {
     case welcome(Welcome)
     case snapshot(Snapshot)
+    case chat(ChatMessage)
     case rejection(code: String, message: String)
 
     public static func decode(_ data: Data) throws -> Self {
@@ -165,6 +177,13 @@ public enum ServerEvent: Sendable {
             let value = try decoder.decode(Snapshot.self, from: data)
             guard value.level.isSafe else { throw ProtocolError.invalidLevel }
             return .snapshot(value)
+        case "chat":
+            let value = try decoder.decode(ChatMessage.self, from: data)
+            guard value.player > 0, value.preset < UInt8(Wire.chatPresets.count),
+                  value.text == Wire.chatPresets[Int(value.preset)] else {
+                throw ProtocolError.unknownMessage
+            }
+            return .chat(value)
         case "error":
             struct Rejection: Decodable { let code: String; let message: String }
             let value = try decoder.decode(Rejection.self, from: data)
@@ -192,6 +211,12 @@ public enum ClientCommand {
         guard seq > 0, (-1...1).contains(input.axis) else { throw ProtocolError.invalidInput }
         struct Command: Encodable { let type = "input"; let seq: UInt32; let input: GameInput; let jump_id: UInt32; let revision: UInt32 }
         return try JSONEncoder().encode(Command(seq: seq, input: input, jump_id: jumpID, revision: revision))
+    }
+
+    public static func chat(preset: UInt8) throws -> Data {
+        guard Int(preset) < Wire.chatPresets.count else { throw ProtocolError.invalidInput }
+        struct Command: Encodable { let type = "chat"; let preset: UInt8 }
+        return try JSONEncoder().encode(Command(preset: preset))
     }
 
     public static func control(action: CampaignAction, seq: UInt32, revision: UInt32) throws -> Data {
