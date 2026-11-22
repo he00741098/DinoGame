@@ -1837,4 +1837,257 @@ mod tests {
             1
         );
     }
+
+    #[test]
+    fn restart_requires_the_controller() {
+        let now = Instant::now();
+        let mut room = Room::new();
+        let owner = join(&mut room, None, now);
+        let peer = join(&mut room, None, now);
+        // Slots are ID-ordered, so the lowest connected player owns the round.
+        assert_eq!(room.controller(), Some(owner.player));
+        assert!(!room.command(
+            peer.player,
+            peer.generation,
+            ClientMessage::Restart {
+                seq: 1,
+                revision: 1,
+            },
+            now,
+        ));
+        assert_eq!(room.revision, 1);
+        assert_eq!(room.level.number, 1);
+        assert!(room.command(
+            owner.player,
+            owner.generation,
+            ClientMessage::Restart {
+                seq: 1,
+                revision: 1,
+            },
+            now,
+        ));
+        assert_eq!(room.revision, 2);
+        // Restart re-runs the current stage; only Next advances the campaign.
+        assert_eq!(room.level.number, 1);
+    }
+
+    #[test]
+    fn restart_bumps_revision_and_clears_round_state() {
+        let now = Instant::now();
+        let mut room = Room::new();
+        let owner = join(&mut room, None, now);
+        let peer = join(&mut room, None, now);
+        let spawns: Vec<i32> = room.world.players.iter().map(|p| p.x).collect();
+        for joined in [&owner, &peer] {
+            assert!(room.command(
+                joined.player,
+                joined.generation,
+                ClientMessage::Input {
+                    seq: 1,
+                    input: Input {
+                        axis: 1,
+                        jump: false,
+                    },
+                    jump_id: 0,
+                    revision: 1,
+                },
+                now,
+            ));
+        }
+        let level = room.level.clone();
+        room.tick(&level, now);
+        assert_eq!(room.slots[&owner.player].ack, Some(1));
+        assert_eq!(room.slots[&peer.player].ack, Some(1));
+        assert_ne!(room.world.players[0].x, spawns[0]);
+        assert_ne!(room.world.players[1].x, spawns[1]);
+        // Round state that a restart must wipe before the next attempt.
+        room.world.completed = true;
+        room.world.key_collected = true;
+        let tick = room.world.tick;
+        let revision = room.revision;
+        assert!(room.command(
+            owner.player,
+            owner.generation,
+            ClientMessage::Restart {
+                seq: 2,
+                revision,
+            },
+            now + Duration::from_millis(1),
+        ));
+        assert_eq!(room.revision, revision + 1);
+        assert_eq!(room.level.number, 1);
+        // Network time survives; the new round starts at the current tick.
+        assert_eq!(room.world.tick, tick);
+        assert_eq!(room.world.level_start_tick, room.world.tick);
+        assert!(!room.world.completed);
+        assert!(!room.world.key_collected);
+        // Everyone is back at spawn with no carried momentum.
+        assert_eq!(
+            room.world.players.iter().map(|p| p.x).collect::<Vec<_>>(),
+            spawns
+        );
+        assert!(room
+            .world
+            .players
+            .iter()
+            .all(|p| p.vx == 0 && p.vy == 0));
+        // Old-round acks are gone; the controller keeps only its restart ack.
+        assert_eq!(room.slots[&owner.player].ack, Some(2));
+        assert_eq!(room.slots[&peer.player].ack, None);
+        assert!(room.slots.values().all(|slot| {
+            slot.pending.is_none()
+                && slot.held == Input::default()
+                && slot.needs_jump_baseline
+        }));
+        // Input from the abandoned revision never re-enters the new round.
+        assert!(!room.command(
+            owner.player,
+            owner.generation,
+            ClientMessage::Input {
+                seq: 3,
+                input: Input {
+                    axis: -1,
+                    jump: true,
+                },
+                jump_id: 3,
+                revision,
+            },
+            now + Duration::from_millis(2),
+        ));
+    }
+
+    #[test]
+    fn next_requires_authoritative_completion() {
+        let now = Instant::now();
+        let mut room = Room::new();
+        let owner = join(&mut room, None, now);
+        let revision = room.revision;
+        // Only server-observed completion may open the next stage.
+        assert!(!room.command(
+            owner.player,
+            owner.generation,
+            ClientMessage::Next {
+                seq: 1,
+                revision,
+            },
+            now,
+        ));
+        assert_eq!(room.revision, revision);
+        assert_eq!(room.level.number, 1);
+        room.world.completed = true;
+        assert!(room.command(
+            owner.player,
+            owner.generation,
+            ClientMessage::Next {
+                seq: 2,
+                revision,
+            },
+            now,
+        ));
+        assert_eq!(room.revision, revision + 1);
+        assert_eq!(room.level.number, 2);
+        assert!(!room.world.completed);
+    }
+
+    #[test]
+    fn next_is_refused_at_the_last_stage() {
+        let now = Instant::now();
+        let mut room = Room::new();
+        let owner = join(&mut room, None, now);
+        room.level = campaign::level(campaign::LEVEL_COUNT).unwrap();
+        room.world = World::for_level(&room.level);
+        room.world.completed = true;
+        let revision = room.revision;
+        assert!(!room.command(
+            owner.player,
+            owner.generation,
+            ClientMessage::Next {
+                seq: 1,
+                revision,
+            },
+            now,
+        ));
+        assert_eq!(room.revision, revision);
+        assert_eq!(room.level.number, campaign::LEVEL_COUNT);
+        assert!(room.world.completed);
+    }
+
+    #[test]
+    fn old_revision_input_cannot_affect_the_new_round() {
+        let now = Instant::now();
+        let mut room = Room::new();
+        let owner = join(&mut room, None, now);
+        let peer = join(&mut room, None, now);
+        let revision = room.revision;
+        assert!(room.command(
+            owner.player,
+            owner.generation,
+            ClientMessage::Restart {
+                seq: 1,
+                revision,
+            },
+            now,
+        ));
+        let level = room.level.clone();
+        let spawns: Vec<i32> = room.world.players.iter().map(|p| p.x).collect();
+        // Both players still speak the abandoned revision, with fresh sequences.
+        assert!(!room.command(
+            owner.player,
+            owner.generation,
+            ClientMessage::Input {
+                seq: 2,
+                input: Input {
+                    axis: 1,
+                    jump: true,
+                },
+                jump_id: 7,
+                revision,
+            },
+            now + Duration::from_millis(1),
+        ));
+        assert!(!room.command(
+            peer.player,
+            peer.generation,
+            ClientMessage::Input {
+                seq: 1,
+                input: Input {
+                    axis: 1,
+                    jump: true,
+                },
+                jump_id: 7,
+                revision,
+            },
+            now + Duration::from_millis(1),
+        ));
+        assert_eq!(room.slots[&owner.player].latest_seq, 1);
+        assert_eq!(room.slots[&peer.player].latest_seq, 0);
+        assert!(room.slots.values().all(|slot| {
+            slot.pending.is_none() && !slot.jump_pending && slot.jump_id == 0
+        }));
+        room.tick(&level, now + Duration::from_millis(1));
+        assert_eq!(
+            room.world.players.iter().map(|p| p.x).collect::<Vec<_>>(),
+            spawns
+        );
+        // The same payload on the current revision lands, so the revision is the fence.
+        assert!(room.command(
+            owner.player,
+            owner.generation,
+            ClientMessage::Input {
+                seq: 2,
+                input: Input {
+                    axis: 1,
+                    jump: true,
+                },
+                jump_id: 7,
+                revision: revision + 1,
+            },
+            now + Duration::from_millis(2),
+        ));
+        assert_eq!(room.slots[&owner.player].latest_seq, 2);
+        assert_eq!(
+            room.slots[&owner.player].pending,
+            Some((2, Input::default()))
+        );
+    }
 }
