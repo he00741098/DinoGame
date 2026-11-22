@@ -345,6 +345,54 @@ impl World {
     }
 }
 
+impl World {
+    /// True when the team can no longer finish: a team pad's gate is shut and
+    /// fewer than the needed number of players remain on the pad's side of it,
+    /// so the pad can never be pressed again and the key is out of reach.
+    ///
+    /// This is the "split team" failure of a pad room. Without it the room is
+    /// permanently lost — there is no hazard to respawn the team and the pad
+    /// cannot be re-pressed from the wrong side.
+    pub(crate) fn unwinnable_split(&self, level: &Level) -> bool {
+        if self.key_collected || self.completed {
+            return false;
+        }
+        level.mechanics.iter().any(|pad| {
+            if pad.kind != MechanicKind::TeamPad {
+                return false;
+            }
+            let need = pad.travel.clamp(2, MAX_PLAYERS as i32) as usize;
+            // The gate this pad drives is the nearest pressure gate to its right.
+            let Some(gate) = level
+                .mechanics
+                .iter()
+                .filter(|m| m.kind == MechanicKind::PressureGate && m.rect.x > pad.rect.x)
+                .min_by_key(|m| m.rect.x)
+            else {
+                return false;
+            };
+            // A gate's `active` flag means solid/closed, so the door is only
+            // passable when it is false (including during its release grace).
+            let gate_closed = self
+                .objects
+                .iter()
+                .zip(&level.mechanics)
+                .find(|(_, m)| m.id == gate.id)
+                .is_some_and(|(o, _)| o.active && o.timer == 0);
+            if !gate_closed {
+                return false;
+            }
+            // Count bodies that can still reach the pad: those left of the gate.
+            let pad_side = self
+                .players
+                .iter()
+                .filter(|p| p.x + PLAYER_WIDTH <= gate.rect.x)
+                .count();
+            pad_side < need
+        })
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

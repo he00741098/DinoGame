@@ -175,6 +175,11 @@ pub struct World {
     pub checkpoint: Option<Rect>,
     #[serde(default)]
     pub level_start_tick: u64,
+    /// Tick of the last automatic rescue from an unwinnable split. Clients play
+    /// a one-shot "run lost" animation whenever this changes; it is part of the
+    /// state hash so two authorities cannot disagree about having rescued.
+    #[serde(default)]
+    pub rescued_at: Option<u64>,
 }
 
 impl Default for World {
@@ -194,6 +199,7 @@ impl World {
             deaths: 0,
             checkpoint: None,
             level_start_tick: 0,
+            rescued_at: None,
         }
     }
 
@@ -309,6 +315,15 @@ impl World {
             return;
         }
         self.update_mechanics(level);
+        if self.unwinnable_split(level) {
+            // The team can no longer reach the key: nobody is left on the pad
+            // side to hold a team pad, so its gate can never reopen. Charge the
+            // whole team a death and regroup rather than leave the room lost.
+            self.rescued_at = Some(self.tick);
+            self.respawn_team(level);
+            self.update_mechanics(level);
+            return;
+        }
         let before_tether = (level.tether_length > 0).then(|| self.players.clone());
         // Key collection runs inside the movement loop below, so a rope rollback
         // needs the pre-move value to undo a key gathered on a discarded step.
@@ -536,6 +551,7 @@ impl World {
             write(&o.timer.to_le_bytes());
         }
         write(&[self.key_collected as u8, self.completed as u8]);
+        write(&self.rescued_at.map_or(u32::MAX, |t| t as u32).to_le_bytes());
         write(&(self.players.len() as u32).to_le_bytes());
         for p in &self.players {
             write(&p.id.to_le_bytes());
@@ -698,6 +714,59 @@ mod tests {
         assert!(
             pad_active(&world, &level),
             "two bodies on the pad edge must press it"
+        );
+    }
+
+    #[test]
+    fn a_split_team_is_rescued_instead_of_left_unwinnable() {
+        // Stage 29: a two-player team pad holds a gate open. Once one player is
+        // through and the gate's grace expires, the pad side has one body — one
+        // short of the two the pad needs — so the room is lost. The authority
+        // must charge a death and regroup rather than let it stay broken.
+        let level = crate::campaign::level(29).expect("stage 29");
+        let mut world = World::for_level(&level);
+        assert!(world.add_player_in(&level, 1));
+        assert!(world.add_player_in(&level, 2));
+        let pad = level
+            .mechanics
+            .iter()
+            .find(|m| m.kind == crate::MechanicKind::TeamPad)
+            .expect("team pad");
+        let gate = level
+            .mechanics
+            .iter()
+            .filter(|m| m.kind == crate::MechanicKind::PressureGate)
+            .min_by_key(|m| m.rect.x)
+            .expect("gate");
+        // Straddle the gate: one body on each side, pad unpressed.
+        world.players[0].x = pad.rect.x + 2 * UNIT;
+        world.players[1].x = gate.rect.x + UNIT;
+        for p in &mut world.players {
+            p.y = level.spawn_y - PLAYER_HEIGHT;
+            p.vx = 0;
+            p.vy = 0;
+            p.grounded = true;
+        }
+        let deaths = world.deaths;
+        // Drain the gate's release grace so it is genuinely shut.
+        for (o, m) in world.objects.iter_mut().zip(&level.mechanics) {
+            if m.kind == crate::MechanicKind::PressureGate {
+                o.timer = 0;
+                o.active = true;
+            }
+        }
+        world.step(&level, &[]);
+        assert!(
+            world.rescued_at.is_some(),
+            "a team that can no longer press the pad must be rescued"
+        );
+        assert_eq!(world.deaths, deaths + 1, "the rescue charges one death");
+        assert!(
+            world
+                .players
+                .iter()
+                .all(|p| p.x + PLAYER_WIDTH <= gate.rect.x || world.key_collected),
+            "everyone returns to the pad side of the gate"
         );
     }
 
