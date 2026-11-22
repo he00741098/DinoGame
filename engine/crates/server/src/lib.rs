@@ -458,7 +458,19 @@ impl Room {
                 (id, slot.held, edge)
             })
             .collect();
+        let before_rescue = self.world.rescued_at;
         self.world.step_with_jump_edges(level, &inputs, ready);
+        // A rescue means the layout allowed a split that could not be undone by
+        // play. Surface it, or a broken room would be silently papered over.
+        if self.world.rescued_at != before_rescue {
+            eprintln!(
+                "rescue: level={} tick={} players={} deaths={}",
+                self.level.number,
+                self.world.tick,
+                self.world.players.len(),
+                self.world.deaths
+            );
+        }
         // Completed worlds do not run physics, but leases must still stop old movement.
         for (&id, slot) in &self.slots {
             if slot.fresh_at.is_none() {
