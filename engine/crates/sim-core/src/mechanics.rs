@@ -350,9 +350,10 @@ impl World {
     /// fewer than the needed number of players remain on the pad's side of it,
     /// so the pad can never be pressed again and the key is out of reach.
     ///
-    /// This is the "split team" failure of a pad room. Without it the room is
-    /// permanently lost — there is no hazard to respawn the team and the pad
-    /// cannot be re-pressed from the wrong side.
+    /// This is the "split team" failure of a pad room. Without it the room
+    /// would be permanently lost before the key: the pad cannot be re-pressed
+    /// from the wrong side. After the key the rescue stands down, and the
+    /// room's own overhead hazard is the manual way back.
     pub(crate) fn unwinnable_split(&self, level: &Level) -> bool {
         if self.key_collected || self.completed {
             return false;

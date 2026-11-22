@@ -50,4 +50,4 @@ Both draw from the authoritative `world.objects`; neither re-simulates rules.
 add(&mut l, TeamPad, rect, travel, 0); // travel = threshold, period unused
 ```
 
-`valid()` only bounds `|travel| <= 8 * UNIT`, so the runtime clamp enforces `2..=4` (`0`/`1` → `2`, `≥ 4` → `4`): author `2`, `3` or `4`. The campaign's `team_pad_room` (stages 29–30) uses `travel = 2`.
+`valid()` only bounds `|travel| <= 8 * UNIT`, so the runtime clamp enforces `2..=4` (`0`/`1` → `2`, `≥ 4` → `4`): author `2`, `3` or `4`. The campaign's `team_pad_room` (stages 29 and 31) uses `travel = 2`, and the stage-32 finale uses `travel = 3`.
