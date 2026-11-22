@@ -7,7 +7,9 @@ const roomField = document.querySelector('#room');
 const restartButton = document.querySelector('#restart');
 const nextButton = document.querySelector('#next');
 const networkStatistics = new NetworkStatistics();
-const motion = new MotionTimeline();
+const motion = window.matchMedia?.('(prefers-reduced-motion: reduce)')?.matches
+  ? new MotionTimeline({ extrapolationCapMs: 0, smoothingMs: 0 })
+  : new MotionTimeline();
 let lastInputSignature, lastInputSent = -Infinity, lastStatisticsUpdate = -Infinity;
 function transmit(current, message) {
   const text = JSON.stringify(message);

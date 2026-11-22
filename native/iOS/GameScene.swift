@@ -14,7 +14,9 @@ final class GameScene: SKScene {
     private var entered: Set<UInt32> = []
     private var levelStartTick: UInt64?
     private var lastDeaths: UInt32?
-    private var motion = MotionTimeline()
+    private var motion = UIAccessibility.isReduceMotionEnabled
+        ? MotionTimeline(extrapolationCap: 0, smoothingDuration: 0)
+        : MotionTimeline()
     private var roster: [UInt32] = []
     private let tether = SKShapeNode()
     private let followCamera = SKCameraNode()
