@@ -30,6 +30,8 @@ let retryTimer, retryAttempts = 0, retryAllowed = false;
 const unit = 1024;
 const arrivals = new Map();
 let reviewing = false, reviewGeneration = 0, reviewFrames = [], reviewPosition = 0, reviewLastTime = 0, reviewPlaying = false;
+// Must match `campaign::LEVEL_COUNT`; every stage count below derives from it.
+const stageCount = 30;
 let reviewFrameMilliseconds = 50;
 const chatBubbles = new Map();
 const chatHistory = [];
@@ -158,8 +160,8 @@ function connectRoom(room, automatic = false) {
       level = message.level;
       lastSnapshot = performance.now();
       updateControls();
-      setStatus(`Room ${room} · You are P${player} · Level ${level.number}/28: ${level.title} · ${level.required_players ?? 2} players needed · ${level.hint}`);
-      announce(`Joined room ${room} as P${player} — Level ${level.number} of 28: ${level.title}`);
+      setStatus(`Room ${room} · You are P${player} · Level ${level.number}/${stageCount}: ${level.title} · ${level.required_players ?? 2} players needed · ${level.hint}`);
+      announce(`Joined room ${room} as P${player} — Level ${level.number} of ${stageCount}: ${level.title}`);
     } else if (message.type === 'snapshot') {
       if (player === undefined || revision === undefined) return;
       if (message.revision < revision || (world && message.world.tick < world.tick)) {
@@ -199,13 +201,13 @@ function connectRoom(room, automatic = false) {
       }
       if (hasAppliedAck) retryAttempts = 0;
       updateControls();
-      setStatus(`Room ${room} · P${player} · Level ${level.number}/28: ${level.title} · ${level.required_players ?? 2} players needed · ${level.hint} · ` +
+      setStatus(`Room ${room} · P${player} · Level ${level.number}/${stageCount}: ${level.title} · ${level.required_players ?? 2} players needed · ${level.hint} · ` +
         `${world.players.length}/4 players · tick ${world.tick} · revision ${revision} · ack ${ack ?? 'pending'} · deaths ${world.deaths}` +
         `${inputReady ? '' : ' · Waiting for neutral input acknowledgment'}` +
-        `${world.key_collected ? ` · key collected · exit ${world.players.filter(p => atExit(p)).length}/${world.players.length} (enter to wait)` : ''}${campaignComplete ? ' · Campaign complete! All 28 levels cleared.' : world.completed ? ' · Level complete! Next stage shortly…' : ''}`);
+        `${world.key_collected ? ` · key collected · exit ${world.players.filter(p => atExit(p)).length}/${world.players.length} (enter to wait)` : ''}${campaignComplete ? ' · Campaign complete! All ${stageCount} levels cleared.' : world.completed ? ' · Level complete! Next stage shortly…' : ''}`);
       if (changed) announce(`Revision ${revision}`);
-      if (previousLevelNumber !== level.number) announce(`Level ${level.number} of 28: ${level.title}`);
-      if (campaignComplete && !wasCampaignComplete) announce('Campaign complete. All 28 levels cleared.');
+      if (previousLevelNumber !== level.number) announce(`Level ${level.number} of ${stageCount}: ${level.title}`);
+      if (campaignComplete && !wasCampaignComplete) announce(`Campaign complete. All ${stageCount} levels cleared.`);
       if (world.completed && !wasTeamComplete) announce('Level complete. Next stage shortly.');
       if (wasStalled && fresh) announce('Connection recovered.');
     } else if (message.type === 'chat') {
@@ -505,7 +507,7 @@ requestAnimationFrame(draw);
 async function startReview(number) {
   motion.reset();
   arrivals.clear();
-  if (!Number.isInteger(number) || number < 1 || number > 28) return;
+  if (!Number.isInteger(number) || number < 1 || number > stageCount) return;
   reviewing = true;
   const request = ++reviewGeneration;
   clearTimeout(retryTimer); retryAllowed = false;
@@ -529,7 +531,7 @@ async function startReview(number) {
     world = reviewFrames[0]; reviewPlaying = true; reviewLastTime = performance.now();
     const seek = document.querySelector('#reviewSeek');
     if (seek) { seek.max = String(reviewFrames.length - 1); seek.value = '0'; }
-    setStatus(`SOLUTION REVIEW · ${number}/28: ${level.title} · ${level.hint} · ${recording.provenance}`);
+    setStatus(`SOLUTION REVIEW · ${number}/${stageCount}: ${level.title} · ${level.hint} · ${recording.provenance}`);
   } catch {
     if (reviewing && request === reviewGeneration) {
       setStatus('Solution could not be loaded. Retry or Join a live room.');
@@ -550,4 +552,4 @@ document.querySelector('#reviewSeek')?.addEventListener('input', event => {
   reviewPlaying = false;
 });
 const querySolution = Number(new URL(location.href).searchParams.get('solution'));
-if (querySolution >= 1 && querySolution <= 28) startReview(querySolution);
+if (querySolution >= 1 && querySolution <= stageCount) startReview(querySolution);

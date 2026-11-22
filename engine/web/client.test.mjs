@@ -280,7 +280,7 @@ test('revision changes clear held input and unsent edges without resetting commi
   assert.deepEqual(socket.sent.at(-1).input, { axis: 0, jump: false });
   h.key('keydown', 'Space');
   assert.equal(socket.sent.at(-1).jump_id, 2);
-  assert.match(h.fields.get('#status').textContent, /Level 2\/28: Stage 2.*Work together/);
+  assert.match(h.fields.get('#status').textContent, /Level 2\/30: Stage 2.*Work together/);
 });
 
 test('old revisions and ticks are diagnosed without overwriting level, world, or controller', () => {
@@ -298,7 +298,7 @@ test('old revisions and ticks are diagnosed without overwriting level, world, or
   assert.equal(h.fields.get('#restart').disabled, false);
   h.tick(); assert.equal(socket.sent.at(-1).revision, 3);
   socket.receive(snapshot({ revision: 3, level: level(3), world: { ...current.world, tick: 11 } }));
-  assert.match(h.fields.get('#status').textContent, /Level 3\/28.*ack pending/);
+  assert.match(h.fields.get('#status').textContent, /Level 3\/30.*ack pending/);
 });
 
 test('higher revision at the same tick starts a baseline; even higher revision with an older tick is rejected', () => {
@@ -306,7 +306,7 @@ test('higher revision at the same tick starts a baseline; even higher revision w
   socket.receive(snapshot());
   socket.receive(snapshot({ revision: 2, level: level(2) }));
   assert.equal(socket.sent.at(-1).revision, 2);
-  assert.match(h.fields.get('#status').textContent, /Level 2\/28/);
+  assert.match(h.fields.get('#status').textContent, /Level 2\/30/);
   const stale = snapshot({ revision: 3, level: level(3) });
   stale.world.tick = 9;
   socket.receive(stale);
@@ -337,9 +337,9 @@ test('controller commands share input sequence and revision; nonowners cannot se
   restart.emit('click'); next.emit('click'); assert.equal(socket.sent.length, count);
   socket.receive({ ...complete, controller: null });
   assert.equal(restart.disabled, true);
-  socket.receive({ ...complete, level: level(28), campaign_complete: true });
+  socket.receive({ ...complete, level: level(30), campaign_complete: true });
   assert.equal(next.disabled, true); assert.equal(restart.disabled, false);
-  assert.match(h.fields.get('#status').textContent, /Level 28\/28.*Campaign complete/);
+  assert.match(h.fields.get('#status').textContent, /Level 30\/30.*Campaign complete/);
   socket.close(); assert.equal(restart.disabled, true);
 });
 
