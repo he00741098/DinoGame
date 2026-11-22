@@ -109,7 +109,10 @@ impl World {
                 rect: m.rect,
                 active: !matches!(
                     m.kind,
-                    MechanicKind::Plate | MechanicKind::Rope | MechanicKind::FallingRock
+                    MechanicKind::Plate
+                        | MechanicKind::TeamPad
+                        | MechanicKind::Rope
+                        | MechanicKind::FallingRock
                 ),
                 timer: 0,
             })
@@ -158,7 +161,13 @@ impl World {
                 .any(|p| p.x < r.x + r.w && p.x + PLAYER_WIDTH > r.x && p.y + PLAYER_HEIGHT == r.y)
         };
         // Distinct bodies, never the same player twice; players are ID-sorted.
-        let count_in = |r: Rect| self.players.iter().filter(|p| p.rect().overlaps(r)).count();
+        // A body resting exactly on the pad's top edge does not overlap it, so
+        // the same predicate backs both counting and the plate check.
+        let on_pad = |p: &Player, r: Rect| {
+            p.rect().overlaps(r)
+                || (p.x < r.x + r.w && p.x + PLAYER_WIDTH > r.x && p.y + PLAYER_HEIGHT == r.y)
+        };
+        let count_in = |r: Rect| self.players.iter().filter(|p| on_pad(p, r)).count();
         // A team pad needs its own head count, so a two-player pad cannot be
         // held open by one player even on a four-player stage.
         let pad_active = |m: &Mechanic| match m.kind {

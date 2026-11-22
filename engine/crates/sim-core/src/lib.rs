@@ -691,6 +691,36 @@ mod tests {
         );
     }
 
+
+    #[test]
+    fn team_pad_counts_bodies_resting_on_its_edge() {
+        // A player standing exactly on the pad's top edge does not overlap the
+        // rect, so counting must use the same predicate as the plate check.
+        let level = team_pad_level(2, 2);
+        let mut world = World::for_level(&level);
+        for id in 1..=2 {
+            world.add_player_in(&level, id);
+        }
+        let pad = level
+            .mechanics
+            .iter()
+            .find(|m| m.kind == crate::MechanicKind::TeamPad)
+            .expect("team pad")
+            .rect;
+        for (index, player) in world.players.iter_mut().enumerate() {
+            player.x = pad.x + index as i32 * PLAYER_WIDTH;
+            player.y = pad.y - PLAYER_HEIGHT;
+            player.vx = 0;
+            player.vy = 0;
+            player.grounded = true;
+        }
+        world.step(&level, &[]);
+        assert!(
+            pad_active(&world, &level),
+            "two bodies on the pad edge must press it"
+        );
+    }
+
     #[test]
     fn team_pad_ignores_duplicate_bodies() {
         // A pad needing four cannot be pressed by one player over many ticks.
