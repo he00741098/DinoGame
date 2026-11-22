@@ -38,3 +38,34 @@ private func body(_ x: Double, vx: Double = 0) -> [MotionBody] {
     bad.append(time: 1, received: 1, bodies: body(.infinity))
     #expect(bad.position(id: 1, now: 2) == nil)
 }
+
+@Test func zeroExtrapolationNeverPredictsPastNewestSample() {
+    var timeline = MotionTimeline(extrapolationCap: 0)
+    timeline.append(time: 0, received: 10, bodies: body(0, vx: 9600))
+    timeline.append(time: 0.05, received: 10.05, bodies: body(480, vx: 9600))
+    for now in [10.1, 10.5, 12.0] {
+        #expect(timeline.position(id: 1, now: now, local: true) == MotionPoint(x: 480, y: 0))
+    }
+}
+
+@Test func zeroSmoothingReturnsInterpolatedSampleDirectly() {
+    var timeline = MotionTimeline(smoothingDuration: 0)
+    timeline.append(time: 0, received: 10, bodies: body(0))
+    timeline.append(time: 0.0625, received: 10.0625, bodies: body(1000))
+    #expect(timeline.position(id: 1, now: 10.0, local: true) == MotionPoint(x: 0, y: 0))
+    #expect(timeline.position(id: 1, now: 10.03125, local: true) == MotionPoint(x: 500, y: 0))
+}
+
+@Test func defaultConfigurationStillExtrapolatesAndSmooths() {
+    var extrapolating = MotionTimeline()
+    extrapolating.append(time: 0, received: 10, bodies: body(0, vx: 9600))
+    extrapolating.append(time: 0.05, received: 10.05, bodies: body(480, vx: 9600))
+    let predicted = extrapolating.position(id: 1, now: 10.2, local: true)
+    #expect(predicted != nil && predicted!.x > 480 && predicted!.x <= 480 + 1536)
+    var smoothing = MotionTimeline()
+    smoothing.append(time: 0, received: 10, bodies: body(0))
+    smoothing.append(time: 0.0625, received: 10.0625, bodies: body(1000))
+    _ = smoothing.position(id: 1, now: 10.0, local: true) // previous output at x = 0
+    let eased = smoothing.position(id: 1, now: 10.03125, local: true) // direct sample would be x = 500
+    #expect(eased != nil && eased!.x > 0 && eased!.x < 500)
+}

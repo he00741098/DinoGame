@@ -20,7 +20,12 @@ public struct MotionTimeline: Sendable {
     private struct Output: Sendable { let point: MotionPoint; let time: Double }
     private var frames: [Frame] = []
     private var outputs: [UInt32: Output] = [:]
-    public init() {}
+    private let extrapolationCap: Double // seconds; 0 = never predict past the newest sample
+    private let smoothingDuration: Double // seconds; 0 = return the sample without easing
+    public init(extrapolationCap: Double = 0.1, smoothingDuration: Double = 0.035) {
+        self.extrapolationCap = extrapolationCap.isFinite ? max(0, extrapolationCap) : 0
+        self.smoothingDuration = smoothingDuration.isFinite ? max(0, smoothingDuration) : 0
+    }
     public mutating func reset() { frames.removeAll(); outputs.removeAll() }
     public mutating func append(time: Double, received: Double, bodies: [MotionBody]) {
         guard time.isFinite, received.isFinite, bodies.count <= 4,
@@ -37,10 +42,10 @@ public struct MotionTimeline: Sendable {
     public mutating func position(id: UInt32, now: Double, local: Bool = false) -> MotionPoint? {
         let samples = frames.compactMap { frame in frame.bodies.first(where: { $0.id == id }).map { (frame.time, $0) } }
         guard now.isFinite, let last = samples.last, let offset = frames.map({ $0.received - $0.time }).min() else { return nil }
-        let target = min(last.0 + 0.1, now - offset - (local ? 0 : 0.1))
+        let target = min(last.0 + extrapolationCap, now - offset - (local ? 0 : 0.1))
         var point = samples[0].1.position
         if target >= last.0 {
-            let dt = max(0, min(0.1, target - last.0))
+            let dt = max(0, min(extrapolationCap, target - last.0))
             var ay = 0.0
             if samples.count >= 2 {
                 let before = samples[samples.count - 2]
@@ -61,9 +66,9 @@ public struct MotionTimeline: Sendable {
                 break
             }
         }
-        if let previous = outputs[id] {
+        if smoothingDuration > 0, let previous = outputs[id] {
             let dt = max(0, min(0.1, now - previous.time))
-            let alpha = 1 - exp(-dt / 0.035)
+            let alpha = 1 - exp(-dt / smoothingDuration)
             point = MotionPoint(x: previous.point.x + (point.x - previous.point.x) * alpha,
                                 y: previous.point.y + (point.y - previous.point.y) * alpha)
         }
