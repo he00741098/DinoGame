@@ -351,3 +351,37 @@ mid-corridor pad was unplayable.
 **Finished a half-done lane.** The iOS chat-cooldown lane had added the state and
 the task but never gated the buttons. I wired the send guard, the 2 s reset, the
 teardown cancellation and the button disable, and verified with a build (`43e82fe`).
+
+### Same day — unwinnable rooms, a rescue, and a real finale
+
+Three decisions from the owner shaped this stretch.
+
+**Unwinnable rooms are now impossible.** A pad room could be lost for good: one
+player through the gate, the grace expires, and the pad side holds fewer bodies
+than the pad needs — the door never reopens and no hazard can respawn the team.
+The owner's call was to detect it and reset, so the authority now checks each
+step: if a pad's gate is shut and too few bodies remain on the pad's side, it
+records `rescued_at`, charges one death and regroups. `rescued_at` is in the
+state hash, so two authorities cannot disagree about having rescued, and both
+clients will play a one-shot "run lost — team was split" message.
+
+Subtle bug found while writing the test: a gate's `active` flag means **solid**,
+not open. The first version checked the opposite and never fired. The test now
+fails when the check is disabled and passes when it is on.
+
+**The campaign no longer ends on a rest beat.** Owner's choice: finale before
+rest. Stage 30 is the breather, 31 the three-player pad room, and 32 a new
+four-player finale where three hold a three-body pad while the fourth rides a
+spring for the key.
+
+Two physics errors caught by the witness:
+
+- The designed key height of four tiles is unreachable — a spring launches at
+  560 units/tick against gravity of 28, peaking around 5.5 tiles, but the arc
+  passes over a key that high without touching it. The key sits at six tiles and
+  the runner must bounce directly under it.
+- A `walk_to` witness cannot collect a spring key at all: it stops when close.
+  The runner has to keep pressing into the spring column.
+
+**Golden hash updated deliberately.** Adding a hashed field changes the replay
+digest; the new value is recorded with the reason rather than quietly edited.
