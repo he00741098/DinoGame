@@ -12,13 +12,15 @@
   button:disabled { opacity:.4; cursor:not-allowed; }
   canvas { display:block; width:100%; margin:20px 0; background:#18263a; border-radius:12px; }
   #status { min-height:24px; color:#b9f479; } p { line-height:1.5; } .muted { color:#a6b7ce; }
+  .sr-only { position:absolute; width:1px; height:1px; overflow:hidden; clip-path:inset(50%); white-space:nowrap; }
   .controls button { min-width:70px; min-height:60px; user-select:none; -webkit-user-select:none; }
 </style>
 <main>
   <h1>Co-op engine / network harness</h1>
   <p>Join the same room with 2–4 players. Cooperate through 28 campaign levels; expeditions include three- and four-player challenges.</p>
   <form id="join"><label>Room <input id="room" value="playtest" pattern="[A-Za-z0-9-]{3,16}" minlength="3" maxlength="16" required></label><button id="connect">Join room</button></form>
-  <p id="status" role="status">Disconnected</p>
+  <p id="status" aria-live="off">Disconnected</p>
+  <div id="announce" role="status" class="sr-only"></div>
   <div class="controls" aria-label="Campaign controls">
     <button id="restart" type="button" disabled>Restart</button>
     <button id="next" type="button" disabled hidden>Next</button>

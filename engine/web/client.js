@@ -57,6 +57,15 @@ function updateInput(change) {
   if (wasJump !== isJump) sendInput();
 }
 function setStatus(text) { status.textContent = text; }
+// Screen readers get meaningful state changes only; #status itself is a
+// per-snapshot diagnostic stream and must never be a live region.
+const announceRegion = document.querySelector('#announce');
+let lastAnnouncement = '';
+function announce(text) {
+  if (!announceRegion || text === lastAnnouncement) return;
+  lastAnnouncement = text;
+  announceRegion.textContent = text;
+}
 function updateControls() {
   const connected = player !== undefined && socket?.readyState === WebSocket.OPEN;
   const owner = connected && inputReady && controller === player;
@@ -148,6 +157,7 @@ function connectRoom(room, automatic = false) {
       lastSnapshot = performance.now();
       updateControls();
       setStatus(`Room ${room} · You are P${player} · Level ${level.number}/28: ${level.title} · ${level.required_players ?? 2} players needed · ${level.hint}`);
+      announce(`Joined room ${room} as P${player} — Level ${level.number} of 28: ${level.title}`);
     } else if (message.type === 'snapshot') {
       if (player === undefined || revision === undefined) return;
       if (message.revision < revision || (world && message.world.tick < world.tick)) {
@@ -157,6 +167,10 @@ function connectRoom(room, automatic = false) {
       const changed = message.revision > revision;
       const fresh = !world || message.world.tick > world.tick || changed;
       if (!fresh && stalePaused) return;
+      const previousLevelNumber = level?.number;
+      const wasCampaignComplete = campaignComplete;
+      const wasTeamComplete = world?.completed;
+      const wasStalled = stalePaused;
       revision = message.revision;
       level = message.level;
       if (changed || world?.deaths !== message.world.deaths) motion.reset();
@@ -187,6 +201,11 @@ function connectRoom(room, automatic = false) {
         `${world.players.length}/4 players · tick ${world.tick} · revision ${revision} · ack ${ack ?? 'pending'} · deaths ${world.deaths}` +
         `${inputReady ? '' : ' · Waiting for neutral input acknowledgment'}` +
         `${world.key_collected ? ` · key collected · exit ${world.players.filter(p => atExit(p)).length}/${world.players.length} (enter to wait)` : ''}${campaignComplete ? ' · Campaign complete! All 28 levels cleared.' : world.completed ? ' · Level complete! Next stage shortly…' : ''}`);
+      if (changed) announce(`Revision ${revision}`);
+      if (previousLevelNumber !== level.number) announce(`Level ${level.number} of 28: ${level.title}`);
+      if (campaignComplete && !wasCampaignComplete) announce('Campaign complete. All 28 levels cleared.');
+      if (world.completed && !wasTeamComplete) announce('Level complete. Next stage shortly.');
+      if (wasStalled && fresh) announce('Connection recovered.');
     } else if (message.type === 'chat') {
       chatBubbles.set(message.player, { text: message.text, until: performance.now() + 3500 });
       chatHistory.push(`P${message.player}: ${message.text}`);
@@ -198,6 +217,7 @@ function connectRoom(room, automatic = false) {
       rejected = true;
       retryAllowed = false;
       setStatus(`Server: ${message.message}`);
+      announce(`Server: ${message.message}`);
       player = undefined;
       updateControls();
     }
@@ -205,7 +225,10 @@ function connectRoom(room, automatic = false) {
   current.addEventListener('close', event => {
     if (socket === current) {
       if (event.code === 1000) { resume = undefined; retryAllowed = false; }
-      if (!rejected) setStatus('Disconnected — reconnect within 15 seconds to resume.');
+      if (!rejected) {
+        setStatus('Disconnected — reconnect within 15 seconds to resume.');
+        announce('Disconnected — reconnect within 15 seconds to resume.');
+      }
       player = undefined;
       updateControls();
       clearInput();
@@ -221,6 +244,7 @@ function connectRoom(room, automatic = false) {
   current.addEventListener('error', () => {
     if (socket === current) {
       setStatus('Connection failed. Check that the development server is running.');
+      announce('Connection failed. Check that the development server is running.');
     }
   });
   // Mouse/touch submit leaves focus on the button, which otherwise eats game keys.
@@ -300,6 +324,7 @@ function serviceConnection() {
       inputReady = false; keys.clear(); touches.clear(); jumpId = committedJumpId;
       updateControls();
       setStatus('Connection stalled — recovering the session…');
+      announce('Connection stalled — recovering the session…');
       socket.close(4001);
       return;
     }
@@ -309,6 +334,7 @@ function serviceConnection() {
       clearInput();
       updateControls();
       setStatus('Waiting for server — controls released…');
+      announce('Waiting for server — controls released…');
     }
   }
   // Keep sending neutral heartbeats while waiting for an acknowledgment. A
@@ -503,7 +529,10 @@ async function startReview(number) {
     if (seek) { seek.max = String(reviewFrames.length - 1); seek.value = '0'; }
     setStatus(`SOLUTION REVIEW · ${number}/28: ${level.title} · ${level.hint} · ${recording.provenance}`);
   } catch {
-    if (reviewing && request === reviewGeneration) setStatus('Solution could not be loaded. Retry or Join a live room.');
+    if (reviewing && request === reviewGeneration) {
+      setStatus('Solution could not be loaded. Retry or Join a live room.');
+      announce('Solution could not be loaded. Retry or Join a live room.');
+    }
   }
 }
 document.querySelector('#review')?.addEventListener('click', () => startReview(Number(document.querySelector('#reviewStage').value)));
