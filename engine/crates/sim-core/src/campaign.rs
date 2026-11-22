@@ -3,7 +3,7 @@
 //! Units are 1/1024 tile.
 use crate::*;
 
-pub const LEVEL_COUNT: u8 = 31;
+pub const LEVEL_COUNT: u8 = 32;
 
 fn r(x: i32, y: i32, w: i32, h: i32) -> Rect {
     Rect {
@@ -70,7 +70,10 @@ pub fn level(number: u8) -> Option<Level> {
     if !(1..=LEVEL_COUNT).contains(&number) {
         return None;
     }
-    if number == 31 {
+    if number == 32 {
+        return Some(finale_room());
+    }
+    if number == 30 {
         return Some(rest_room());
     }
     if number > 28 {
@@ -463,9 +466,58 @@ fn expedition(number: u8) -> Level {
 /// A deliberate rest beat after the team-pad rooms: one familiar mechanic, no
 /// timing demand, no hazards. The exit still needs both players, so it stays a
 /// co-op stage rather than a solo victory lap.
+/// The campaign finale. Three players hold a three-body pad so the door stays
+/// open; the fourth rides a spring for the high key. Everyone must regroup at
+/// the exit, so it cannot be shortened to a solo run.
+///
+/// Deliberately self-recovering: if the runners get stranded, the three holders
+/// can put the pad back under them at any time, so there is no unwinnable split.
+fn finale_room() -> Level {
+    let mut l = Level {
+        number: 32,
+        width: 20 * UNIT,
+        height: 14 * UNIT,
+        spawn_y: 12 * UNIT,
+        required_players: 4,
+        tether_length: 0,
+        title: "All hands on brass".into(),
+        hint: "Three on the brass hold the door. The fourth rides the spring for the key, then everyone meets at the exit.".into(),
+        solids: vec![r(0, 12, 20, 2)],
+        // Six tiles up: above the ~2.5-tile normal jump, inside the ~5.5-tile
+        // spring arc. Higher than this and no bounce could reach it.
+        key: Rect {
+            w: UNIT / 2,
+            h: UNIT / 2,
+            ..r(12, 6, 1, 1)
+        },
+        gate: r(16, 9, 1, 3),
+        exit: r(17, 10, 2, 2),
+        ..Level::default()
+    };
+    add(
+        &mut l,
+        MechanicKind::TeamPad,
+        Rect {
+            y: 12 * UNIT - UNIT / 8,
+            h: UNIT / 8,
+            ..r(0, 0, 4, 1)
+        },
+        3,
+        0,
+    );
+    add(&mut l, MechanicKind::PressureGate, r(10, 0, 1, 12), 0, 900);
+    add(&mut l, MechanicKind::Spring, Rect {
+        y: 12 * UNIT - UNIT / 8,
+        h: UNIT / 8,
+        ..r(12, 0, 2, 1)
+    }, 0, 0);
+    add(&mut l, MechanicKind::Checkpoint, r(6, 10, 4, 2), 0, 0);
+    l
+}
+
 fn rest_room() -> Level {
     let mut l = Level {
-        number: 31,
+        number: 30,
         width: 30 * UNIT,
         height: 14 * UNIT,
         spawn_y: 12 * UNIT,
@@ -516,7 +568,7 @@ fn rest_room() -> Level {
 }
 
 fn team_pad_room(number: u8) -> Level {
-    let wide = number == 30;
+    let wide = number == 31;
     let width = if wide { 34 } else { 30 };
     let mut l = Level {
         number,

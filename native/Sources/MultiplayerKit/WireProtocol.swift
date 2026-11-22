@@ -5,7 +5,7 @@ public enum Wire {
     public static let version = 3
     public static let game = "coop-sandbox"
     public static let ruleset = "coop-campaign-3"
-    public static let levelCount = 31
+    public static let levelCount = 32
     /// Mirrors `net_proto::CHAT_PRESETS`; a mismatch fails decode rather than
     /// showing wording the server did not choose.
     public static let chatPresets = ["Follow me", "Wait here", "Jump!", "Ready?", "Help!", "Nice!"]
@@ -112,6 +112,9 @@ public struct GameWorld: Codable, Equatable, Sendable {
     public let deaths: UInt32
     public let checkpoint: GameRect?
     public let level_start_tick: UInt64
+    /// Tick of the authority's automatic rescue from an unwinnable split, nil
+    /// normally and when an older server omits the field entirely.
+    public let rescued_at: UInt64?
 }
 
 public struct InputAck: Codable, Equatable, Sendable {

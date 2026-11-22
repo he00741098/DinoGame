@@ -668,7 +668,7 @@ async fn upgrade(State(host): State<Host>, ws: WebSocketUpgrade) -> Response {
 }
 
 async fn solution(Path(number): Path<u8>) -> Response {
-    const RECORDINGS: [&str; 31] = [
+    const RECORDINGS: [&str; 32] = [
         include_str!("../../../web/solutions/1.json"),
         include_str!("../../../web/solutions/2.json"),
         include_str!("../../../web/solutions/3.json"),
@@ -700,6 +700,7 @@ async fn solution(Path(number): Path<u8>) -> Response {
         include_str!("../../../web/solutions/29.json"),
         include_str!("../../../web/solutions/30.json"),
         include_str!("../../../web/solutions/31.json"),
+        include_str!("../../../web/solutions/32.json"),
     ];
     match number
         .checked_sub(1)

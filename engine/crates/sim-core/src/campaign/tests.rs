@@ -797,8 +797,65 @@ fn platform_courses_place_a_checkpoint_every_five_ledges() {
 }
 
 #[test]
+fn input_only_completion_of_the_finale() {
+    let l = level(32).unwrap();
+    // ReviewWorld::new already staffs up to the level's required players.
+    let mut w = ReviewWorld::new(&l);
+    assert_eq!(w.players.len(), 4, "the finale needs four bodies");
+    let pad = l
+        .mechanics
+        .iter()
+        .find(|m| m.kind == MechanicKind::TeamPad)
+        .expect("team pad")
+        .rect;
+    let gate = l
+        .mechanics
+        .iter()
+        .filter(|m| m.kind == MechanicKind::PressureGate)
+        .min_by_key(|m| m.rect.x)
+        .expect("gate");
+    // Three hold the pad; the fourth runs the errand.
+    for id in 1..=3 {
+        walk_to(&l, &mut w, id, pad.x + (id as i32 - 1) * (PLAYER_WIDTH + 24));
+    }
+    for _ in 0..40 {
+        w.step(&l, &[]);
+    }
+    assert!(
+        w.objects
+            .iter()
+            .zip(&l.mechanics)
+            .any(|(o, m)| m.kind == MechanicKind::TeamPad && o.active),
+        "three of four must press the finale pad"
+    );
+    // The spring must be walked onto, not approached: it launches on contact and
+    // the key sits inside the arc, so the runner bounces up into it.
+    for _ in 0..1200 {
+        if w.key_collected {
+            break;
+        }
+        let p = w.players.iter().find(|p| p.id == 4).expect("runner");
+        // Bounce directly under the key: the key's column is over the left of the
+        // spring, so steering to the spring's centre would arc past it.
+        w.step(&l, &[(4, steering(&l, p, l.key.x))]);
+    }
+    assert!(w.key_collected, "the runner must reach the spring key");
+    walk_to(&l, &mut w, 4, l.exit.x);
+    for id in (1..=3).rev() {
+        walk_to(&l, &mut w, id, l.exit.x);
+    }
+    assert!(
+        w.completed,
+        "finale: key {}, players {:?}, deaths {}",
+        w.key_collected, w.players, w.deaths
+    );
+    assert_eq!(w.deaths, 0);
+    assert!(w.players.iter().all(|p| p.x + PLAYER_WIDTH > gate.rect.x));
+}
+
+#[test]
 fn input_only_completion_of_the_rest_room() {
-    let l = level(31).unwrap();
+    let l = level(30).unwrap();
     let mut w = ReviewWorld::new(&l);
     let count = u32::from(l.required_players);
     // Springs launch on contact; the spring line sits under the key, so walking
@@ -832,8 +889,9 @@ fn input_only_completion_of_the_rest_room() {
 
 #[test]
 fn input_only_completion_of_team_pad_rooms() {
-    // 29-30 are the team-pad rooms; 31 is its own rest-room witness.
-    for number in 29..=30 {
+    // 29 and 31 are the pad rooms; 30 is the rest beat and 32 the finale,
+    // each with its own witness.
+    for number in [29, 31] {
         let l = level(number).unwrap();
         let mut w = ReviewWorld::new(&l);
         let count = u32::from(l.required_players);
