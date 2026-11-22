@@ -492,3 +492,32 @@ teammates, team-size stages and quick chat.
 
 `6/6` iOS UI tests pass against a live host. Twice today a claim of "verified"
 meant "it compiled".
+
+### Same day — the playtest build, and a 404 that would have made it useless
+
+Deployed `20261122-50f5f9b6440d`: 32 stages, first-run onboarding, and the local
+playtest log.
+
+**The telemetry was dead on arrival and I only caught it by fetching it.** The page
+loaded `/telemetry.js` while the server had routes for `client.js`, `network.js`
+and `motion.js` but not the new module, so the request 404'd. The client guard I
+added would then throw, the page would lose its whole script, and the downloaded
+log would never have existed — a silent total failure of the feature that exists to
+gather evidence.
+
+No test caught this because every test exercises modules directly rather than
+through the served page. There is now a test that reads `index.html`, extracts
+every `<script src>`, and asserts each has a server route (`fc4b8d2`). I proved it
+by removing the route: it fails with `telemetry.js is loaded by the page but has
+no server route`.
+
+**Verified live, not assumed:** all four scripts return 200 through the
+authenticated host, the download button is present in the served page, and the
+full remote check still passes (checksum, 32 recordings, WSS, 401/403, private
+port).
+
+**The lesson generalises.** Three times today a feature "verified" by its own
+tests was broken in the assembled system: the chat cooldown broke a UI test, the
+telemetry module was never served, and earlier the review panel silently refused
+new stages. Unit tests prove a module works; only an end-to-end fetch proves a
+*deployed system* works.
