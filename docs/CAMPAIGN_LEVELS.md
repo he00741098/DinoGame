@@ -70,7 +70,7 @@ Two rooms teach `MechanicKind::TeamPad`, a pad that is pressable only while the 
 
 The pad gates the door in the middle of the corridor, and the key sits behind that door: the team must keep the pad held down while a teammate walks through, collects the shared key and comes back. One player alone can never finish — stage 29 needs one to hold and one to run, and stage 30 leaves two on the brass while the third carries the key home. Stage 30 drops the pressure entirely — two springs, a shelf above the key and no hazards — so the team catches its breath before the last two rooms. Stage 32 is the finale: the pad needs three bodies, so the fourth player is free to ride a spring for a key six tiles up, and everyone has to meet at the exit.
 
-No pad room can become unwinnable. If the authority finds a pad's gate shut with too few bodies left on the pad's side, it records `rescued_at`, charges one death and regroups the whole team, and both clients show a short "run lost — team was split" message.
+No pad room can become unwinnable. If the authority finds a pad's gate shut with too few bodies left on the pad's side, it records `rescued_at`, charges one death and regroups the whole team, and both clients show a short "run lost — team was split" message. Each room also carries a checkpoint on the pad side of the door and a hazard strip on the overhead ledge, so a team that has already collected the key — where the automatic rescue no longer applies — can still reset itself by hand by climbing into the strip.
 
 ## How to play
 

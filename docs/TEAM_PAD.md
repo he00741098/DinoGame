@@ -26,6 +26,15 @@ A team pad is an ordinary `Mechanic` plus one ordinary `MechanicState` entry in 
 - No partial or progress feedback: state is binary (`active`), never "2 of 3".
 - No free-standing logic beyond gate pressure: it never moves a body, opens the key gate or touches the exit; it only reports pressable state to gates.
 
+## Failure and recovery
+
+Two mechanisms keep the pad rooms (stages 29 and 31) from going unwinnable; both live in the room, not in the pad mechanic.
+
+- **Automatic rescue** — `World::unwinnable_split` (`mechanics.rs`), checked every tick by the authority. Fires only when a pad's nearest pressure gate to its right is shut (`active && timer == 0`), the team is genuinely split across it (bodies on **both** sides), too few bodies remain pad-side to re-press the pad (`behind < need`), **and** the gate is a full-height barrier (`gate.rect.y <= level.spawn_y - 4 * UNIT`) — a jumpable gate never triggers it, so a player mid-air above a short door is never miscounted as stranded. On fire it sets `world.rescued_at`, charges one death and regroups the team: headless, automatic, no player action. It returns `false` once the key is collected (or the run is completed), so the rescue never fires after the key.
+- **Manual hazard** — `campaign.rs`'s `team_pad_room` authors a `Checkpoint` on the **pad side** of the door (a reset must return the team where the pad can still be pressed) and a `Hazard` strip on the overhead one-way ledge, far side of the door and above the walking line. A stranded player climbs to it deliberately; the touch charges a death and respawns everyone at the pad-side flag, keeping the shared key. This is the route after the key is collected — which is why the hazard exists: the automatic rescue is skipped then.
+
+Neither can soft-lock: before the key the authority rescues on its own, after the key the hazard is a deliberate hand reset.
+
 ## Rendering (both clients)
 
 Both draw from the authoritative `world.objects`; neither re-simulates rules.
