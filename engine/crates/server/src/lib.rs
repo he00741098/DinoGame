@@ -652,6 +652,16 @@ pub fn app(host: Host) -> Router {
                 )
             }),
         )
+
+        .route(
+            "/telemetry.js",
+            get(|| async {
+                (
+                    [("content-type", "text/javascript; charset=utf-8")],
+                    include_str!("../../../web/telemetry.js"),
+                )
+            }),
+        )
         .route("/health", get(|| async { "ok" }))
         .route(
             "/campaign",
@@ -1061,6 +1071,29 @@ mod tests {
             now,
         )
         .unwrap()
+    }
+
+    #[test]
+    fn every_script_the_page_loads_is_served() {
+        // A new browser module with no route returns 404 and the page silently
+        // loses that feature. Keep the served set and the page's <script> tags
+        // in lockstep.
+        const PAGE: &str = include_str!("../../../web/index.html");
+        const ROUTES: [&str; 4] = ["client.js", "network.js", "motion.js", "telemetry.js"];
+        let page_scripts: Vec<&str> = PAGE
+            .match_indices("src=\"/")
+            .map(|(i, _)| {
+                let rest = &PAGE[i + 6..];
+                &rest[..rest.find('"').unwrap()]
+            })
+            .collect();
+        assert!(!page_scripts.is_empty(), "the page loads no scripts");
+        for script in page_scripts {
+            assert!(
+                ROUTES.contains(&script),
+                "{script} is loaded by the page but has no server route"
+            );
+        }
     }
 
     #[test]
