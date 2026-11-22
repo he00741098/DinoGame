@@ -1,0 +1,40 @@
+# Render PUBLIC_HOST and PASSWORD_HASH locally on the host. Never commit secrets.
+{
+    # Lightsail NAT presents a private local address; IP clients omit SNI.
+    default_sni __PUBLIC_HOST__
+}
+
+https://__PUBLIC_HOST__ {
+    tls {
+        issuer acme {
+            dir https://acme-v02.api.letsencrypt.org/directory
+            profile shortlived
+        }
+    }
+    header {
+        X-Content-Type-Options nosniff
+        Referrer-Policy no-referrer
+        X-Frame-Options DENY
+        Content-Security-Policy "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; connect-src 'self' wss://__PUBLIC_HOST__; frame-ancestors 'none'; base-uri 'none'; form-action 'self'"
+        Link "</source/LICENSE>; rel=license"
+        -Server
+    }
+    route {
+        @foreign_origin {
+            path /ws
+            header Origin *
+            not header Origin https://__PUBLIC_HOST__
+        }
+        respond @foreign_origin "Origin not permitted" 403
+        basic_auth bcrypt "Co-op playtest" {
+            playtester __PASSWORD_HASH__
+        }
+        handle_path /source/* {
+            root * /opt/coop/current/source
+            file_server
+        }
+        handle {
+            reverse_proxy 127.0.0.1:3000
+        }
+    }
+}

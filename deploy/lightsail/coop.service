@@ -1,0 +1,33 @@
+[Unit]
+Description=Co-op campaign playtest authority
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=coop
+Group=coop
+WorkingDirectory=/var/lib/coop
+Environment=BIND_ADDR=127.0.0.1:3000
+ExecStart=/opt/coop/current/multiplayer-server
+Restart=on-failure
+RestartSec=5
+NoNewPrivileges=true
+ProtectSystem=strict
+ProtectHome=true
+PrivateTmp=true
+PrivateDevices=true
+ProtectKernelTunables=true
+ProtectKernelModules=true
+ProtectControlGroups=true
+RestrictAddressFamilies=AF_UNIX AF_INET AF_INET6
+CapabilityBoundingSet=
+LockPersonality=true
+MemoryDenyWriteExecute=true
+MemoryMax=768M
+TasksMax=128
+LimitNOFILE=4096
+UMask=0077
+
+[Install]
+WantedBy=multi-user.target
