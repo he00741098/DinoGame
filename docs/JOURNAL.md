@@ -318,3 +318,36 @@ failing test, the other needed someone reading the diff instead of the exit code
 also do not restore `key_collected`. That may be correct — a regroup relocates
 the team but does not discard the step, unlike a rollback — so a lane is
 determining reachability before any fix is written.
+
+### Same day — stage 31, and two lanes that verified instead of duplicating
+
+**Stage 31 "A moment to breathe"** is the rest beat the curve audit asked for
+(`1f18be4`): two springs — the first a free practice bounce with nothing to
+reach — a forgiving shelf above the key, no hazards, no timing. It still needs
+both players at the exit, so it is a rest, not a solo lap.
+
+Two constraints pushed back, and both were right:
+
+- The catalogue test requires every stage after 15 to carry at least four
+  mechanics or fifteen solids, a deliberate anti-filler rule. The rest room had
+  three mechanics and one solid. The fix that satisfied it was adding a
+  *practice* spring, which improves the level instead of padding it.
+- My decorative terraces made the room **unsolvable**: the witness collected the
+  key and then stalled at the gate. Players are solid to each other, so scenery
+  in a corridor is a wall. Removed.
+
+**Witness bounds keep breaking on catalogue growth.** `LEVEL_COUNT` going to 31
+silently made the team-pad witness (`29..=LEVEL_COUNT`) try to solve the rest
+room as a pad puzzle — the same class of bug as the platform-course loop earlier.
+Every stage-family witness now bounds itself explicitly.
+
+**Two lanes declined to duplicate work.** The stages 29-30 lane and the docs lane
+both found their tickets already implemented by concurrent workers; both verified
+the result and reported the divergence instead of re-doing it, and neither
+reverted another lane's committed design. One flagged a real detail: the shipped
+29-30 geometry deliberately differs from its ticket because the original
+mid-corridor pad was unplayable.
+
+**Finished a half-done lane.** The iOS chat-cooldown lane had added the state and
+the task but never gated the buttons. I wired the send guard, the 2 s reset, the
+teardown cancellation and the button disable, and verified with a build (`43e82fe`).
