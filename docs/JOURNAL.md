@@ -263,3 +263,32 @@ timeline options are tested, but nothing fails if the clients stop passing them)
 Checkpoint spacing is the worst coverage-to-risk ratio — the completion witness
 passes with any layout that remains completable, which is exactly how the
 428-second sparse-checkpoint stage slipped through. A spacing test is in flight.
+
+### Same day — review panel unblocked, chat cooldown, iOS UI verified
+
+**Solution review could not open the new stages.** `startReview` rejected any
+number above 28, so the browser's review panel silently refused stages 29-30
+while the recordings sat on the server unread. Every stage count in the client
+now derives from one `stageCount` constant (`04cdb60`), and the four tests that
+asserted `/28` in status text were updated to `/30` — they were pinning the
+literal, not the behaviour.
+
+**Chat felt broken.** The server drops chat faster than one per two seconds and
+neither client said so. Both now disable the message buttons for two seconds
+after sending, cleared on reconnect so the cooldown cannot stick (`57d86e3`);
+chat history also clears when the revision or level changes.
+
+**iOS UI tests ran against a live host for the first time since the stage bump:**
+6 of 6 passed, including the new quick-chat gating test. Artifact:
+`ui30/run-ufafoutg/Native.xcresult`. Gate: 9 Rust suites, 48 Node, 45 Swift,
+Clippy clean.
+
+**A stale-doc trap worth recording.** `docs/TEAM_PAD.md` was rewritten by one lane
+in a flowing-prose style while another lane had already committed a
+bullet-structured version. I reverted the overwrite rather than keep both; the
+committed version is the one that was reviewed against the code.
+
+**Level design now has a written contract** (`docs/LEVEL_DESIGN_CONSTRAINTS.md`):
+players are solid to each other and resolve front-to-back, so a one-body corridor
+is a trap, and a pad-controlled door's release grace must cover the walk. Two
+team-pad levels failed before that was written down.
