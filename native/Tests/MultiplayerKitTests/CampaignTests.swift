@@ -50,7 +50,7 @@ private func mechanicSnapshot(kind: MechanicKind, travel: Int = 0) throws -> Dat
 
 @Test func campaignRulesetIsRequiredAndLegacyLevelZeroIsBounded() throws {
     let oldRuleset = String(decoding: welcomeData(), as: UTF8.self)
-        .replacingOccurrences(of: "coop-campaign-1", with: "coop-sandbox-1")
+        .replacingOccurrences(of: "coop-campaign-3", with: "coop-sandbox-1")
     #expect(throws: ProtocolError.incompatible) { try ServerEvent.decode(Data(oldRuleset.utf8)) }
     let legacy = try editingJSON(welcomeData()) { value in
         var level = value["level"] as! [String: Any]
@@ -59,6 +59,27 @@ private func mechanicSnapshot(kind: MechanicKind, travel: Int = 0) throws -> Dat
     guard case .welcome(let welcome) = try ServerEvent.decode(legacy) else { throw ProtocolError.unknownMessage }
     #expect(welcome.level.number == 0)
     #expect(welcome.level.mechanics.isEmpty)
+}
+
+@Test func fallingRockCanOnlyMoveDownItsDeclaredShaft() throws {
+    let source = try mechanicSnapshot(kind: .fallingRock, travel: 2048)
+    let moved = try editingJSON(source) { value in
+        var world = value["world"] as! [String: Any]
+        var rect = mechanicRect; rect["y"] = 11024
+        world["objects"] = [["id": 7, "rect": rect, "active": true, "timer": 100]]
+        value["world"] = world
+    }
+    var stream = try campaignStream()
+    let accepted = try stream.accept(snapshot(moved), lastSentSequence: 0)
+    #expect(accepted)
+    let invalid = try editingJSON(source) { value in
+        var world = value["world"] as! [String: Any]
+        var rect = mechanicRect; rect["y"] = 12049
+        world["objects"] = [["id": 7, "rect": rect, "active": true, "timer": 100]]
+        value["world"] = world
+    }
+    var other = try campaignStream()
+    #expect(throws: ProtocolError.invalidSnapshot) { try other.accept(snapshot(invalid), lastSentSequence: 0) }
 }
 
 @Test func latestMailboxCanSkipLevelsAndTransitionAtSameTick() throws {
@@ -123,7 +144,7 @@ private func mechanicSnapshot(kind: MechanicKind, travel: Int = 0) throws -> Dat
 @Test func hostileCampaignLevelAndMechanicBoundsAreRejected() throws {
     let source = try mechanicSnapshot(kind: .movingPlatform, travel: 4096)
     for (field, replacement): (String, Any) in [
-        ("number", 21), ("number", -1), ("title", String(repeating: "x", count: 129)),
+        ("number", Wire.levelCount + 1), ("number", -1), ("title", String(repeating: "x", count: 129)),
         ("hint", String(repeating: "x", count: 1025)), ("width", Int.max),
     ] {
         let changed = try editingJSON(source) { value in
@@ -203,7 +224,7 @@ private func mechanicSnapshot(kind: MechanicKind, travel: Int = 0) throws -> Dat
     var stream = try campaignStream()
     let final = try editingJSON(snapshotData()) { value in
         value["campaign_complete"] = true; value["revision"] = 19
-        var level = value["level"] as! [String: Any]; level["number"] = 20; value["level"] = level
+        var level = value["level"] as! [String: Any]; level["number"] = Wire.levelCount; value["level"] = level
         var world = value["world"] as! [String: Any]; world["completed"] = true; value["world"] = world
     }
     #expect(try stream.accept(snapshot(final), lastSentSequence: 0))

@@ -4,7 +4,8 @@ import Foundation
 public enum Wire {
     public static let version = 3
     public static let game = "coop-sandbox"
-    public static let ruleset = "coop-campaign-1"
+    public static let ruleset = "coop-campaign-3"
+    public static let levelCount = 28
     public static let playerWidth = 720
     public static let playerHeight = 896
 }
@@ -33,6 +34,10 @@ public struct GameRect: Codable, Equatable, Sendable {
 }
 
 public struct GameLevel: Codable, Equatable, Sendable {
+    public let tether_length: Int?
+    public var tetherLength: Int { tether_length ?? 0 }
+    public let required_players: Int?
+    public var minimumPlayers: Int { required_players ?? 2 }
     public let number: Int
     public let title: String
     public let hint: String
@@ -45,12 +50,13 @@ public struct GameLevel: Codable, Equatable, Sendable {
     public let exit: GameRect
 
     public var isSafe: Bool {
-        guard (16_384...131_072).contains(width), (14_336...65_536).contains(height),
-              (0...20).contains(number), title.utf8.count <= 128, hint.utf8.count <= 1024,
+        guard (16_384...262_144).contains(width), (14_336...131_072).contains(height),
+              tetherLength == 0 || (2048...12288).contains(tetherLength),
+              (0...Wire.levelCount).contains(number), (2...4).contains(minimumPlayers), title.utf8.count <= 128, hint.utf8.count <= 1024,
               solids.count <= 128, mechanics.count <= 64,
               Set(mechanics.map(\.id)).count == mechanics.count else { return false }
         return (solids + [gate, key, exit]).allSatisfy(contains) && mechanics.allSatisfy {
-            contains($0.rect) && (-8192...8192).contains($0.travel)
+            contains($0.rect) && ($0.kind == .fallingRock ? (0...(height - $0.rect.y - $0.rect.h)).contains($0.travel) : (-8192...8192).contains($0.travel))
                 && $0.period <= 3600
                 && ($0.kind != .movingPlatform || (0...(width - $0.rect.w)).contains($0.rect.x + $0.travel))
         }
@@ -65,6 +71,7 @@ public enum MechanicKind: String, Codable, CaseIterable, Sendable {
     case plate, pressureGate = "pressure_gate", timedGate = "timed_gate", oneWay = "one_way"
     case movingPlatform = "moving_platform", conveyor, ice, spring, hazard, checkpoint, crumble
     case lowGravity = "low_gravity", wind
+    case rope, fallingRock = "falling_rock"
 }
 
 public struct GameMechanic: Codable, Equatable, Sendable {
@@ -168,7 +175,7 @@ public enum ServerEvent: Sendable {
 }
 
 public enum ClientCommand {
-    public static func hello(room: String, resumeToken: String? = nil) throws -> Data {
+    public static func hello(room: String, resumeToken: String? = nil, patches: Bool = false) throws -> Data {
         struct Hello: Encodable {
             let type = "hello"
             let `protocol` = Wire.version
@@ -176,8 +183,9 @@ public enum ClientCommand {
             let ruleset = Wire.ruleset
             let room: String
             let resume_token: String?
+            let patches: Bool?
         }
-        return try JSONEncoder().encode(Hello(room: room, resume_token: resumeToken))
+        return try JSONEncoder().encode(Hello(room: room, resume_token: resumeToken, patches: patches ? true : nil))
     }
 
     public static func input(seq: UInt32, input: GameInput, jumpID: UInt32, revision: UInt32) throws -> Data {
@@ -233,7 +241,7 @@ public struct SnapshotStream: Sendable {
                       && (-4096...4096).contains(player.vx) && (-4096...4096).contains(player.vy)
                }),
               snapshot.controller.map({ id in world.players.contains(where: { $0.id == id }) }) ?? true,
-              !snapshot.campaign_complete || (level.number == 20 && world.completed),
+               !snapshot.campaign_complete || (level.number == Wire.levelCount && world.completed),
               world.level_start_tick <= world.tick,
               world.checkpoint.map({ rect in level.mechanics.contains { $0.kind == .checkpoint && $0.rect == rect } }) ?? true,
               world.objects.count == level.mechanics.count,
@@ -250,6 +258,9 @@ public struct SnapshotStream: Sendable {
                       (min(mechanic.rect.x, end)...max(mechanic.rect.x, end)).contains(object.rect.x) else {
                     throw ProtocolError.invalidSnapshot
                 }
+            } else if mechanic.kind == .fallingRock {
+                guard object.rect.x == mechanic.rect.x,
+                      (mechanic.rect.y...(mechanic.rect.y + mechanic.travel)).contains(object.rect.y) else { throw ProtocolError.invalidSnapshot }
             } else if object.rect != mechanic.rect { throw ProtocolError.invalidSnapshot }
         }
         if let lastTick, world.tick < lastTick || (world.tick == lastTick && snapshot.revision == revision) { return false }

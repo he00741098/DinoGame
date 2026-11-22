@@ -70,7 +70,7 @@ let fixtureLevel = """
 
 func welcomeData(version: Int = 3) -> Data {
     Data("""
-    {"type":"welcome","protocol":\(version),"ruleset":"coop-campaign-1","player":1,"revision":0,"controller":1,
+    {"type":"welcome","protocol":\(version),"ruleset":"coop-campaign-3","player":1,"revision":0,"controller":1,
      "tick_hz":60,"snapshot_hz":20,"resume_token":"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa","resumed":false,
      "level":\(fixtureLevel)}
     """.utf8)
@@ -115,7 +115,7 @@ func snapshotData(tick: Int = 1, ack: Int = 0, x: Int = 2048, duplicate: Bool = 
 @Test func encoderProducesOnlyProtocolCommands() throws {
     let hello = try JSONSerialization.jsonObject(with: ClientCommand.hello(room: "test")) as! [String: Any]
     #expect(hello["protocol"] as? Int == 3)
-    #expect(hello["ruleset"] as? String == "coop-campaign-1")
+    #expect(hello["ruleset"] as? String == "coop-campaign-3")
     #expect(hello["resume_token"] == nil)
     let command = try JSONSerialization.jsonObject(with: ClientCommand.input(seq: 1, input: GameInput(axis: 2), jumpID: 4, revision: 7)) as! [String: Any]
     #expect(command["revision"] as? Int == 7)
