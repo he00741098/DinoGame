@@ -166,3 +166,37 @@ twenty times a second. It is now a silent visual element (`aria-live="off"`) and
 a separate visually-hidden region announces only joined, disconnected, revision
 change, level change, completion, stall and recovery (`c7d0691`). No visible text
 changed and no existing assertion had to be modified.
+
+### Same day — correctness sweep after the team pad
+
+The audits kept finding real defects, so most of this stretch was fixes rather
+than features.
+
+**Team pad undercount (fixed, `ca866d7`).** Counting bodies used a boolean
+"someone is standing on it" as a fallback, which cannot count a row of players
+resting on the pad's top edge — those players do not overlap the rect at all.
+Counting and pressing now share one predicate, team pads start inactive like
+other pressables, and `team_pad_counts_bodies_resting_on_its_edge` pins the
+geometry that would have slipped through.
+
+**Patch grammar (fixed, `9d9c5c1`).** The encoder walked only the new snapshot's
+keys, so an added field was emitted as a patch (then rejected by both decoders)
+and a removed field left stale data on the client. The encoder now falls back to
+a full snapshot whenever the key set changes, and the browser measures merged
+payloads in UTF-8 bytes instead of UTF-16 units.
+
+**Chat could lock out input (fixed, `38e8dfb`).** Chat frames shared the
+gameplay frame budget; spam could consume `INPUTS_PER_SECOND` and drop input.
+Chat now has its own budget and is dropped rather than fatal. Two tests cover
+broadcast delivery without any snapshot interaction, and per-player (not
+per-room) rate limiting.
+
+**Native retry loop (confirmed, fix in flight).** The iOS client treated every
+server rejection outside a small whitelist as a transient failure, so joining a
+full room produced an endless background retry with no explanation. The browser
+already stopped on any server error; native now matches.
+
+Also landed: reduced-motion knobs on both timelines (`1617e82`), the iOS team-pad
+threshold read from the mechanic instead of the team size (`fbc6c42`).
+
+Gate at this point: 9 Rust suites green, 45 Node, 45 Swift, Clippy clean.
