@@ -459,3 +459,36 @@ its own (`cefd252`).
 
 Deployed as `20261122-840527a2f863` and verified: all 32 recordings, WSS, 401/403,
 private port.
+
+### Same day — evidence capture, and two "verified" claims that weren't
+
+**Playtest telemetry shipped.** The browser now records snapshot gaps, applied-ack
+latency, frame durations and discrete events (`join`, `resume`, `reconnect`,
+`disconnect`, `level_change`, `death`, `rescue`, `complete`) into bounded buffers
+(`SAMPLE_CAP` 4096 per sample, `EVENT_CAP` 512, drop-oldest) and exports a JSON
+file on demand. Nothing is transmitted; the file is written only when the operator
+presses the button. I verified the bound directly: after 20,000 recorded samples
+the buffer still held exactly 4096.
+
+That matters because the biggest unknown is whether the network *feels* right in
+a real room, and a playtest otherwise leaves only impressions. A `rescue` event in
+a downloaded log is now a level bug report with a timestamp.
+
+**First-run onboarding shipped**, covering the shared key and exit, standing on
+teammates, team-size stages and quick chat.
+
+**Two lanes said "build passes, tests still pass". Neither had run them.**
+
+- The onboarding lane laid the overlay out *speculatively* so the UI tests would
+  pass, and did not run them. One of six failed — but not because of the overlay.
+  The chat cooldown I shipped earlier disables the button for two seconds after a
+  tap, and the test asserted it was enabled immediately after tapping. The test
+  was stale, the code was correct. It now waits for the cooldown to release,
+  which is a stronger assertion: it proves the cooldown cannot stick.
+- The telemetry lane wired `client.js` as `type="module"` while `client.js` uses
+  `SessionTelemetry` as a page global. That works only because of script order.
+  It now throws immediately if the order is ever wrong, rather than silently
+  recording nothing.
+
+`6/6` iOS UI tests pass against a live host. Twice today a claim of "verified"
+meant "it compiled".
