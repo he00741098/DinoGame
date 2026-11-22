@@ -385,3 +385,24 @@ Two physics errors caught by the witness:
 
 **Golden hash updated deliberately.** Adding a hashed field changes the replay
 digest; the new value is recorded with the reason rather than quietly edited.
+
+### Same day — 32 stages and the rescue are live
+
+Release `20261122-6eb0d8f89517` is at <https://mobile.userorientedsystems.com/>.
+Verification: HTTPS on every route, exact source checksum, **all 32** solution
+recordings matching local fixtures, two-player WSS acknowledgments, 401/403, and
+port 3000 unreachable.
+
+Both clients now show the rescue. The iOS notice is a centred label that fades
+over 2.5 s (and under Reduce Motion simply appears and leaves); the browser draws
+a banner that fades only its last 400 ms and announces once for screen readers.
+Neither pauses play — the authority has already respawned everyone.
+
+**The browser rescue shipped without tests, and I wrote them.** Three: the notice
+appears and expires, one marker does not stack copies, and a marker from a
+previous session does not fire after reconnect. I checked all three fail when the
+`showRescue` call is removed, because a notice that silently never appears is
+exactly the bug that had just been fixed on iOS.
+
+**Totals:** 72 commits this session; 9 Rust suites, 52 sim-core, 52 Node, 46
+Swift, Clippy clean, iOS build green.
