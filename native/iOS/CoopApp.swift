@@ -31,7 +31,7 @@ struct LobbyView: View {
                 ScrollView {
                     VStack(alignment: .leading, spacing: 12) {
                         Text("CO-OP LAB").font(.title2.bold()).foregroundStyle(.mint)
-                        Text("24 challenges. One team.").font(.headline)
+                        Text("\(Wire.levelCount) challenges. One team.").font(.headline)
                         connectionForm
                         Text("2–4 players. Stack on teammates, collect the shared key, then bring everyone to the exit.")
                             .font(.footnote).foregroundStyle(.secondary)
