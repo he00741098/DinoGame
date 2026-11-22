@@ -34,7 +34,21 @@ pub enum ClientMessage {
         seq: u32,
         revision: u32,
     },
+    /// Preset only: the server owns the wording, so clients cannot send free text.
+    Chat {
+        preset: u8,
+    },
 }
+
+/// Canonical quick-chat wording. Index is the wire `preset` value.
+pub const CHAT_PRESETS: [&str; 6] = [
+    "Follow me",
+    "Wait here",
+    "Jump!",
+    "Ready?",
+    "Help!",
+    "Nice!",
+];
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct InputAck {
@@ -68,6 +82,11 @@ pub enum ServerMessage {
     Error {
         code: String,
         message: String,
+    },
+    Chat {
+        player: PlayerId,
+        preset: u8,
+        text: String,
     },
 }
 
@@ -184,5 +203,23 @@ mod tests {
             panic!("wrong variant")
         };
         assert_eq!(hash, world.state_hash());
+    }
+
+    #[test]
+    fn chat_is_preset_only_and_server_worded() {
+        let decoded = decode(r#"{"type":"chat","preset":2}"#).unwrap();
+        assert!(matches!(decoded, ClientMessage::Chat { preset: 2 }));
+        assert!(decode(r#"{"type":"chat","preset":0,"text":"hi"}"#).is_err());
+        assert_eq!(CHAT_PRESETS.len(), 6);
+        let encoded = serde_json::to_string(&ServerMessage::Chat {
+            player: 2,
+            preset: 2,
+            text: CHAT_PRESETS[2].into(),
+        })
+        .unwrap();
+        assert_eq!(
+            encoded,
+            r#"{"type":"chat","player":2,"preset":2,"text":"Jump!"}"#
+        );
     }
 }

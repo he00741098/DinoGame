@@ -29,6 +29,8 @@ const unit = 1024;
 const arrivals = new Map();
 let reviewing = false, reviewGeneration = 0, reviewFrames = [], reviewPosition = 0, reviewLastTime = 0, reviewPlaying = false;
 let reviewFrameMilliseconds = 50;
+const chatBubbles = new Map();
+const chatHistory = [];
 const queryRoom = new URL(location.href).searchParams.get('room');
 if (queryRoom && /^[A-Za-z0-9-]{3,16}$/.test(queryRoom)) roomField.value = queryRoom;
 
@@ -107,6 +109,7 @@ function connectRoom(room, automatic = false) {
   lastSnapshot = performance.now();
   networkStatistics.begin(lastSnapshot);
   lastInputSignature = undefined; lastInputSent = -Infinity;
+  chatBubbles.clear();
   updateControls();
   const url = new URL(location.href);
   url.searchParams.set('room', room);
@@ -184,6 +187,12 @@ function connectRoom(room, automatic = false) {
         `${world.players.length}/4 players · tick ${world.tick} · revision ${revision} · ack ${ack ?? 'pending'} · deaths ${world.deaths}` +
         `${inputReady ? '' : ' · Waiting for neutral input acknowledgment'}` +
         `${world.key_collected ? ` · key collected · exit ${world.players.filter(p => atExit(p)).length}/${world.players.length} (enter to wait)` : ''}${campaignComplete ? ' · Campaign complete! All 28 levels cleared.' : world.completed ? ' · Level complete! Next stage shortly…' : ''}`);
+    } else if (message.type === 'chat') {
+      chatBubbles.set(message.player, { text: message.text, until: performance.now() + 3500 });
+      chatHistory.push(`P${message.player}: ${message.text}`);
+      if (chatHistory.length > 3) chatHistory.shift();
+      const log = document.querySelector('#chatlog');
+      if (log) log.textContent = chatHistory.join(' · ');
     } else if (message.type === 'error') {
       if (message.code === 'invalid_resume_token') resume = undefined;
       rejected = true;
@@ -423,6 +432,11 @@ function draw() {
       box({ x: x + 360 * (1 - scale), y: y + 448 * (1 - scale), w: 720 * scale, h: 896 * scale }, colors[(p.id - 1) % colors.length]);
       ctx.fillStyle = '#ffffff'; ctx.font = '15px system-ui';
       ctx.fillText(`P${p.id}${p.id === player ? ' (you)' : ''}`, x / unit * 50, y / unit * 50 - 10);
+      const bubble = chatBubbles.get(p.id);
+      if (bubble && bubble.until > performance.now()) {
+        ctx.fillStyle = '#ffe175'; ctx.font = 'bold 13px system-ui';
+        ctx.fillText(bubble.text, x / unit * 50, y / unit * 50 - 28);
+      }
       ctx.globalAlpha = 1;
     }
     if (arrivals.size) { ctx.fillStyle = '#ffffff'; ctx.fillText(`${arrivals.size}/${world.players.length} ✓`, level.exit.x / unit * 50, level.exit.y / unit * 50 - 12); }
@@ -479,6 +493,11 @@ async function startReview(number) {
   }
 }
 document.querySelector('#review')?.addEventListener('click', () => startReview(Number(document.querySelector('#reviewStage').value)));
+for (const button of document.querySelectorAll('[data-chat]')) {
+  button.addEventListener('click', () => {
+    if (socket?.readyState === WebSocket.OPEN) transmit(socket, { type: 'chat', preset: Number(button.dataset.chat) });
+  });
+}
 document.querySelector('#reviewPause')?.addEventListener('click', () => { reviewPlaying = !reviewPlaying; reviewLastTime = performance.now(); });
 document.querySelector('#reviewSeek')?.addEventListener('input', event => {
   arrivals.clear();

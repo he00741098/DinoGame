@@ -25,7 +25,7 @@ use futures_util::{SinkExt, StreamExt};
 use net_proto::{ClientMessage, InputAck, ServerMessage, PROTOCOL_VERSION, RULESET};
 use sim_core::{campaign, Input, Level, PlayerId, World, MAX_PLAYERS, TICK_HZ};
 use tokio::{
-    sync::{watch, Mutex, Semaphore},
+    sync::{broadcast, watch, Mutex, Semaphore},
     time::{timeout, Instant, MissedTickBehavior},
 };
 
@@ -38,6 +38,7 @@ const INPUTS_PER_SECOND: usize = 120;
 const IO_TIMEOUT: Duration = Duration::from_secs(5);
 const INPUT_LEASE: Duration = Duration::from_millis(250);
 const RESUME_GRACE: Duration = Duration::from_secs(15);
+const CHAT_INTERVAL: Duration = Duration::from_secs(2);
 const PROGRESS_TTL: Duration = Duration::from_secs(3600);
 const MAX_SAVED_ROOMS: usize = 128;
 // Never reused, even if a room is deleted/recreated while an old socket unwinds.
@@ -64,6 +65,7 @@ struct Slot {
     pending: Option<(u32, Input)>,
     held: Input,
     needs_jump_baseline: bool,
+    last_chat: Option<Instant>,
 }
 
 impl Slot {
@@ -81,6 +83,7 @@ struct Joined {
     token: String,
     resumed: bool,
     snapshot: ServerMessage,
+    chat: broadcast::Receiver<ServerMessage>,
 }
 
 struct Room {
@@ -91,6 +94,7 @@ struct Room {
     next_id: PlayerId,
     completed_at: Option<Instant>,
     final_signature: Option<String>,
+    chat: broadcast::Sender<ServerMessage>,
 }
 
 #[derive(Clone)]
@@ -150,6 +154,7 @@ impl Room {
             next_id: 1,
             completed_at: None,
             final_signature: None,
+            chat: broadcast::channel(16).0,
         }
     }
 
@@ -186,6 +191,7 @@ impl Room {
                 token: token.to_owned(),
                 resumed: true,
                 snapshot: self.snapshot(),
+                chat: self.chat.subscribe(),
             });
         }
         if self.slots.len() >= MAX_PLAYERS {
@@ -217,6 +223,7 @@ impl Room {
                 pending: None,
                 held: Input::default(),
                 needs_jump_baseline: false,
+                last_chat: None,
             },
         );
         Ok(Joined {
@@ -225,6 +232,7 @@ impl Room {
             token,
             resumed: false,
             snapshot: self.snapshot(),
+            chat: self.chat.subscribe(),
         })
     }
 
@@ -293,8 +301,28 @@ impl Room {
         }
     }
 
-    fn controller(&self) -> Option<PlayerId> {
-        self.slots
+    /// Server-owned wording; the client only sends a preset index. Silently
+    /// ignores unknown presets, disconnected slots and messages inside the
+    /// per-player interval.
+    fn chat(&mut self, player: PlayerId, preset: u8, now: Instant) -> Option<ServerMessage> {
+        let text = net_proto::CHAT_PRESETS.get(preset as usize)?;
+        let slot = self.slots.get_mut(&player)?;
+        if !slot.connected
+            || slot
+                .last_chat
+                .is_some_and(|last| now.duration_since(last) < CHAT_INTERVAL)
+        {
+            return None;
+        }
+        slot.last_chat = Some(now);
+        Some(ServerMessage::Chat {
+            player,
+            preset,
+            text: (*text).into(),
+        })
+    }
+
+    fn controller(&self) -> Option<PlayerId> {        self.slots
             .iter()
             .find(|(_, slot)| slot.connected)
             .map(|(&id, _)| id)
@@ -765,7 +793,15 @@ async fn session(mut socket: WebSocket, host: Host) {
         player: joined.player,
         generation: joined.generation,
     }
-    .run(&mut sink, &mut stream, rx, stopped, initial, patches)
+    .run(
+        &mut sink,
+        &mut stream,
+        rx,
+        stopped,
+        joined.chat,
+        initial,
+        patches,
+    )
     .await;
 }
 
@@ -784,6 +820,7 @@ impl Connection<'_> {
         stream: &mut R,
         rx: watch::Receiver<String>,
         mut stopped: watch::Receiver<bool>,
+        chat: broadcast::Receiver<ServerMessage>,
         initial: [String; 2],
         patches: bool,
     ) where
@@ -794,7 +831,7 @@ impl Connection<'_> {
             biased;
             _ = stopped.changed() => Outcome::disconnected(),
             outcome = read_inputs(stream, self.host, self.room, self.player, self.generation) => outcome,
-            _ = write_snapshots(sink, rx, initial, patches) => Outcome::disconnected(),
+            _ = write_snapshots(sink, rx, chat, initial, patches) => Outcome::disconnected(),
         };
         // Neutralize before any possibly blocked error/close write. Stale generation is a no-op.
         self.host
@@ -859,6 +896,7 @@ fn read_failure(error: &axum::Error) -> Outcome {
 async fn write_snapshots<S: futures_util::Sink<Message> + Unpin>(
     sink: &mut S,
     mut rx: watch::Receiver<String>,
+    mut chat: broadcast::Receiver<ServerMessage>,
     initial: [String; 2],
     patches: bool,
 ) {
@@ -874,20 +912,41 @@ async fn write_snapshots<S: futures_util::Sink<Message> + Unpin>(
             return;
         }
     }
-    while rx.changed().await.is_ok() {
-        let text = rx.borrow_and_update().clone();
-        let (text, next) = if patches {
-            snapshot_patch::encode(previous.as_ref(), &text)
-        } else {
-            (text, None)
-        };
-        if !matches!(
-            timeout(IO_TIMEOUT, sink.send(Message::Text(text.into()))).await,
-            Ok(Ok(()))
-        ) {
-            return;
+    loop {
+        tokio::select! {
+            changed = rx.changed() => {
+                if changed.is_err() {
+                    return;
+                }
+                let text = rx.borrow_and_update().clone();
+                let (text, next) = if patches {
+                    snapshot_patch::encode(previous.as_ref(), &text)
+                } else {
+                    (text, None)
+                };
+                if !matches!(
+                    timeout(IO_TIMEOUT, sink.send(Message::Text(text.into()))).await,
+                    Ok(Ok(()))
+                ) {
+                    return;
+                }
+                previous = next;
+            }
+            // Chat is transient and never part of a snapshot or patch.
+            event = chat.recv() => match event {
+                Ok(message) => {
+                    let text = serde_json::to_string(&message).unwrap();
+                    if !matches!(
+                        timeout(IO_TIMEOUT, sink.send(Message::Text(text.into()))).await,
+                        Ok(Ok(()))
+                    ) {
+                        return;
+                    }
+                }
+                Err(broadcast::error::RecvError::Lagged(_)) => continue,
+                Err(broadcast::error::RecvError::Closed) => return,
+            },
         }
-        previous = next;
     }
 }
 
@@ -927,6 +986,13 @@ async fn read_inputs<S: futures_util::Stream<Item = Result<Message, axum::Error>
                                 }
                             }
                         }
+                        Ok(ClientMessage::Chat { preset }) => {
+                            if let Some(state) = host.rooms.lock().await.get_mut(room) {
+                                if let Some(message) = state.chat(player, preset, Instant::now()) {
+                                    let _ = state.chat.send(message);
+                                }
+                            }
+                        }
                         _ => return Outcome::invalid("invalid_message"),
                     },
                     Some(Ok(Message::Ping(_) | Message::Pong(_))) => {},
@@ -952,6 +1018,24 @@ mod tests {
             now,
         )
         .unwrap()
+    }
+
+    #[test]
+    fn chat_presets_are_server_owned_and_rate_limited() {
+        let now = Instant::now();
+        let mut room = Room::new();
+        let a = join(&mut room, None, now);
+        assert!(matches!(
+            room.chat(a.player, 0, now),
+            Some(ServerMessage::Chat { text, .. }) if text == "Follow me"
+        ));
+        assert!(room
+            .chat(a.player, 1, now + Duration::from_millis(500))
+            .is_none());
+        assert!(room.chat(a.player, 1, now + CHAT_INTERVAL).is_some());
+        assert!(room
+            .chat(a.player, 200, now + Duration::from_secs(10))
+            .is_none());
     }
 
     #[test]
@@ -1328,7 +1412,7 @@ mod tests {
         tokio::pin!(sink);
         let outcome = tokio::select! {
             outcome = read_inputs(&mut stream, &host, "test", a.player, a.generation) => outcome,
-            _ = write_snapshots(&mut sink, rx, ["welcome".into(), "snapshot".into()], false) => panic!("writer unexpectedly finished"),
+            _ = write_snapshots(&mut sink, rx, broadcast::channel(4).1, ["welcome".into(), "snapshot".into()], false) => panic!("writer unexpectedly finished"),
         };
         assert!(outcome.permanent);
         assert_eq!(
@@ -1369,7 +1453,7 @@ mod tests {
         });
         tokio::pin!(sink);
         let start = Instant::now();
-        write_snapshots(&mut sink, rx, ["welcome".into(), "snapshot".into()], false).await;
+        write_snapshots(&mut sink, rx, broadcast::channel(4).1, ["welcome".into(), "snapshot".into()], false).await;
         assert_eq!(start.elapsed(), IO_TIMEOUT);
     }
 
@@ -1420,6 +1504,7 @@ mod tests {
                 &mut stream,
                 rx,
                 stopped,
+                broadcast::channel(4).1,
                 ["welcome".into(), "snapshot".into()],
                 false,
             )

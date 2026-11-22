@@ -37,6 +37,7 @@ function harness(options = {}) {
   fields.set('#restart', new ButtonElement());
   fields.set('#next', new ButtonElement());
   fields.set('#networkStatistics', new Element());
+  fields.set('#chatlog', new Element());
   for (const id of ['review', 'reviewPause']) fields.set(`#${id}`, new ButtonElement());
   for (const id of ['reviewStage', 'reviewSpeed', 'reviewSeek']) { const input = new InputElement(); input.value = '1'; fields.set(`#${id}`, input); }
   const draws = [];
@@ -50,9 +51,12 @@ function harness(options = {}) {
   const controls = ['left', 'right', 'jump'].map(action => {
     const button = new ButtonElement(); button.dataset = { action }; return button;
   });
+  const chats = [0, 1, 2, 3, 4, 5].map(preset => {
+    const button = new ButtonElement(); button.dataset = { chat: String(preset) }; return button;
+  });
   const doc = new Element();
   doc.querySelector = id => fields.get(id);
-  doc.querySelectorAll = () => controls;
+  doc.querySelectorAll = selector => selector === '[data-chat]' ? chats : controls;
   doc.activeElement = fields.get('#connect');
   doc.hidden = false;
   const window = new Element();
@@ -101,7 +105,7 @@ function harness(options = {}) {
     interval();
     for (const [id, timer] of [...timers]) if (timer.at <= now) { timers.delete(id); timer.fn(); }
   };
-  return { fields, doc, window, controls, sockets, join, key, advance, review: number => vm.runInContext(`startReview(${number})`, context), tick: () => interval(), draw: () => { draws.length = 0; frame(); return draws; } };
+  return { fields, doc, window, controls, chats, sockets, join, key, advance, review: number => vm.runInContext(`startReview(${number})`, context), tick: () => interval(), draw: () => { draws.length = 0; frame(); return draws; } };
 }
 
 test('long campaign stages use a bounded following viewport', () => {
@@ -556,4 +560,25 @@ test('large expedition camera pans horizontally and vertically without growing t
   const calls = h.draw();
   assert.ok(calls.some(call => call[0] === 'translate' && call[1] < 0 && call[2] < 0));
   assert.equal(h.fields.get('#game').width, 1200); assert.equal(h.fields.get('#game').height, 700);
+});
+
+test('quick chat sends a preset and renders the server wording', () => {
+  const h = harness(); const socket = h.join();
+  const state = snapshot();
+  state.world.players = [{ id: 1, x: 1024, y: 2048 }, { id: 2, x: 3072, y: 2048 }];
+  socket.receive(state);
+  const before = socket.sent.length;
+  h.chats[2].emit('click');
+  assert.deepEqual(socket.sent.at(-1), { type: 'chat', preset: 2 });
+  assert.equal(socket.sent.length, before + 1);
+  socket.receive({ type: 'chat', player: 2, preset: 2, text: 'Jump!' });
+  assert.match(h.fields.get('#chatlog').textContent, /P2: Jump!/);
+  const texts = h.draw().filter(call => call[0] === 'text').map(call => call[1]);
+  assert.ok(texts.includes('Jump!'));
+});
+
+test('quick chat sends nothing while disconnected', () => {
+  const h = harness();
+  h.chats[0].emit('click');
+  assert.equal(h.sockets.length, 0);
 });

@@ -30,6 +30,15 @@
     <button type="button" data-action="right" aria-label="Move right">→</button>
     <button type="button" data-action="jump">Jump</button>
   </div>
+  <div class="controls" aria-label="Quick chat">
+    <button type="button" data-chat="0">Follow me</button>
+    <button type="button" data-chat="1">Wait here</button>
+    <button type="button" data-chat="2">Jump!</button>
+    <button type="button" data-chat="3">Ready?</button>
+    <button type="button" data-chat="4">Help!</button>
+    <button type="button" data-chat="5">Nice!</button>
+  </div>
+  <p id="chatlog" class="muted" aria-live="polite"></p>
   <p class="muted">Move: arrows or A/D · Jump: space/W/up · 2–4 players · 60 Hz authority / 20 Hz snapshots.<br>
   This canvas is a diagnostic view, not the production renderer. It displays server snapshots without local prediction.</p>
   <p class="muted">Hosted playtest: <a href="/source/coop-source.tar.gz">exact deployed source</a> · <a href="/source/LICENSE">GPLv3 license</a>. Native iOS client is separately licensed; this page is the development engine's browser client.</p>
@@ -40,7 +49,7 @@
 </details>
 <details><summary>Solution review — all 28 levels</summary>
   <p>Death-free input-only simulation recordings, not proven optimal routes. Review does not join or control a live room.</p>
-  <label>Level <input id="reviewStage" type="number" min="1" max="24" value="1"></label>
+  <label>Level <input id="reviewStage" type="number" min="1" max="28" value="1"></label>
   <button id="review" type="button">Watch solution</button>
   <button id="reviewPause" type="button">Pause / play</button>
   <label>Speed <select id="reviewSpeed"><option value="0.5">½×</option><option value="1" selected>1×</option><option value="2">2×</option><option value="4">4×</option></select></label>
