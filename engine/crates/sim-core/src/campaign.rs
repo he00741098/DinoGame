@@ -490,7 +490,7 @@ fn finale_room() -> Level {
             h: UNIT / 2,
             ..r(12, 6, 1, 1)
         },
-        gate: r(16, 9, 1, 3),
+        gate: r(14, 9, 1, 3),
         exit: r(17, 10, 2, 2),
         ..Level::default()
     };
@@ -512,6 +512,11 @@ fn finale_room() -> Level {
         ..r(12, 0, 2, 1)
     }, 0, 0);
     add(&mut l, MechanicKind::Checkpoint, r(6, 10, 4, 2), 0, 0);
+    // Post-key beat: the exit door cycles on its own timer, so once the key is in
+    // hand all four must regroup and move through one shared window. That is a
+    // different coordination shape from holding a pad, and it cannot soft-lock
+    // because the cycle reopens regardless of who is standing where.
+    add(&mut l, MechanicKind::TimedGate, r(16, 8, 1, 4), 0, 240);
     l
 }
 
@@ -581,7 +586,7 @@ fn team_pad_room(number: u8) -> Level {
         hint: if wide {
             "Two on the brass pad hold the door while the third brings the key home."
         } else {
-            "The brass pad opens only while all of you stand on it. One climbs, one holds."
+            "Both stand on the brass pad to open the door. One holds it while the other fetches the key."
         }
         .into(),
         solids: vec![r(0, 12, width, 2)],
@@ -615,8 +620,9 @@ fn team_pad_room(number: u8) -> Level {
     // stepping off together; the exit still needs every player, so lingering
     // outside is never a way to win.
     add(&mut l, MechanicKind::PressureGate, r(13, 8, 1, 4), 0, 900);
-    // A flag past the door, and a ledge over the key for a second beat.
-    add(&mut l, MechanicKind::Checkpoint, r(18, 10, 4, 2), 0, 0);
+    // The flag sits on the pad side of the door: a reset must return the team
+    // to the side that can still press the pad, never behind a shut door.
+    add(&mut l, MechanicKind::Checkpoint, r(6, 10, 4, 2), 0, 0);
     add(
         &mut l,
         MechanicKind::OneWay,
@@ -624,6 +630,21 @@ fn team_pad_room(number: u8) -> Level {
             y: 10 * UNIT,
             h: UNIT / 4,
             ..r(width - 8, 0, 3, 1)
+        },
+        0,
+        0,
+    );
+    // A red strip on the ledge's far end, above the floor line the team walks
+    // to the key: only a deliberate climb with the key can touch it, and a
+    // touch resets everyone to the pad-side flag, so a split team always has
+    // a way back to the pad.
+    add(
+        &mut l,
+        MechanicKind::Hazard,
+        Rect {
+            y: 10 * UNIT - UNIT / 4,
+            h: UNIT / 4,
+            ..r(width - 6, 0, 1, 1)
         },
         0,
         0,
