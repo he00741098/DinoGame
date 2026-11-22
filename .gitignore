@@ -4,4 +4,14 @@ Cargo.lock
 debug
 rust-server/target
 rust-server/target/flycheck0
+engine/target/
+# Application workspace locks are reproducible; legacy ignores stay unchanged.
+!engine/Cargo.lock
+native/.build/
+native/.swiftpm/
+native/build/
+native/**/xcuserdata/
+native/**/*.xcuserstate
+native/scripts/__pycache__/
+.DS_Store
 rust-server/target/flycheck0
