@@ -488,7 +488,7 @@ fn platform_course(number: u8) -> Level {
     for platform in route.iter().skip(columns as usize + 1) {
         add(&mut l, MechanicKind::OneWay, *platform, 0, 0);
     }
-    for platform in route.iter().skip(1).step_by(7) {
+    for platform in route.iter().skip(1).step_by(5) {
         add(
             &mut l,
             MechanicKind::Checkpoint,
