@@ -200,3 +200,34 @@ Also landed: reduced-motion knobs on both timelines (`1617e82`), the iOS team-pa
 threshold read from the mechanic instead of the team size (`fbc6c42`).
 
 Gate at this point: 9 Rust suites green, 45 Node, 45 Swift, Clippy clean.
+
+### Same day — 30 stages and chat deployed
+
+Release `20261122-b995e48a3229` is live at
+<https://mobile.userorientedsystems.com/>. Hostname config was reapplied after
+install (the installer overwrites it), and verification passed: HTTPS on every
+route, exact source checksum, all **30** solution recordings matching local
+fixtures, two-player WSS acknowledgments, 401/403 protections, and port 3000
+unreachable from outside.
+
+**Stages 29-30 took three attempts, and the failures were informative.** The
+first design had the team press the pad, step off, and walk through the door —
+which a single player can do, so it taught nothing. The second put the pad next
+to the spawn, where the holder blocked the corridor: bodies collide at one
+height, so the team could not get past each other. The shipped version puts the
+pad left of the spawn, keeps the key behind the pad-driven door, and gives the
+door a 15 s release grace so the team can walk the corridor after stepping off
+together. The witness walks the front-most player first, because an arrived
+player stops blocking and lets the rest follow.
+
+The platform-course witness looped `25..=LEVEL_COUNT`, so it tried to climb the
+team-pad rooms as if they were staircase courses; it is now bounded to `25..=28`.
+
+**Two breakages caught by the stage bump**, both of which would have shipped
+silently: the native client's `Wire.levelCount` gates snapshot validation, so a
+stale 28 would have rejected every stage 29/30 snapshot as invalid; and
+`verify_remote.py` hard-coded `range(1, 29)`, so it would have reported success
+while never checking the two new levels. The verifier now derives its count from
+the checked-in recordings.
+
+Gate: 9 Rust suites, 45 Node, 45 Swift, Clippy clean, iOS Debug build.
