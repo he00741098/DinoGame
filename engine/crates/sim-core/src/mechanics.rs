@@ -31,7 +31,8 @@ pub struct Mechanic {
     pub kind: MechanicKind,
     pub rect: Rect,
     /// Signed horizontal shuttle distance, belt speed or wind speed; for a
-    /// team pad, the number of players required (clamped to 2..=4).
+    /// team pad, the players required on it at once: `travel <= 1` means 2
+    /// (a threshold of one would just be a plate), clamped to the room's 4.
     pub travel: i32,
     /// Full shuttle/gate cycle; crumble lifetime; pressure release grace. 0 uses defaults.
     pub period: u32,
@@ -41,7 +42,8 @@ pub struct Mechanic {
 pub struct MechanicState {
     pub id: u32,
     pub rect: Rect,
-    /// Gates: solid/closed; crumble: present; plate: occupied; other zones: enabled.
+    /// Gates: solid/closed; crumble: present; plate/team pad: occupied;
+    /// other zones: enabled.
     pub active: bool,
     pub timer: u32,
 }

@@ -165,7 +165,7 @@ struct LobbyView: View {
                             .buttonStyle(.bordered)
                             .font(.caption2)
                             .accessibilityIdentifier("chat\(index)")
-                            .disabled(controlsDisabled)
+                            .disabled(controlsDisabled || session.chatCoolingDown)
                     }
                 }
             }

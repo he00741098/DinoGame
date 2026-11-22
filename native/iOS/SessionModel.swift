@@ -28,10 +28,13 @@ final class SessionModel: ObservableObject {
     /// Last three quick-chat lines, newest last. Wording is server-owned.
     @Published private(set) var chatLog: [String] = []
     @Published private(set) var latestChat: ChatEntry?
+    /// True from a quick-chat send until the server's `CHAT_INTERVAL` (2 s) allows another.
+    @Published private(set) var chatCoolingDown = false
     private var networkStatistics = NetworkStatistics()
     private var lastStatisticsUpdate = 0.0
 
     private var worker: Task<Void, Never>?
+    private var chatCooldown: Task<Void, Never>?
     private var socket: URLSessionWebSocketTask?
     private var session: URLSession?
     private var generation = UUID()
@@ -142,10 +145,19 @@ final class SessionModel: ObservableObject {
 
     func releaseControls() { input.clear() }
 
+    /// Sends one preset and starts a cooldown matching the server's own interval,
+    /// so the buttons visibly pause instead of the message being silently dropped.
     func sendChat(preset: UInt8) {
-        guard let socket, active || hasSnapshot else { return }
+        guard !chatCoolingDown, let socket, active || hasSnapshot else { return }
+        guard let data = try? ClientCommand.chat(preset: preset) else { return }
+        chatCoolingDown = true
+        chatCooldown?.cancel()
+        chatCooldown = Task { [weak self] in
+            try? await Task.sleep(for: .seconds(2))
+            guard !Task.isCancelled else { return }
+            self?.chatCoolingDown = false
+        }
         Task { [weak socket] in
-            guard let data = try? ClientCommand.chat(preset: preset) else { return }
             try? await socket?.send(.string(String(decoding: data, as: UTF8.self)))
         }
     }
@@ -176,6 +188,8 @@ final class SessionModel: ObservableObject {
         awaitingBaseline = true; baselineSequence = nil
         acknowledgmentDeadline.clear()
         latestChat = nil
+        chatCooldown?.cancel(); chatCooldown = nil
+        chatCoolingDown = false
     }
 
     private func begin() {
