@@ -1,6 +1,6 @@
 # Campaign catalogue
 
-All 30 stages have death-free, input-only completion witnesses in `engine/crates/sim-core/src/campaign/tests.rs`: two players for stages 1–22, 25, 26 and 29; three for 23, 27 and 30; four for 24 and 28. Four-player deterministic collision-safety replays cover the full catalogue. These are simulation checks, not a substitute for human difficulty/UX balancing.
+All 31 stages have death-free, input-only completion witnesses in `engine/crates/sim-core/src/campaign/tests.rs`: two players for stages 1–22, 25, 26, 29 and 31; three for 23, 27 and 30; four for 24 and 28. Four-player deterministic collision-safety replays cover the full catalogue. These are simulation checks, not a substitute for human difficulty/UX balancing.
 
 | Stage | Name | Lesson / combination |
 | --- | --- | --- |
@@ -59,14 +59,15 @@ The intended curve introduces tools and then combines them. Strictly increasing 
 
 ## Team pad chapter
 
-The final two rooms teach `MechanicKind::TeamPad`, a pad that is pressable only while the required number of players stand on it at once:
+Two rooms teach `MechanicKind::TeamPad`, a pad that is pressable only while the required number of players stand on it at once, followed by a short rest stage:
 
 | Stage | Name | Size (tiles) | Minimum players | Lesson |
 | --- | --- | --- | --- | --- |
 | 29 | Both on the brass | 30 × 14 | 2 | Hold the brass pad together, then split into holder and key-runner |
-| 30 | Two to hold | 34 × 14 | 3 | Two hold the pad while the third fetches the key |
+| 30 | Two to hold | 34 × 14 | 3 | Two hold the brass while the third carries the key home |
+| 31 | A moment to breathe | 30 × 14 | 2 | Rest beat: one familiar spring, no timing or hazards |
 
-The pad gates the door in the middle of the corridor, and the key sits behind that door: the team must keep the pad held down while a teammate walks through, collects the shared key and comes back. One player alone can never finish — stage 29 needs one to hold and one to run, and stage 30 leaves two on the brass while the third carries the key home.
+The pad gates the door in the middle of the corridor, and the key sits behind that door: the team must keep the pad held down while a teammate walks through, collects the shared key and comes back. One player alone can never finish — stage 29 needs one to hold and one to run, and stage 30 leaves two on the brass while the third carries the key home. Stage 31 then drops the pressure entirely: two springs, a shelf above the key, and no hazards, so the team can catch its breath before whatever comes next.
 
 ## How to play
 
