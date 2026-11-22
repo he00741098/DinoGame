@@ -38,6 +38,22 @@ deploy, then continue gameplay work.
 **Next.** Design notes from the co-op research, then new cooperative mechanics
 and levels; quick chat is the other open feature.
 
+### Same day — quick chat end to end
+
+- Protocol/server (`30c47e3`): `ClientMessage::Chat` carries a preset index
+  only; the server owns the wording (`CHAT_PRESETS`, 6 entries), allows one
+  message per player per 2 s and silently ignores anything else. Chat goes out
+  over a per-room broadcast channel and never enters a snapshot or a patch, so
+  the 20 Hz state path is unchanged.
+- Browser: six `[data-chat]` buttons, 3.5 s sprite bubbles, 3-line log;
+  40 Node tests pass (`node --test web/*.test.mjs`).
+- Native wire (`1c303e4`): preset-only encode, wording validated on decode;
+  42 Swift tests in the suite.
+- Native UI (`e250c72`): quick-chat row, log and 3 s in-world bubble, committed
+  by a delegated builder.
+- Unverified: no human playtest of chat, no rate-limit behaviour observed on a
+  real network, chat not deployed (the hosted release predates it).
+
 ### Same day — delivery fleet changed shape
 
 Subagent throughput was the bottleneck, not the code. The OpenCode free pool

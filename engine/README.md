@@ -30,6 +30,12 @@ Both clients expose **Network statistics**: cumulative sent/received application
 
 Clients still sample controls at approximately 60 Hz but send only changed held state, new jump IDs/revisions, controls, or a 100 ms heartbeat. This reduces steady unchanged-input messages from about 60/s to about 9–10/s while preserving the 250 ms input lease and independent acknowledgment timeout. Timer stalls still trigger neutralization/recovery; they are not hidden by the optimization.
 
+### Quick chat
+
+Six server-owned presets — `Follow me`, `Wait here`, `Jump!`, `Ready?`, `Help!`, `Nice!` (indices 0–5) — are the whole vocabulary: clients send only `{"type":"chat","preset":n}` and the server resolves the wording, so there is no free text and no moderation surface. One message per player per 2 s (`CHAT_INTERVAL`); anything faster, out of range or from a disconnected slot is silently ignored, never a disconnect.
+
+Chat rides a per-room broadcast channel drained by the snapshot writer, so it is never part of a snapshot or a patch and costs nothing on the 20 Hz state path. The browser shows a bubble above the speaker for 3.5 s plus a 3-line log; the native client shows a 3 s bubble label (fade skipped under Reduce Motion) and the same 3-line log. Presets, rendering, evidence and scope: [docs/QUICK_CHAT.md](../docs/QUICK_CHAT.md).
+
 ### Compact snapshots and finished-screen quiet mode
 
 Hello may opt in with `"patches":true` (browser/native do). The default remains full snapshots for non-opted-in clients. A connection begins with a full snapshot; each successful writer send establishes its next base. Same-revision messages can be `{type:"patch",revision,base_tick,changes}` where nested object keys merge, arrays replace atomically and null **remains a value**, not deletion. `base_tick` must exactly match the last received base; missing/wrong bases cause bounded reconnect. Static level metadata cannot change via a patch. A new revision/level or a patch larger than the full frame sends a full snapshot instead. Crucially, the latest-only mailbox still stores **full** states: patches are generated only at the writer, so skipped mailbox updates cannot drop a required delta. Reconstruction is connection-local and passes the existing native stream validation/64 KiB bounds. No new external dependency or native GPL linkage is introduced.
@@ -50,7 +56,7 @@ Generic session identity, transport recovery, resource bounds and diagnostics be
 
 P2P is **not implemented**. Web browsers can use WebRTC data channels, with signaling and often TURN relay fallback. Before any peer address/ICE exchange, require explicit opt-in explaining IP-address exposure, who the peers are, and the server-relay alternative; trust must be scoped to a session/roster and renewed when peers change. Declining must retain a playable relayed route. Peer consent does not grant simulation authority or bypass validation. Do not silently switch to direct peers.
 
-Chat is **not implemented**. Start with optional room-scoped quick messages ("wait", "jump", "come here", "ready") useful during co-op; keep that bounded social stream separate from deterministic inputs and latest-only snapshots. Any later text chat needs server identity binding, length/rate limits, mute/block/report controls, safe text rendering, accessibility, and an explicit retention policy. Voice, global discovery, persisted chat and moderation services are out of this MVP scope.
+Room-scoped quick chat (the six server-owned presets above) is **implemented**; it keeps that bounded social stream separate from deterministic inputs and latest-only snapshots. **Text chat is not implemented.** Any later text chat needs server identity binding, length/rate limits, mute/block/report controls, safe text rendering, accessibility, and an explicit retention policy. Voice, global discovery, persisted chat and moderation services are out of this MVP scope.
 
 The host binds to loopback by default. For trusted LAN testing:
 
