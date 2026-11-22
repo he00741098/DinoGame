@@ -774,6 +774,29 @@ fn input_only_completion_of_long_platform_courses() {
 }
 
 #[test]
+fn platform_courses_place_a_checkpoint_every_five_ledges() {
+    for number in 25..=28 {
+        let l = level(number).unwrap();
+        // Mirror platform_course's route arithmetic instead of importing it:
+        // one floor platform plus `columns` outbound ledges, then (for 26+) a
+        // switchback one ledge short, with a Checkpoint on every fifth ledge
+        // after the first.
+        let index = i32::from(number - 25);
+        let width = 128 + index * 32;
+        let columns = (width - 20) / 7;
+        let ledges = 1 + columns + if number >= 26 { columns - 1 } else { 0 };
+        let expected = (0..ledges).skip(1).step_by(5).count();
+        let placed = l
+            .mechanics
+            .iter()
+            .filter(|m| m.kind == MechanicKind::Checkpoint)
+            .count();
+        assert_eq!(placed, expected, "course {number}");
+        assert!(placed >= 3, "course {number} lost its recovery flags");
+    }
+}
+
+#[test]
 fn input_only_completion_of_team_pad_rooms() {
     for number in 29..=LEVEL_COUNT {
         let l = level(number).unwrap();
