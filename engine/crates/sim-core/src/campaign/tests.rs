@@ -892,12 +892,38 @@ impl Drop for ReviewWorld {
             return;
         }
         assert!(self.world.completed && self.world.deaths == 0);
-        let data = serde_json::json!({
+        // Mechanic state is identical in every frame for most stages. Store it
+        // once instead of repeating it hundreds of times; the viewer fills the
+        // per-frame list from `constant_objects` when it is absent.
+        let constant_objects = self
+            .frames
+            .first()
+            .map(|frame| frame.objects.clone())
+            .unwrap_or_default();
+        let objects_are_constant = self
+            .frames
+            .iter()
+            .all(|frame| frame.objects == constant_objects);
+        let frames = self
+            .frames
+            .iter()
+            .map(|frame| {
+                let mut value = serde_json::to_value(frame).unwrap();
+                if objects_are_constant {
+                    value.as_object_mut().unwrap().remove("objects");
+                }
+                value
+            })
+            .collect::<Vec<_>>();
+        let mut data = serde_json::json!({
             "format": 1, "tick_hz": TICK_HZ, "frame_stride": if self.level.number >= 25 { 6 } else { 3 },
                 "provenance": "death-free input-only deterministic simulation witness; not a proven optimal route",
-                "level": self.level, "frames": self.frames,
+                "level": self.level, "frames": frames,
                 "final_hash": format!("{:016x}", self.world.state_hash()),
         });
+        if objects_are_constant {
+            data["constant_objects"] = serde_json::json!(constant_objects);
+        }
         if let Ok(directory) = std::env::var("COOP_EXPORT_SOLUTIONS") {
             let directory = std::path::Path::new(&directory);
             std::fs::create_dir_all(directory).unwrap();
