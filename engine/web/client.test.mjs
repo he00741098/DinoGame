@@ -26,12 +26,12 @@ function level(number = 1, mechanics = []) {
 }
 function snapshot(overrides = {}) {
   return { type: 'snapshot', revision: 1, controller: 1, campaign_complete: false, level: level(), acks: [],
-    world: { tick: 10, players: [], objects: [], deaths: 0, checkpoint: null, level_start_tick: 0, completed: false, key_collected: false }, ...overrides };
+    world: { tick: 10, players: [], objects: [], deaths: 0, checkpoint: null, level_start_tick: 0, completed: false, key_collected: false, rescued_at: null }, ...overrides };
 }
 
 function harness(options = {}) {
   const fields = new Map();
-  for (const id of ['join', 'status', 'game']) fields.set(`#${id}`, new Element());
+  for (const id of ['join', 'status', 'game', 'announce']) fields.set(`#${id}`, new Element());
   fields.set('#room', new InputElement());
   fields.set('#connect', new ButtonElement());
   fields.set('#restart', new ButtonElement());
@@ -643,6 +643,49 @@ test('chat cooldown does not survive a reconnect', () => {
   assert.ok(h.chats.every(button => button.disabled));
   h.join();
   assert.ok(h.chats.every(button => !button.disabled));
+});
+
+const RESCUE_MESSAGE = 'Run lost — the team was split. Respawning…';
+const rescueBanner = h => h.draw().filter(call => call[0] === 'text' && call[1] === RESCUE_MESSAGE).length;
+
+test('a rescue shows a run-lost message', () => {
+  const h = harness(); const socket = h.join();
+  socket.receive(snapshot());
+  assert.equal(rescueBanner(h), 0);
+  const rescued = snapshot(); rescued.world.tick = 11; rescued.world.deaths = 1; rescued.world.rescued_at = 11;
+  socket.receive(rescued);
+  assert.equal(rescueBanner(h), 1);
+  assert.equal(h.fields.get('#announce').textContent, RESCUE_MESSAGE);
+  h.advance(2000);
+  assert.equal(rescueBanner(h), 1);
+  h.advance(600);
+  assert.equal(rescueBanner(h), 0);
+});
+
+test('a rescue does not fire twice for the same tick', () => {
+  const h = harness(); const socket = h.join();
+  const rescued = snapshot(); rescued.world.tick = 11; rescued.world.rescued_at = 11;
+  socket.receive(rescued);
+  assert.equal(rescueBanner(h), 1);
+  assert.equal(h.fields.get('#announce').textContent, RESCUE_MESSAGE);
+  h.advance(1000);
+  const duplicate = snapshot(); duplicate.world.tick = 12; duplicate.world.rescued_at = 11;
+  socket.receive(duplicate);
+  // Still exactly one banner, and the duplicate does not renew its window.
+  assert.equal(rescueBanner(h), 1);
+  h.advance(1600);
+  assert.equal(rescueBanner(h), 0);
+});
+
+test('the rescue marker resets on a new session', () => {
+  const h = harness(); const socket = h.join();
+  const rescued = snapshot(); rescued.world.tick = 11; rescued.world.rescued_at = 11;
+  socket.receive(rescued);
+  assert.equal(rescueBanner(h), 1);
+  const current = h.join();
+  const fresh = snapshot(); fresh.world.tick = 1; // No rescued_at in the new session.
+  current.receive(fresh);
+  assert.equal(rescueBanner(h), 0);
 });
 
 test('a rescue shows a run-lost notice that expires', () => {
