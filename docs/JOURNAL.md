@@ -75,3 +75,37 @@ two tickets named the same path and every lane staged by explicit path.
 
 First delegated implementation: `e250c72` (native quick-chat buttons and bubbles)
 built, verified and committed by `cc-builder` without orchestrator edits.
+
+### Same day — audits, and a design defect caught before playtest
+
+Nine read-only lanes ran against the same tree while four builders worked
+disjoint files. The audits paid for themselves immediately.
+
+**Design defect found and fixed.** Measured from the recorded witnesses, the four
+platform courses take 120 s, 291 s, 352 s and 428 s (`web/solutions/25..28.json`
+frame counts × stride ÷ 60). Recovery points came only every seventh ledge, so a
+late mistake on the 428 s four-player finale could cost minutes of replay. Stride
+is now five (`bd7eaee`): checkpoints went 3/6/7/9 → 3/8/10/12 on stages 25–28,
+layout untouched, all 39 sim-core tests and the regenerated witnesses still pass.
+
+**Copy drift.** The 24→28 bump left five stale claims: the `hello` example and
+welcome prose still said `coop-campaign-2`, the protocol reference said Next
+"stops at level 24", and both client headers said 24 stages. Fixed in `eb0032b`
+and `25eae92`; the Swift header now interpolates `Wire.levelCount` so that one
+cannot drift again.
+
+**Decisions recorded.**
+
+- **P2P: defer.** The consent rule (no peer address or ICE before explicit trust)
+  can only be honoured without exposure by a server relay, which loads the 2 GB
+  box and buys little over the authoritative server already running. The safety
+  rules stay in `engine/README.md` as the prerequisite if it is ever built.
+- **Chat: safe to ship.** Preset-only with server-owned wording means no
+  attacker-controlled bytes can reach the wire; worst case is 8 broadcast sends
+  per second across a full room.
+- **Next mechanic: team pad.** No new `World` field, no hash change, no patch
+  encoder work — an enum arm, a count check and a glyph.
+
+**Open bug.** Chat frames share the gameplay frame budget, so chat spam could
+consume `INPUTS_PER_SECOND` and drop a player's input or the connection. Fix in
+flight: chat gets its own budget and is dropped rather than fatal.
