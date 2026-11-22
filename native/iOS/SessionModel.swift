@@ -78,7 +78,7 @@ final class SessionModel: ObservableObject {
         begin()
     }
 
-    private struct Rejected: Error { let code: String }
+    private struct Rejected: Error { let code: String; let message: String }
 
     func connect(primary: String, fallback: String, room: String, accessCode: String = "") {
         do {
@@ -214,12 +214,15 @@ final class SessionModel: ObservableObject {
                         requested = false
                         return
                     }
-                    if ["protocol_mismatch", "ruleset_mismatch", "invalid_room", "invalid_message"].contains(rejection.code) {
-                        status = "Server rejected this client"
-                        detail = rejection.code.replacingOccurrences(of: "_", with: " ")
-                        requested = false
-                        return
-                    }
+                    // Every other server rejection is terminal: reconnecting cannot
+                    // change a decision the server already made, so stop retrying
+                    // and show the server's own wording, like the browser client.
+                    let message = rejection.message.trimmingCharacters(in: .whitespacesAndNewlines)
+                    let why = message.isEmpty ? rejection.code.replacingOccurrences(of: "_", with: " ") : message
+                    status = "Connection rejected by server"
+                    detail = "\(why) (\(rejection.code))"
+                    requested = false
+                    return
                 }
                 if error is ProtocolError || error is DecodingError {
                     status = "Incompatible server data"
@@ -405,11 +408,11 @@ final class SessionModel: ObservableObject {
                 latestChat = ChatEntry(player: message.player, text: message.text, at: ProcessInfo.processInfo.systemUptime)
                 chatLog.append("P\(message.player): \(message.text)")
                 if chatLog.count > 3 { chatLog.removeFirst(chatLog.count - 3) }
-            case .rejection(let code, _): throw Rejected(code: code)
+            case .rejection(let code, let message): throw Rejected(code: code, message: message)
             }
         }
         } catch {
-            if (task.response as? HTTPURLResponse)?.statusCode == 401 { throw Rejected(code: "access_denied") }
+            if (task.response as? HTTPURLResponse)?.statusCode == 401 { throw Rejected(code: "access_denied", message: "") }
             throw error
         }
     }
