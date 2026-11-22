@@ -1,0 +1,31 @@
+name: Native iOS
+
+on:
+  push:
+    paths: ["native/**", "engine/**", ".github/workflows/native.yml"]
+  pull_request:
+    paths: ["native/**", "engine/**", ".github/workflows/native.yml"]
+
+permissions:
+  contents: read
+
+jobs:
+  ios:
+    runs-on: macos-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          toolchain: 1.94.0
+      - run: python3 native/scripts/check_dependencies.py
+      - run: swift test --package-path native --scratch-path "$RUNNER_TEMP/coop-swift"
+      - run: python3 native/scripts/test_ios.py --artifacts "$RUNNER_TEMP/coop-ios"
+      - if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: native-test-results
+          path: ${{ runner.temp }}/coop-ios/**/Native.xcresult

@@ -1,0 +1,39 @@
+name: Multiplayer foundation
+
+on:
+  push:
+    paths: ["engine/**", ".github/workflows/engine.yml"]
+  pull_request:
+    paths: ["engine/**", ".github/workflows/engine.yml"]
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    strategy:
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+    runs-on: ${{ matrix.os }}
+    defaults:
+      run:
+        working-directory: engine
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          toolchain: 1.94.0
+          components: rustfmt, clippy
+      - run: cargo fmt --all -- --check
+      - run: cargo clippy --workspace --all-targets --locked -- -D warnings
+      - run: cargo test --workspace --locked
+      - run: node --check web/client.js
+      - run: node --test web/client.test.mjs
+      - run: rustup target add wasm32-unknown-unknown
+      - run: cargo check --locked -p sim-core -p net-proto --target wasm32-unknown-unknown
+      - if: runner.os == 'macOS'
+        run: rustup target add aarch64-apple-ios aarch64-apple-ios-sim
+      - if: runner.os == 'macOS'
+        run: cargo check --locked -p sim-core -p net-proto --target aarch64-apple-ios
+      - if: runner.os == 'macOS'
+        run: cargo check --locked -p sim-core -p net-proto --target aarch64-apple-ios-sim
