@@ -126,7 +126,14 @@ def main():
         request = urllib.request.Request(base + "/network.js", headers={"Authorization": authorization, "User-Agent": USER_AGENT})
         with urllib.request.urlopen(request, timeout=10) as response:
             assert b"class NetworkStatistics" in response.read(100_000)
-        for number in range(1, 29):
+        # Derived from the checked-in recordings so a stage-count bump cannot
+        # leave a level unverified.
+        available = sorted(
+            int(path.stem)
+            for path in (Path(__file__).resolve().parents[2] / "engine/web/solutions").glob("*.json")
+        )
+        assert available, "no local recordings to verify against"
+        for number in available:
             request = urllib.request.Request(base + f"/solutions/{number}", headers={"Authorization": authorization, "User-Agent": USER_AGENT})
             with urllib.request.urlopen(request, timeout=10) as response:
                 recording = json.loads(response.read(2_000_000))
@@ -134,7 +141,10 @@ def main():
                 assert recording["frames"][-1]["completed"] and recording["frames"][-1]["deaths"] == 0
                 local = Path(__file__).resolve().parents[2] / "engine/web/solutions" / f"{number}.json"
                 assert recording == json.loads(local.read_text())
-        print("All 28 hosted solution recordings and network statistics asset verified against local fixtures")
+        print(
+            f"All {len(available)} hosted solution recordings and network statistics "
+            "asset verified against local fixtures"
+        )
     for auth, origin, expected in [(None, base, 401), (authorization, "https://unrelated.example", 403)]:
         rejected = Peer(args.host, auth, origin)
         assert rejected.status == expected
