@@ -40,7 +40,7 @@ class SnapshotWireDecoder {
       if (!this.base || message.base_tick !== this.base.world.tick || message.revision !== this.base.revision ||
           !message.changes || ['type', 'level', 'revision'].some(key => Object.hasOwn(message.changes, key))) throw new Error('Invalid patch base');
       message = this.merge(this.base, message.changes, 0);
-      if (JSON.stringify(message).length > 65536) throw new Error('Oversized snapshot');
+      if (new TextEncoder().encode(JSON.stringify(message)).length > 65536) throw new Error('Oversized snapshot');
     }
     if (message.type === 'snapshot') this.base = message;
     return message;

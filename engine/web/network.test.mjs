@@ -32,3 +32,22 @@ test('patches reconstruct exact bases, replace arrays, retain null and reject st
   assert.throws(() => wire.decode({ ...patch, base_tick: 7, revision: 2 }));
   assert.throws(() => wire.decode({ ...patch, base_tick: 7, changes: JSON.parse('{"__proto__":{"polluted":true}}') }));
 });
+
+test('merged patches are rejected on UTF-8 byte length, not UTF-16 length', () => {
+  const context = vm.createContext({ TextEncoder });
+  vm.runInContext(readFileSync(new URL('./network.js', import.meta.url), 'utf8'), context);
+  const wire = vm.runInContext('new SnapshotWireDecoder()', context);
+  const full = { type: 'snapshot', revision: 1, level: { number: 1 }, world: { tick: 1, checkpoint: { x: 1 } }, acks: [] };
+  wire.decode(full);
+  // 32000 astral emojis: 64000 UTF-16 code units but 128000 UTF-8 bytes, so the
+  // merged snapshot stays under the limit only if code units are counted.
+  const big = '\u{1F600}'.repeat(32000);
+  const merged = { ...full, world: { ...full.world, tick: big } };
+  const text = JSON.stringify(merged);
+  assert.ok(text.length <= 65536, `UTF-16 length ${text.length} is within the limit`);
+  assert.ok(new TextEncoder().encode(text).length > 65536, 'UTF-8 byte length exceeds the limit');
+  assert.throws(
+    () => wire.decode({ type: 'patch', revision: 1, base_tick: 1, changes: { world: { tick: big } } }),
+    /Oversized snapshot/,
+  );
+});
