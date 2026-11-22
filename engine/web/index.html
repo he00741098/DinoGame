@@ -1,0 +1,53 @@
+<!doctype html>
+<html lang="en">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Co-op engine — network harness</title>
+<style>
+  * { box-sizing: border-box; } body { margin:0; background:#101725; color:#e5eefb; font:16px system-ui; }
+  main { max-width:1100px; margin:auto; padding:24px; } h1 { font-size:24px; }
+  form, .controls { display:flex; gap:12px; flex-wrap:wrap; align-items:center; }
+  input, button { padding:12px; font:inherit; border-radius:8px; border:1px solid #75829a; }
+  input { width:160px; } button { background:#b9f479; color:#14231b; cursor:pointer; touch-action:none; }
+  button:disabled { opacity:.4; cursor:not-allowed; }
+  canvas { display:block; width:100%; margin:20px 0; background:#18263a; border-radius:12px; }
+  #status { min-height:24px; color:#b9f479; } p { line-height:1.5; } .muted { color:#a6b7ce; }
+  .controls button { min-width:70px; min-height:60px; user-select:none; -webkit-user-select:none; }
+</style>
+<main>
+  <h1>Co-op engine / network harness</h1>
+  <p>Join the same room with 2–4 players. Cooperate through 24 campaign levels; expeditions include three- and four-player challenges.</p>
+  <form id="join"><label>Room <input id="room" value="playtest" pattern="[A-Za-z0-9-]{3,16}" minlength="3" maxlength="16" required></label><button id="connect">Join room</button></form>
+  <p id="status" role="status">Disconnected</p>
+  <div class="controls" aria-label="Campaign controls">
+    <button id="restart" type="button" disabled>Restart</button>
+    <button id="next" type="button" disabled hidden>Next</button>
+    <span class="muted">Controller can restart. The next stage starts automatically after everyone enters the exit.</span>
+  </div>
+  <canvas id="game" width="1200" height="700" aria-label="Cooperative platformer test level"></canvas>
+  <div class="controls" aria-label="Touch controls">
+    <button type="button" data-action="left" aria-label="Move left">←</button>
+    <button type="button" data-action="right" aria-label="Move right">→</button>
+    <button type="button" data-action="jump">Jump</button>
+  </div>
+  <p class="muted">Move: arrows or A/D · Jump: space/W/up · 2–4 players · 60 Hz authority / 20 Hz snapshots.<br>
+  This canvas is a diagnostic view, not the production renderer. It displays server snapshots without local prediction.</p>
+  <p class="muted">Hosted playtest: <a href="/source/coop-source.tar.gz">exact deployed source</a> · <a href="/source/LICENSE">GPLv3 license</a>. Native iOS client is separately licensed; this page is the development engine's browser client.</p>
+</main>
+<details><summary>Network statistics</summary>
+  <p id="networkStatistics" aria-live="off">No network samples</p>
+  <p>Session-average application payload only; excludes TLS/TCP/WebSocket overhead. Applied ack includes server scheduling, not pure ping.</p>
+</details>
+<details><summary>Solution review — all 24 levels</summary>
+  <p>Death-free input-only simulation recordings, not proven optimal routes. Review does not join or control a live room.</p>
+  <label>Level <input id="reviewStage" type="number" min="1" max="24" value="1"></label>
+  <button id="review" type="button">Watch solution</button>
+  <button id="reviewPause" type="button">Pause / play</button>
+  <label>Speed <select id="reviewSpeed"><option value="0.5">½×</option><option value="1" selected>1×</option><option value="2">2×</option><option value="4">4×</option></select></label>
+  <label>Timeline <input id="reviewSeek" type="range" min="0" max="0" value="0" aria-label="Solution timeline"></label>
+  <p>Use Join to return to live multiplayer.</p>
+</details>
+<script src="/network.js"></script>
+<script src="/motion.js"></script>
+<script type="module" src="/client.js"></script>
+</html>
