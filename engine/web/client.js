@@ -77,6 +77,18 @@ function announce(text) {
   lastAnnouncement = text;
   announceRegion.textContent = text;
 }
+// One-shot "run lost" banner for an authority rescue from an unwinnable split.
+// The simulation has already respawned the team; this is diagnostic only.
+const RESCUE_MESSAGE = 'Run lost — the team was split. Respawning…';
+const RESCUE_DISPLAY_MS = 2500;
+let lastRescuedAt = null, rescueBannerUntil = 0;
+function showRescue(rescuedAt) {
+  if (rescuedAt === lastRescuedAt) return;
+  lastRescuedAt = rescuedAt;
+  if (rescuedAt === null) return;
+  rescueBannerUntil = performance.now() + RESCUE_DISPLAY_MS;
+  announce(RESCUE_MESSAGE);
+}
 function updateControls() {
   const connected = player !== undefined && socket?.readyState === WebSocket.OPEN;
   const owner = connected && inputReady && controller === player;
@@ -128,6 +140,8 @@ function connectRoom(room, automatic = false) {
   if (previous) previous.close(token ? 4001 : 1000);
   if (!token) resume = undefined;
   world = level = player = revision = controller = undefined;
+  // A rescue marker from the previous session must not fire in this one.
+  lastRescuedAt = null; rescueBannerUntil = 0;
   campaignComplete = false;
   lastFinalHeartbeat = -Infinity;
   inputReady = false; baselineSeq = undefined;
@@ -192,6 +206,8 @@ function connectRoom(room, automatic = false) {
       level = message.level;
       // Stale chat from the previous stage must not persist into the next one.
       if (changed || previousLevelNumber !== level.number) clearChat();
+      // A rescue marker belongs to its level; a new stage starts a new run.
+      if (previousLevelNumber !== level.number) { lastRescuedAt = null; rescueBannerUntil = 0; }
       if (changed || world?.deaths !== message.world.deaths) motion.reset();
       world = message.world;
       motion.append(world.tick / 60, performance.now() / 1000, world.players.map(p => ({ ...p, vx: (p.vx ?? 0) * 60, vy: (p.vy ?? 0) * 60 })));
@@ -225,6 +241,7 @@ function connectRoom(room, automatic = false) {
       if (campaignComplete && !wasCampaignComplete) announce(`Campaign complete. All ${stageCount} levels cleared.`);
       if (world.completed && !wasTeamComplete) announce('Level complete. Next stage shortly.');
       if (wasStalled && fresh) announce('Connection recovered.');
+      showRescue(world.rescued_at ?? null);
     } else if (message.type === 'chat') {
       chatBubbles.set(message.player, { text: message.text, until: performance.now() + 3500 });
       chatHistory.push(`P${message.player}: ${message.text}`);
@@ -513,6 +530,18 @@ function draw() {
     }
     if (player !== undefined && !campaignComplete && performance.now() - lastSnapshot > 1500) {
       ctx.fillStyle = '#ffffff'; ctx.fillText('Waiting for server…', 24, 36);
+    }
+    // Non-blocking rescue banner: play continues underneath; a simple fade is
+    // the only motion, and reduced motion gets the same banner without it.
+    if (rescueBannerUntil > performance.now()) {
+      const remaining = rescueBannerUntil - performance.now();
+      const reduced = window.matchMedia?.('(prefers-reduced-motion: reduce)')?.matches ?? false;
+      ctx.globalAlpha = reduced ? 1 : Math.min(1, remaining / 400);
+      ctx.fillStyle = '#ffbd80'; ctx.font = 'bold 20px system-ui';
+      ctx.textAlign = 'center';
+      ctx.fillText(RESCUE_MESSAGE, canvas.width / 2, 48);
+      ctx.textAlign = 'left';
+      ctx.globalAlpha = 1;
     }
   }
   requestAnimationFrame(draw);

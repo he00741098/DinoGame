@@ -644,3 +644,49 @@ test('chat cooldown does not survive a reconnect', () => {
   h.join();
   assert.ok(h.chats.every(button => !button.disabled));
 });
+
+test('a rescue shows a run-lost notice that expires', () => {
+  const h = harness(); const socket = h.join();
+  const state = snapshot();
+  state.world.players = [{ id: 1, x: 1024, y: 2048 }];
+  socket.receive(state);
+  assert.ok(!h.draw().some(call => call[0] === 'text' && /Run lost/.test(call[1])));
+  const rescued = snapshot();
+  rescued.world.players = [{ id: 1, x: 1024, y: 2048 }];
+  rescued.world.rescued_at = 1234;
+  socket.receive(rescued);
+  const shown = h.draw();
+  assert.ok(shown.some(call => call[0] === 'text' && /Run lost/.test(call[1])),
+    'the rescue notice must be drawn');
+  h.advance(2600);
+  assert.ok(!h.draw().some(call => call[0] === 'text' && /Run lost/.test(call[1])),
+    'the notice must expire');
+});
+
+test('a rescue is shown once for one marker', () => {
+  const h = harness(); const socket = h.join();
+  const state = snapshot();
+  state.world.players = [{ id: 1, x: 1024, y: 2048 }];
+  state.world.rescued_at = 77;
+  socket.receive(state);
+  const first = h.draw().filter(call => call[0] === 'text' && /Run lost/.test(call[1])).length;
+  socket.receive(state);
+  const second = h.draw().filter(call => call[0] === 'text' && /Run lost/.test(call[1])).length;
+  assert.equal(first, 1);
+  // The banner keeps drawing while live, but does not stack copies.
+  assert.ok(second <= 1, 'the notice must not stack per snapshot');
+});
+
+test('a rescue marker from an old session does not fire after reconnect', () => {
+  const h = harness();
+  const first = h.join();
+  const state = snapshot();
+  state.world.players = [{ id: 1, x: 1024, y: 2048 }];
+  state.world.rescued_at = 5;
+  first.receive(state);
+  assert.ok(h.draw().some(call => call[0] === 'text' && /Run lost/.test(call[1])));
+  h.join();
+  const after = h.draw();
+  assert.ok(!after.some(call => call[0] === 'text' && /Run lost/.test(call[1])),
+    'a new session must not inherit the previous rescue banner');
+});
