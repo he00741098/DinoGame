@@ -7,6 +7,8 @@ const roomField = document.querySelector('#room');
 const restartButton = document.querySelector('#restart');
 const nextButton = document.querySelector('#next');
 const networkStatistics = new NetworkStatistics();
+const telemetry = new SessionTelemetry(performance.now());
+let hasJoined = false;
 const motion = window.matchMedia?.('(prefers-reduced-motion: reduce)')?.matches
   ? new MotionTimeline({ extrapolationCapMs: 0, smoothingMs: 0 })
   : new MotionTimeline();
@@ -99,6 +101,7 @@ function showRescue(rescuedAt) {
   if (rescuedAt === lastRescuedAt) return;
   lastRescuedAt = rescuedAt;
   if (rescuedAt === null) return;
+  telemetry.recordEvent('rescue', performance.now(), { rescued_at: rescuedAt });
   rescueBannerUntil = performance.now() + RESCUE_DISPLAY_MS;
   announce(RESCUE_MESSAGE);
 }
@@ -202,6 +205,8 @@ function connectRoom(room, automatic = false) {
       updateControls();
       setStatus(`Room ${room} · You are P${player} · Level ${level.number}/${stageCount}: ${level.title} · ${level.required_players ?? 2} players needed · ${level.hint}`);
       announce(`Joined room ${room} as P${player} — Level ${level.number} of ${stageCount}: ${level.title}`);
+      telemetry.recordEvent(token ? 'resume' : hasJoined ? 'reconnect' : 'join', performance.now());
+      hasJoined = true;
     } else if (message.type === 'snapshot') {
       if (player === undefined || revision === undefined) return;
       if (message.revision < revision || (world && message.world.tick < world.tick)) {
@@ -212,6 +217,7 @@ function connectRoom(room, automatic = false) {
       const fresh = !world || message.world.tick > world.tick || changed;
       if (!fresh && stalePaused) return;
       const previousLevelNumber = level?.number;
+      const previousDeaths = world?.deaths;
       const wasCampaignComplete = campaignComplete;
       const wasTeamComplete = world?.completed;
       const wasStalled = stalePaused;
@@ -220,9 +226,15 @@ function connectRoom(room, automatic = false) {
       // Stale chat from the previous stage must not persist into the next one.
       if (changed || previousLevelNumber !== level.number) clearChat();
       // A rescue marker belongs to its level; a new stage starts a new run.
-      if (previousLevelNumber !== level.number) { lastRescuedAt = null; rescueBannerUntil = 0; }
+      if (previousLevelNumber !== level.number) {
+        lastRescuedAt = null; rescueBannerUntil = 0;
+        telemetry.recordEvent('level_change', performance.now(), { level: level.number });
+      }
       if (changed || world?.deaths !== message.world.deaths) motion.reset();
       world = message.world;
+      if (previousDeaths !== undefined && world.deaths > previousDeaths) {
+        telemetry.recordEvent('death', performance.now(), { deaths: world.deaths });
+      }
       motion.append(world.tick / 60, performance.now() / 1000, world.players.map(p => ({ ...p, vx: (p.vx ?? 0) * 60, vy: (p.vy ?? 0) * 60 })));
       controller = message.controller;
       campaignComplete = message.campaign_complete;
@@ -233,8 +245,13 @@ function connectRoom(room, automatic = false) {
         clearInput();
       }
       const ack = message.acks.find(ack => ack.player === player)?.seq;
-      networkStatistics.snapshot(ack, performance.now());
-      if (ackTargetSeq !== undefined && ack >= ackTargetSeq) { ackTargetSeq = ackSince = undefined; }
+      const arrivedAt = performance.now();
+      networkStatistics.snapshot(ack, arrivedAt);
+      telemetry.recordSnapshot(arrivedAt);
+      if (ackTargetSeq !== undefined && ack >= ackTargetSeq) {
+        telemetry.recordAck(arrivedAt - ackSince);
+        ackTargetSeq = ackSince = undefined;
+      }
       if (baselineSeq !== undefined && ack >= baselineSeq) {
         inputReady = true; baselineSeq = undefined;
         hasAppliedAck = true;
@@ -251,7 +268,10 @@ function connectRoom(room, automatic = false) {
         `${world.key_collected ? ` · key collected · exit ${world.players.filter(p => atExit(p)).length}/${world.players.length} (enter to wait)` : ''}${campaignComplete ? ` · Campaign complete! All ${stageCount} levels cleared.` : world.completed ? ' · Level complete! Next stage shortly…' : ''}`);
       if (changed) announce(`Revision ${revision}`);
       if (previousLevelNumber !== level.number) announce(`Level ${level.number} of ${stageCount}: ${level.title}`);
-      if (campaignComplete && !wasCampaignComplete) announce(`Campaign complete. All ${stageCount} levels cleared.`);
+      if (campaignComplete && !wasCampaignComplete) {
+        telemetry.recordEvent('complete', performance.now());
+        announce(`Campaign complete. All ${stageCount} levels cleared.`);
+      }
       if (world.completed && !wasTeamComplete) announce('Level complete. Next stage shortly.');
       if (wasStalled && fresh) announce('Connection recovered.');
       showRescue(world.rescued_at ?? null);
@@ -273,6 +293,7 @@ function connectRoom(room, automatic = false) {
   });
   current.addEventListener('close', event => {
     if (socket === current) {
+      telemetry.recordEvent('disconnect', performance.now(), { code: event.code });
       if (event.code === 1000) { resume = undefined; retryAllowed = false; }
       if (!rejected) {
         setStatus('Disconnected — reconnect within 15 seconds to resume.');
@@ -422,6 +443,7 @@ const mechanicStyles = {
   team_pad: ['#e87fb5', '👥'],
 };
 function draw() {
+  telemetry.recordFrame(performance.now());
   if (reviewing && reviewFrames.length) {
     const now = performance.now();
     const speed = Number(document.querySelector('#reviewSpeed')?.value ?? 1);
@@ -610,6 +632,18 @@ document.querySelector('#reviewSeek')?.addEventListener('input', event => {
   arrivals.clear();
   reviewPosition = Math.max(0, Math.min(reviewFrames.length - 1, Number(event.target.value)));
   reviewPlaying = false;
+});
+// Opt-in local export only: no network call, no personal data, nothing uploaded.
+document.querySelector('#downloadLog')?.addEventListener('click', () => {
+  if (typeof Blob !== 'function' || typeof URL === 'undefined' || typeof URL.createObjectURL !== 'function') return;
+  const url = URL.createObjectURL(new Blob([JSON.stringify(telemetry.summary(performance.now()), null, 2)], { type: 'application/json' }));
+  const anchor = document.createElement('a');
+  anchor.href = url;
+  anchor.download = `coop-playtest-${new Date().toISOString().replace(/[:.]/g, '-')}.json`;
+  document.body.append(anchor);
+  anchor.click();
+  anchor.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 0);
 });
 const querySolution = Number(new URL(location.href).searchParams.get('solution'));
 if (querySolution >= 1 && querySolution <= stageCount) startReview(querySolution);

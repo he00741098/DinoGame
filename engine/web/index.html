@@ -59,6 +59,8 @@
 <details><summary>Network statistics</summary>
   <p id="networkStatistics" aria-live="off">No network samples</p>
   <p>Session-average application payload only; excludes TLS/TCP/WebSocket overhead. Applied ack includes server scheduling, not pure ping.</p>
+  <p><button id="downloadLog" type="button">Download playtest log</button></p>
+  <p class="muted">The log stays on this device until you download it and contains no personal data.</p>
 </details>
 <details><summary>Solution review — all 32 levels</summary>
   <p>Death-free input-only simulation recordings, not proven optimal routes. Review does not join or control a live room.</p>
@@ -71,5 +73,6 @@
 </details>
 <script src="/network.js"></script>
 <script src="/motion.js"></script>
+<script type="module" src="/telemetry.js"></script>
 <script type="module" src="/client.js"></script>
 </html>

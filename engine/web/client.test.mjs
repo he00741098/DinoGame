@@ -4,6 +4,10 @@ import vm from 'node:vm';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
+// client.js consumes SessionTelemetry from the page global scope, so the vm
+// harness injects the imported class instead of evaluating the module itself.
+const { SessionTelemetry } = await import('./telemetry.js');
+
 class Element {
   listeners = new Map();
   textContent = '';
@@ -37,6 +41,7 @@ function harness(options = {}) {
   fields.set('#restart', new ButtonElement());
   fields.set('#next', new ButtonElement());
   fields.set('#networkStatistics', new Element());
+  fields.set('#downloadLog', new ButtonElement());
   fields.set('#chatlog', new Element());
   for (const id of ['review', 'reviewPause']) fields.set(`#${id}`, new ButtonElement());
   for (const id of ['reviewStage', 'reviewSpeed', 'reviewSeek']) { const input = new InputElement(); input.value = '1'; fields.set(`#${id}`, input); }
@@ -80,7 +85,7 @@ function harness(options = {}) {
   const timers = new Map();
   let nextTimer = 1;
   const context = vm.createContext({
-    document: doc, window, WebSocket: Socket, URL, TextEncoder,
+    document: doc, window, WebSocket: Socket, URL, TextEncoder, SessionTelemetry,
     fetch: options.fetch ?? (async path => ({ ok: true, json: async () => JSON.parse(readFileSync(new URL(`./solutions/${path.split('/').at(-1)}.json`, import.meta.url), 'utf8')) })),
     HTMLInputElement: InputElement, HTMLButtonElement: ButtonElement, HTMLElement: Element,
     location: { href: 'http://localhost:3000/', host: 'localhost:3000', protocol: 'http:' },
@@ -105,7 +110,7 @@ function harness(options = {}) {
     interval();
     for (const [id, timer] of [...timers]) if (timer.at <= now) { timers.delete(id); timer.fn(); }
   };
-  return { fields, doc, window, controls, chats, sockets, join, key, advance, review: number => vm.runInContext(`startReview(${number})`, context), tick: () => interval(), draw: () => { draws.length = 0; frame(); return draws; } };
+  return { fields, doc, window, controls, chats, sockets, join, key, advance, review: number => vm.runInContext(`startReview(${number})`, context), tick: () => interval(), draw: () => { draws.length = 0; frame(); return draws; }, summary: () => vm.runInContext('telemetry.summary(performance.now())', context) };
 }
 
 test('long campaign stages use a bounded following viewport', () => {
@@ -686,4 +691,19 @@ test('the rescue marker resets on a new session', () => {
   const fresh = snapshot(); fresh.world.tick = 1; // No rescued_at in the new session.
   current.receive(fresh);
   assert.equal(rescueBanner(h), 0);
+});
+
+test('a rescue event is recorded when rescued_at changes and the log download is guarded', () => {
+  const h = harness();
+  const socket = h.join();
+  socket.receive(snapshot());
+  assert.ok(!h.summary().events.some(event => event.type === 'rescue'));
+  const rescued = snapshot(); rescued.world.tick = 11; rescued.world.deaths = 1; rescued.world.rescued_at = 11;
+  socket.receive(rescued);
+  const rescue = h.summary().events.find(event => event.type === 'rescue');
+  assert.ok(rescue);
+  assert.equal(rescue.rescued_at, 11);
+  assert.ok(Number.isFinite(rescue.at) && rescue.at >= 0);
+  // The harness has no Blob, so the opt-in download must not throw.
+  assert.doesNotThrow(() => h.fields.get('#downloadLog').emit('click'));
 });
