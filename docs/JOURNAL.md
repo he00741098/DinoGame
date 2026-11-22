@@ -231,3 +231,35 @@ while never checking the two new levels. The verifier now derives its count from
 the checked-in recordings.
 
 Gate: 9 Rust suites, 45 Node, 45 Swift, Clippy clean, iOS Debug build.
+
+### Same day — audits that found shipped defects
+
+Four read-only audits ran against the deployed release. Every one found something
+that a green test suite had not.
+
+**Solution review could not open the new stages.** `startReview` rejected any
+number above 28, so the browser silently refused stages 29 and 30 — and the
+`/28` bound was copied into a status string and the deep-link guard. The bound is
+being replaced by one named constant, with a test that stage 29/30 open and that
+31 is still rejected.
+
+**Nine stale "28" strings** remained in the browser client after the stage bump:
+status text, screen-reader announcements, the completion message and the review
+banner. `index.html` is fixed (`e66ac6b`); the client strings are being swept in
+the same pass as the review bound.
+
+**Chat had no cooldown.** The server drops messages faster than one per two
+seconds, and both clients sent on every tap with no feedback, so a second tap
+read as a dead button. Both clients now disable the buttons for two seconds and
+show the cooldown, with the timer cleared on reconnect so it cannot stick.
+
+**Chat history never cleared**, so messages from a previous stage or room
+persisted across a level change and a reconnect.
+
+**Coverage audit.** Quick chat, the team pad and stages 29-30 are genuinely
+covered by tests that fail if they break. Two areas are only build-checked: the
+team-pad *rendering* on both clients, and the reduced-motion *wiring* (the
+timeline options are tested, but nothing fails if the clients stop passing them).
+Checkpoint spacing is the worst coverage-to-risk ratio — the completion witness
+passes with any layout that remains completable, which is exactly how the
+428-second sparse-checkpoint stage slipped through. A spacing test is in flight.
