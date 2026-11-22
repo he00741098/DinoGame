@@ -597,3 +597,30 @@ test('expired chat bubbles are pruned from the bubble map', () => {
   const again = h.draw().filter(call => call[0] === 'text').map(call => call[1]);
   assert.ok(!again.includes('On my way'));
 });
+
+test('chat buttons are disabled during the cooldown', () => {
+  const h = harness(); const socket = h.join();
+  const before = socket.sent.length;
+  h.chats[2].emit('click');
+  assert.equal(socket.sent.length, before + 1);
+  assert.ok(h.chats.every(button => button.disabled));
+  h.advance(2000);
+  assert.ok(h.chats.every(button => !button.disabled));
+});
+
+test('chat history clears when the level changes', () => {
+  const h = harness(); const socket = h.join();
+  socket.receive(snapshot());
+  socket.receive({ type: 'chat', player: 2, preset: 2, text: 'Jump!' });
+  assert.match(h.fields.get('#chatlog').textContent, /P2: Jump!/);
+  socket.receive(snapshot({ revision: 2, level: level(2) }));
+  assert.equal(h.fields.get('#chatlog').textContent, '');
+});
+
+test('chat cooldown does not survive a reconnect', () => {
+  const h = harness(); h.join();
+  h.chats[2].emit('click');
+  assert.ok(h.chats.every(button => button.disabled));
+  h.join();
+  assert.ok(h.chats.every(button => !button.disabled));
+});

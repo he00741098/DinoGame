@@ -35,6 +35,13 @@ const stageCount = 30;
 let reviewFrameMilliseconds = 50;
 const chatBubbles = new Map();
 const chatHistory = [];
+let chatCooldownTimer;
+function clearChat() {
+  chatBubbles.clear();
+  chatHistory.length = 0;
+  const log = document.querySelector('#chatlog');
+  if (log) log.textContent = '';
+}
 const queryRoom = new URL(location.href).searchParams.get('room');
 if (queryRoom && /^[A-Za-z0-9-]{3,16}$/.test(queryRoom)) roomField.value = queryRoom;
 
@@ -74,6 +81,10 @@ function updateControls() {
   const connected = player !== undefined && socket?.readyState === WebSocket.OPEN;
   const owner = connected && inputReady && controller === player;
   for (const button of document.querySelectorAll('[data-action]')) button.disabled = !connected || !inputReady || campaignComplete;
+  // Quick chat mirrors the server's per-player CHAT_INTERVAL as a visible cooldown.
+  for (const button of document.querySelectorAll('[data-chat]')) {
+    button.disabled = chatCooldownTimer !== undefined || socket?.readyState !== WebSocket.OPEN;
+  }
   restartButton.disabled = !owner;
   nextButton.disabled = true;
   nextButton.hidden = true; // Automatic authoritative progression replaces manual Next.
@@ -104,6 +115,8 @@ function connectRoom(room, automatic = false) {
   arrivals.clear();
   reviewing = false; ++reviewGeneration; reviewFrames = [];
   clearTimeout(retryTimer); retryTimer = undefined;
+  // A stale cooldown timer must not re-enable quick chat in the new session.
+  clearTimeout(chatCooldownTimer); chatCooldownTimer = undefined;
   retryAllowed = true;
   if (!automatic) retryAttempts = 0;
   clearInput();
@@ -177,6 +190,8 @@ function connectRoom(room, automatic = false) {
       const wasStalled = stalePaused;
       revision = message.revision;
       level = message.level;
+      // Stale chat from the previous stage must not persist into the next one.
+      if (changed || previousLevelNumber !== level.number) clearChat();
       if (changed || world?.deaths !== message.world.deaths) motion.reset();
       world = message.world;
       motion.append(world.tick / 60, performance.now() / 1000, world.players.map(p => ({ ...p, vx: (p.vx ?? 0) * 60, vy: (p.vy ?? 0) * 60 })));
@@ -542,7 +557,10 @@ async function startReview(number) {
 document.querySelector('#review')?.addEventListener('click', () => startReview(Number(document.querySelector('#reviewStage').value)));
 for (const button of document.querySelectorAll('[data-chat]')) {
   button.addEventListener('click', () => {
-    if (socket?.readyState === WebSocket.OPEN) transmit(socket, { type: 'chat', preset: Number(button.dataset.chat) });
+    if (socket?.readyState !== WebSocket.OPEN || chatCooldownTimer !== undefined) return;
+    transmit(socket, { type: 'chat', preset: Number(button.dataset.chat) });
+    chatCooldownTimer = setTimeout(() => { chatCooldownTimer = undefined; updateControls(); }, 2000);
+    updateControls();
   });
 }
 document.querySelector('#reviewPause')?.addEventListener('click', () => { reviewPlaying = !reviewPlaying; reviewLastTime = performance.now(); });
