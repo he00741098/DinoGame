@@ -426,3 +426,36 @@ its no-op path.
 **Totals:** 73 commits this session; 9 Rust suites, 52 sim-core, 52 Node, 46
 Swift, Clippy clean, iOS build green; release `20261122-6eb0d8f89517` live and
 verified with 32 stages.
+
+### Same day — two rescue bugs found after shipping, and a finale that escalates
+
+**A shipped rescue bug, caught by writing the negative case.** The rescue fired
+whenever too few bodies were *behind* a shut gate — which also matches a team
+that had all crossed it. A team that opened the door and walked through together
+would have been charged a death and dragged backwards, punishing exactly what the
+room rewards. It was live in `20261122-6eb0d8f89517`.
+
+The fix requires bodies on **both** sides: everyone behind means the door has not
+opened yet, everyone ahead means the team crossed together, and only a genuine
+strand with too few behind to re-press the pad is a lost run (`1f0346f`).
+
+**A second one from the same review.** A short gate can be jumped, so a body
+above it is not stranded — an x-only check would have rescued a team that could
+still finish. The rescue now requires the door to span the traversable height
+before treating separation as permanent (`1ef860c`), with a test using a
+deliberately jumpable gate.
+
+Both bugs existed because I tested only the positive case: split → rescue fires.
+I never tested that it stays quiet when the team is fine. Negative cases are
+where shipped bugs hide, and that is now the third time today a read-only review
+found something my green suite could not.
+
+**The finale escalated.** A curve audit pointed out stage 32 was the third
+pad room with a spring that stage 30 had already rehearsed — escalation by player
+count only. It now runs a self-cycling exit door after the key, so all four must
+regroup and move through one shared window. That is a different coordination
+shape from holding a pad, and it cannot soft-lock because the cycle reopens on
+its own (`cefd252`).
+
+Deployed as `20261122-840527a2f863` and verified: all 32 recordings, WSS, 401/403,
+private port.
