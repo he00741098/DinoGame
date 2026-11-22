@@ -310,6 +310,9 @@ impl World {
         }
         self.update_mechanics(level);
         let before_tether = (level.tether_length > 0).then(|| self.players.clone());
+        // Key collection runs inside the movement loop below, so a rope rollback
+        // needs the pre-move value to undo a key gathered on a discarded step.
+        let key_before_tether = self.key_collected;
         // Resolve lower players first so a standing player sees its support's new position.
         let mut order: Vec<usize> = (0..self.players.len()).collect();
         order.sort_by_key(|&i| (std::cmp::Reverse(self.players[i].y), self.players[i].id));
@@ -467,7 +470,7 @@ impl World {
             }
         }
         if let Some(previous) = before_tether {
-            self.solve_tether(level, previous);
+            self.solve_tether(level, previous, key_before_tether);
         }
         if self.players.iter().any(|p| p.rect().overlaps(level.key)) {
             self.key_collected = true;

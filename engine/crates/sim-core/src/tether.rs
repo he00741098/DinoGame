@@ -92,7 +92,14 @@ impl World {
         })
     }
 
-    pub(crate) fn solve_tether(&mut self, level: &Level, previous: Vec<Player>) {
+    /// `key_before_tether` is the pre-movement key state: movement may gather the
+    /// key before this solve runs, and a rollback must undo that with the players.
+    pub(crate) fn solve_tether(
+        &mut self,
+        level: &Level,
+        previous: Vec<Player>,
+        key_before_tether: bool,
+    ) {
         if !self.tether_valid(level, &previous) {
             self.regroup_team(level);
             return;
@@ -153,6 +160,8 @@ impl World {
                     *current = old;
                     current.jump_held = held;
                 }
+                // Movement gathered the key before this solve; undo it with the players.
+                self.key_collected = key_before_tether;
             } else {
                 // A late new identity/removed link can start far from the chain.
                 // Deterministically regroup at the checkpoint without charging a death.
@@ -235,5 +244,98 @@ mod tests {
         assert!(world.tether_valid(&level, &world.players));
         assert_eq!(world.deaths, 0);
         assert!(world.players.iter().all(|p| p.x < 8 * UNIT));
+    }
+    #[test]
+    fn rolled_back_tether_step_must_not_keep_a_key_gathered_mid_move() {
+        let level = Level {
+            tether_length: 2 * UNIT,
+            solids: vec![
+                Rect {
+                    x: 0,
+                    y: 12 * UNIT,
+                    w: 24 * UNIT,
+                    h: 2 * UNIT,
+                },
+                // A wall between the teammates: the rope correction cannot pull
+                // the post-move chain back within the tether through it.
+                Rect {
+                    x: 10 * UNIT,
+                    y: 10 * UNIT,
+                    w: 2 * UNIT,
+                    h: 2 * UNIT,
+                },
+            ],
+            // Kept away from both spawn columns so it never blocks a step.
+            gate: Rect {
+                x: 0,
+                y: 0,
+                w: UNIT,
+                h: UNIT,
+            },
+            // One stride of leftward movement touches it; the resting body does not.
+            key: Rect {
+                x: 8450,
+                y: 12 * UNIT - PLAYER_HEIGHT,
+                w: UNIT / 2,
+                h: UNIT / 2,
+            },
+            exit: Rect {
+                x: 23 * UNIT,
+                y: 10 * UNIT,
+                w: UNIT,
+                h: 2 * UNIT,
+            },
+            ..Level::default()
+        };
+        assert!(level.valid());
+        let mut world = World::for_level(&level);
+        assert!(world.add_player_in(&level, 1));
+        assert!(world.add_player_in(&level, 2));
+        for p in &mut world.players {
+            p.y = 12 * UNIT - PLAYER_HEIGHT;
+            p.vx = 0;
+            p.vy = 0;
+            p.grounded = true;
+            p.jump_held = false;
+        }
+        // Player 1 starts on the locked exit, player 2 starts left of the wall.
+        world.players[0].x = 22_900;
+        world.players[1].x = 9_000;
+        assert!(!world.key_collected);
+        assert!(world.players[0].rect().overlaps(level.exit));
+        assert!(!world.players[1].rect().overlaps(level.key));
+        // The walked-into key really is gathered before the solve runs...
+        let walked = Rect {
+            x: 9_000 - 96,
+            ..world.players[1].rect()
+        };
+        assert!(walked.overlaps(level.key));
+        // ...and standing on the exit is what keeps the pre-step tether valid
+        // while the post-move chain cannot cross the wall.
+        world.step(
+            &level,
+            &[
+                (
+                    1,
+                    Input {
+                        axis: -1,
+                        jump: false,
+                    },
+                ),
+                (
+                    2,
+                    Input {
+                        axis: -1,
+                        jump: false,
+                    },
+                ),
+            ],
+        );
+        assert_eq!(world.players[0].x, 22_900, "the tether must roll back");
+        assert_eq!(world.players[1].x, 9_000, "the tether must roll back");
+        assert!(
+            !world.key_collected,
+            "a key gathered mid-move must roll back with the players"
+        );
     }
 }
