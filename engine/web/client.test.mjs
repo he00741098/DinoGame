@@ -487,6 +487,26 @@ test('late review fetch cannot overwrite a newly joined live session', async () 
   assert.match(h.fields.get('#status').textContent, /You are P1/);
 });
 
+test('solution review opens the newest stages', async () => {
+  const h = harness(); const socket = h.join();
+  await h.review(29);
+  assert.equal(socket.closeCode, 1000);
+  assert.match(h.fields.get('#status').textContent, /SOLUTION REVIEW · 29\/30/);
+  assert.ok(h.controls.every(button => button.disabled));
+  const recording29 = JSON.parse(readFileSync(new URL('./solutions/29.json', import.meta.url), 'utf8'));
+  assert.equal(h.fields.get('#reviewSeek').max, String(recording29.frames.length - 1));
+  await h.review(30);
+  assert.match(h.fields.get('#status').textContent, /SOLUTION REVIEW · 30\/30/);
+  assert.ok(h.controls.every(button => button.disabled));
+  const recording30 = JSON.parse(readFileSync(new URL('./solutions/30.json', import.meta.url), 'utf8'));
+  assert.equal(h.fields.get('#reviewSeek').max, String(recording30.frames.length - 1));
+  const settled = h.fields.get('#status').textContent;
+  const settledMax = h.fields.get('#reviewSeek').max;
+  await h.review(31);
+  assert.equal(h.fields.get('#status').textContent, settled);
+  assert.equal(h.fields.get('#reviewSeek').max, settledMax);
+});
+
 test('high key is opaque and painted above translucent low-gravity zone', () => {
   const h = harness(); const socket = h.join();
   const zone = { x: 8 * 1024, y: 3 * 1024, w: 10 * 1024, h: 9 * 1024 };
